@@ -21,6 +21,3 @@ These instructions will get you a copy of the project up and running on your loc
 
 - Go 1.16 or higher OR use the Dockerfile / Docker to start using VectoriaDB 
 
-### Installing
-
-Clone the Repo and use Docker to 
