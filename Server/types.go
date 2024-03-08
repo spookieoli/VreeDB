@@ -85,6 +85,31 @@ type RuntimeData struct {
 	Uptime          int64
 }
 
+// Classifier is the struct that will be used to create a new classifier
+type Classifier struct {
+	ApiKey         string  `json:"api_key"`
+	CollectionName string  `json:"collection_name"`
+	ClassifierName string  `json:"classifier_name"`
+	Degree         int     `json:"degree"`
+	C              float64 `json:"c"`
+	Epochs         int     `json:"epochs"`
+}
+
+// DeleteClassifier is the struct that will be used to delete a classifier
+type DeleteClassifier struct {
+	ApiKey         string `json:"api_key"`
+	CollectionName string `json:"collection_name"`
+	ClassifierName string `json:"classifier_name"`
+}
+
+// Classify will be the struct that will be used to classify a vector
+type Classify struct {
+	ApiKey         string    `json:"api_key"`
+	CollectionName string    `json:"collection_name"`
+	ClassifierName string    `json:"classifier_name"`
+	Vector         []float64 `json:"vector"`
+}
+
 // Data will be the struct that will be used to display the web page
 type Data struct {
 	Collections []Collection

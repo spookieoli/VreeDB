@@ -1,6 +1,8 @@
 package Server
 
 import (
+	"VectoriaDB/Logger"
+	"VectoriaDB/Svm"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vdb"
 	"VectoriaDB/Vector"
@@ -369,6 +371,140 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	}
 	// Notice the user that the route is not found under given information
 	fmt.Println(req.Method, req.URL.String())
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+// TrainClassifier trains a classifier
+func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		// load the request into the TrainClassifier via json decode
+		tc := &Classifier{}
+		err = json.NewDecoder(req.Body).Decode(tc)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+		// Check if Collection exists
+		if _, ok := r.DB.Collections[tc.CollectionName]; !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Collection does not exist"))
+			return
+		}
+		// Create the classifier in the collection
+		r.DB.Collections[tc.CollectionName].Classifiers[tc.ClassifierName] = Svm.NewMultiClassSVM(tc.ClassifierName, tc.CollectionName)
+		// Train the classifier non blocking
+		go r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
+		// Send the success or error message to the client
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Classifier created and training started"))
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+// DeleteClassifier will delete a classifier
+func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
+		// Limit the size of the request
+		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		// load the request into the DeleteClassifier via json decode
+		dc := &DeleteClassifier{}
+		err = json.NewDecoder(req.Body).Decode(dc)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+		// Check if Collection exists
+		if _, ok := r.DB.Collections[dc.CollectionName]; !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Collection does not exist"))
+			return
+		}
+		// Delete the classifier from the collection
+		delete(r.DB.Collections[dc.CollectionName].Classifiers, dc.ClassifierName)
+		// Log the deletion
+		Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
+		// Send the success or error message to the client
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Classifier deleted"))
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+// Classify will classify a vector
+func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/classify" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		// load the request into the Classify via json decode
+		c := &Classify{}
+		err = json.NewDecoder(req.Body).Decode(c)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+		// Check if Collection exists
+		if _, ok := r.DB.Collections[c.CollectionName]; !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Collection does not exist"))
+			return
+		}
+		// Check if Classifier exists
+		if _, ok := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName]; !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Classifier does not exist"))
+			return
+		}
+		// Check if the vector is of the right dimension
+		if len(c.Vector) != r.DB.Collections[c.CollectionName].VectorDimension {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Vector has wrong dimension it should be " + fmt.Sprint(r.DB.Collections[c.CollectionName].VectorDimension) + " but is " + fmt.Sprint(len(c.Vector)) + " long"))
+			return
+		}
+		// Classify the vector
+		class := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName].Predict(c.Vector)
+		// Send the class to the client
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(struct {
+			Class int `json:"class"`
+		}{
+			Class: class,
+		})
+		return
+	}
+	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
 	return

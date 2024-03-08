@@ -4,6 +4,7 @@ import (
 	"VectoriaDB/FileMapper"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Node"
+	"VectoriaDB/Svm"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vector"
 	"encoding/json"
@@ -26,6 +27,7 @@ type Collection struct {
 	DimensionDiff    *Vector.Vector
 	DiagonalLength   float64
 	DistanceFuncName string
+	Classifiers      map[string]*Svm.MultiClassSVM
 }
 
 // NewCollection returns a new Collection
@@ -165,4 +167,24 @@ func (c *Collection) Rebuild() {
 func (c *Collection) CheckID(id string) bool {
 	_, ok := (*c.Space)[id]
 	return ok
+}
+
+// TrainClassifier will train a given classifier
+func (c *Collection) TrainClassifier(name string, degree int, cValue float64, epochs int) error {
+	c.Mut.RLock()
+	defer c.Mut.RUnlock()
+
+	// The classfier must exist
+	if _, ok := c.Classifiers[name]; !ok {
+		return fmt.Errorf("Classifier with name %s does not exists", name)
+	}
+
+	// Create a slice with alle vectors in the collection
+	var data []*Vector.Vector
+	for _, v := range *c.Space {
+		data = append(data, v)
+	}
+	// Train the classfifier
+	c.Classifiers[name].Train(data, epochs, cValue, degree)
+	return nil
 }
