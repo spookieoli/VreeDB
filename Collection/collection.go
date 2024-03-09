@@ -7,6 +7,7 @@ import (
 	"VectoriaDB/Svm"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vector"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -186,5 +187,25 @@ func (c *Collection) TrainClassifier(name string, degree int, cValue float64, ep
 	}
 	// Train the classfifier
 	c.Classifiers[name].Train(data, epochs, cValue, degree)
+	return nil
+}
+
+// SaveClassifier will save all classifier to the file system using gob
+func (c *Collection) SaveClassifier() error {
+	c.Mut.RLock()
+	defer c.Mut.RUnlock()
+
+	// Open the file
+	file, err := os.Create("collections/" + c.Name + "_classifiers.gob")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Save the classifiers
+	err = gob.NewEncoder(file).Encode(c.Classifiers)
+	if err != nil {
+		return err
+	}
 	return nil
 }

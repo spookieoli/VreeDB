@@ -403,7 +403,12 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 		// Create the classifier in the collection
 		r.DB.Collections[tc.CollectionName].Classifiers[tc.ClassifierName] = Svm.NewMultiClassSVM(tc.ClassifierName, tc.CollectionName)
 		// Train the classifier non blocking
-		go r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
+		go func() {
+			err = r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
+			if err != nil {
+				Logger.Log.Log(err.Error())
+			}
+		}()
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Classifier created and training started"))
@@ -443,6 +448,13 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 		}
 		// Delete the classifier from the collection
 		delete(r.DB.Collections[dc.CollectionName].Classifiers, dc.ClassifierName)
+		// save the classifiers in a gob file
+		go func() {
+			err := r.DB.Collections[dc.CollectionName].SaveClassifier()
+			if err != nil {
+				Logger.Log.Log(err.Error())
+			}
+		}()
 		// Log the deletion
 		Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
 		// Send the success or error message to the client
