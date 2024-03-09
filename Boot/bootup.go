@@ -70,6 +70,12 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Recreate the KD-Tree
 			collections[c.Name].Recreate()
 
+			// recreate the SVMs (if present)
+			err = collections[c.Name].ReadClassifiers()
+			if err != nil {
+				Logger.Log.Log("Error reading SVMs: " + err.Error())
+			}
+
 			// Close the file
 			file.Close()
 			Logger.Log.Log("Collection " + c.Name + " restored")

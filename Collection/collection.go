@@ -209,3 +209,27 @@ func (c *Collection) SaveClassifier() error {
 	}
 	return nil
 }
+
+// ReadClassifiers will read all classifiers from the file system using gob
+func (c *Collection) ReadClassifiers() error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// Open the file
+	if _, err := os.Stat("collections/" + c.Name + "_classifiers.gob"); os.IsNotExist(err) {
+		return nil
+	}
+
+	file, err := os.Open("collections/" + c.Name + "_classifiers.gob")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Decode the file
+	err = gob.NewDecoder(file).Decode(&c.Classifiers)
+	if err != nil {
+		return err
+	}
+	return nil
+}
