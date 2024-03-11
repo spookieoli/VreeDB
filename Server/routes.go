@@ -376,7 +376,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// TrainClassifier trains a classifier
+// TrainClassifier trains a classifier // TODO - CHECK IF CLASSIFIER ALREADY TRAINS
 func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
 		// Parse the form
@@ -404,7 +404,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 		r.DB.Collections[tc.CollectionName].Classifiers[tc.ClassifierName] = Svm.NewMultiClassSVM(tc.ClassifierName, tc.CollectionName)
 		// Train the classifier non blocking
 		go func() {
-			err = r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
+			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
 			if err != nil {
 				Logger.Log.Log(err.Error())
 			}

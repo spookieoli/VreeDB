@@ -1,9 +1,13 @@
 package Svm
 
 import (
+	"VectoriaDB/FileMapper"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Vector"
+	"fmt"
 	"math"
+	"runtime"
+	"sync"
 )
 
 // The SVM struct will represent the SVM
@@ -21,6 +25,14 @@ type MultiClassSVM struct {
 	Name        string
 	Training    bool
 	Collection  string
+}
+
+// Struct to communicate with the go routines of training
+type IdxChan struct {
+	Idx    int
+	IdxCol int
+	Sum    *float64
+	Wg     *sync.WaitGroup
 }
 
 // polynomialKernel is a function that calculates the polynomial kernel
@@ -41,25 +53,64 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 	svm.Kernel = func(x, y []float64) float64 {
 		return polynomialKernel(x, y, svm.Degree)
 	}
+	// Mut variable to lock the data
+	mut := sync.Mutex{}
+
+	// A chanel to send the index to the go routines
+	indexChan := make(chan IdxChan, runtime.NumCPU()/2)
+
+	// Start cpu cores -1 go routines
+	for i := 0; i < runtime.NumCPU()/2; i++ {
+		go func() {
+			for {
+				select {
+				case idxChan := <-indexChan:
+					sum := 0.0
+					sum = svm.Alpha[idxChan.IdxCol] * float64((*svm.Data[idxChan.IdxCol].Payload)["Label"].(int)) * svm.Kernel(svm.Data[idxChan.Idx].Data, svm.Data[idxChan.IdxCol].Data)
+					mut.Lock()
+					*idxChan.Sum += sum
+					mut.Unlock()
+					idxChan.Wg.Done()
+				}
+			}
+		}()
+	}
 
 	// Train the SVM
 	for epoch := 0; epoch < epochs; epoch++ {
+		Logger.Log.Log("Epoch " + fmt.Sprint(epoch))
 		for i := 0; i < n; i++ {
-			sum := 0.0
+			sumArr := make([]float64, n)
+			// Create a wait group to wait for all go routines to finish
+			wg := sync.WaitGroup{}
 			for j := 0; j < n; j++ {
-				sum += svm.Alpha[j] * float64((*svm.Data[j].Payload)["Label"].(int)) * svm.Kernel(svm.Data[i].Data, svm.Data[j].Data)
+				wg.Add(1)
+				indexChan <- IdxChan{Idx: i, IdxCol: j, Sum: &sumArr[i], Wg: &wg}
 			}
+			// wait for the go routines to finish
+			wg.Wait()
+
+			// summarize the sumArr
+			sum := 0.0
+			for _, sum := range sumArr {
+				sum += sum
+			}
+
 			if float64((*svm.Data[i].Payload)["Label"].(int))*(sum+svm.Bias) < 1 {
 				svm.Alpha[i] += C
 			}
 		}
+		Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + " done")
 	}
+
+	// End the go routines
+	close(indexChan)
 
 	// Calculate the bias
 	sum := 0.0
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			sum += svm.Alpha[j] * float64((*svm.Data[j].Payload)["Label"].(int)) * svm.Kernel(svm.Data[i].Data, svm.Data[j].Data)
+			sum += svm.Alpha[j] * (*svm.Data[j].Payload)["Label"].(float64) * svm.Kernel(svm.Data[i].Data, svm.Data[j].Data)
 		}
 	}
 	svm.Bias = float64((*svm.Data[0].Payload)["Label"].(int)) - sum
@@ -69,7 +120,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 func (svm *SVM) decisionFunction(x []float64) float64 {
 	sum := 0.0
 	for i := 0; i < len(svm.Data); i++ {
-		sum += svm.Alpha[i] * float64((*svm.Data[i].Payload)["Label"].(int)) * svm.Kernel(x, svm.Data[i].Data)
+		sum += svm.Alpha[i] * (*svm.Data[i].Payload)["Label"].(float64) * svm.Kernel(x, svm.Data[i].Data)
 	}
 	return sum
 }
@@ -77,25 +128,38 @@ func (svm *SVM) decisionFunction(x []float64) float64 {
 // Train is a function that trains the MultiClassSVM
 func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) {
 	mcs.Classifiers = make(map[int]*SVM)
-
 	classes := make(map[int]bool)
 	for _, point := range data {
-		classes[(*point.Payload)["Label"].(int)] = true
+		m, err := FileMapper.Mapper.ReadPayload(point.PayloadStart, mcs.Collection)
+		if err != nil {
+			Logger.Log.Log("Error reading payload: " + err.Error())
+			return
+		}
+		point.Payload = m
+		classes[int((*point.Payload)["Label"].(float64))] = true
 	}
 
 	for class := range classes {
 		svm := &SVM{}
 		modifiedData := make([]*Vector.Vector, len(data))
 		for i, point := range data {
-			if (*point.Payload)["Label"].(int) == class {
+			if int((*point.Payload)["Label"].(float64)) == class {
 				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": 1}}
 			} else {
 				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}}
 			}
 		}
+		fmt.Println("Training SVM for class ", class)
 		svm.Train(modifiedData, epochs, C, degree)
+		fmt.Println("Training done for class ", class)
 		mcs.Classifiers[class] = svm
 	}
+
+	// Set all the data items Payload to nil
+	for _, point := range data {
+		point.Payload = nil
+	}
+
 	// Log that the training is done
 	mcs.Training = false
 	Logger.Log.Log("Training of MultiClassSVM " + mcs.Name + " in Collection " + mcs.Collection + " done")
