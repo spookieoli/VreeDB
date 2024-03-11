@@ -147,6 +147,9 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 		svm.Train(modifiedData, epochs, C, degree)
 		Logger.Log.Log("Training done for class " + fmt.Sprint(class))
 		mcs.Classifiers[class] = svm
+		// Clear Context and Cancel
+		svm.Ctx = nil
+		svm.Cancel = nil
 	}
 
 	// Set all the data items Payload to nil
