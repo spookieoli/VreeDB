@@ -12,11 +12,13 @@ import (
 
 // The SVM struct will represent the SVM
 type SVM struct {
-	Alpha  []float64
-	Bias   float64
-	Data   []*Vector.Vector
-	Kernel func([]float64, []float64) float64
-	Degree int
+	Alpha   []float64
+	Bias    float64
+	Data    []*Vector.Vector
+	Kernel  func([]float64, []float64) float64
+	Degree  int
+	Mut     sync.Mutex
+	idxChan chan IdxChan
 }
 
 // MultiClassSVM is a struct that holds multiple SVMs
@@ -33,6 +35,7 @@ type IdxChan struct {
 	IdxCol int
 	Sum    *float64
 	Wg     *sync.WaitGroup
+	data   *Vector.Vector
 }
 
 // polynomialKernel is a function that calculates the polynomial kernel
@@ -53,28 +56,6 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 	svm.Kernel = func(x, y []float64) float64 {
 		return polynomialKernel(x, y, svm.Degree)
 	}
-	// Mut variable to lock the data
-	mut := sync.Mutex{}
-
-	// A chanel to send the index to the go routines
-	indexChan := make(chan IdxChan, runtime.NumCPU()/2)
-
-	// Start cpu cores -1 go routines
-	for i := 0; i < runtime.NumCPU()/2; i++ {
-		go func() {
-			for {
-				select {
-				case idxChan := <-indexChan:
-					sum := 0.0
-					sum = svm.Alpha[idxChan.IdxCol] * float64((*svm.Data[idxChan.IdxCol].Payload)["Label"].(int)) * svm.Kernel(svm.Data[idxChan.Idx].Data, svm.Data[idxChan.IdxCol].Data)
-					mut.Lock()
-					*idxChan.Sum += sum
-					mut.Unlock()
-					idxChan.Wg.Done()
-				}
-			}
-		}()
-	}
 
 	// Train the SVM
 	for epoch := 0; epoch < epochs; epoch++ {
@@ -85,7 +66,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 			wg := sync.WaitGroup{}
 			for j := 0; j < n; j++ {
 				wg.Add(1)
-				indexChan <- IdxChan{Idx: i, IdxCol: j, Sum: &sumArr[i], Wg: &wg}
+				svm.idxChan <- IdxChan{Idx: i, IdxCol: j, Sum: &sumArr[i], Wg: &wg}
 			}
 			// wait for the go routines to finish
 			wg.Wait()
@@ -104,7 +85,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 	}
 
 	// End the go routines
-	close(indexChan)
+	close(svm.idxChan)
 
 	// Calculate the bias
 	sum := 0.0
@@ -140,7 +121,8 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 	}
 
 	for class := range classes {
-		svm := &SVM{}
+		svm := &SVM{Mut: sync.Mutex{}, idxChan: make(chan IdxChan, len(data))}
+		svm.StartThreads() // Will start the go routines
 		modifiedData := make([]*Vector.Vector, len(data))
 		for i, point := range data {
 			if int((*point.Payload)["Label"].(float64)) == class {
@@ -178,6 +160,26 @@ func (mcs *MultiClassSVM) Predict(features []float64) int {
 		}
 	}
 	return maxClass
+}
+
+// StartThreads is a function that starts the go routines
+func (svm *SVM) StartThreads() {
+	// Start cpu cores -1 go routines
+	for i := 0; i < runtime.NumCPU()/2; i++ {
+		go func() {
+			for {
+				select {
+				case idxchan := <-svm.idxChan:
+					sum := 0.0
+					sum = svm.Alpha[idxchan.IdxCol] * float64((*svm.Data[idxchan.IdxCol].Payload)["Label"].(int)) * svm.Kernel(svm.Data[idxchan.Idx].Data, svm.Data[idxchan.IdxCol].Data)
+					svm.Mut.Lock()
+					*idxchan.Sum += sum
+					svm.Mut.Unlock()
+					idxchan.Wg.Done()
+				}
+			}
+		}()
+	}
 }
 
 // NewMultiClassSVM Creates new MultiClassSVM
