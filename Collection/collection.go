@@ -47,7 +47,8 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 		distanceFunc = Utils.Utils.CosineDistance
 	}
 
-	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{}, MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName}
+	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]*Svm.MultiClassSVM)}
 }
 
 // Insert inserts a vector into the collection
