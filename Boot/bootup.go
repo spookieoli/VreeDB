@@ -75,6 +75,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			if err != nil {
 				Logger.Log.Log("Error reading SVMs: " + err.Error())
 			}
+			Logger.Log.Log("Collection " + c.Name + " classifiers restored")
 
 			// Close the file
 			file.Close()

@@ -4,6 +4,7 @@ import (
 	"VectoriaDB/FileMapper"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Vector"
+	"context"
 	"fmt"
 	"math"
 	"runtime"
@@ -17,8 +18,9 @@ type SVM struct {
 	Data    []*Vector.Vector
 	Kernel  func([]float64, []float64) float64
 	Degree  int
-	Mut     sync.Mutex
 	idxChan chan IdxChan
+	Ctx     context.Context
+	Cancel  context.CancelFunc
 }
 
 // MultiClassSVM is a struct that holds multiple SVMs
@@ -36,6 +38,7 @@ type IdxChan struct {
 	Sum    *float64
 	Wg     *sync.WaitGroup
 	data   *Vector.Vector
+	Mut    *sync.Mutex
 }
 
 // polynomialKernel is a function that calculates the polynomial kernel
@@ -57,6 +60,8 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 		return polynomialKernel(x, y, svm.Degree)
 	}
 
+	mut := sync.Mutex{}
+
 	// Train the SVM
 	for epoch := 0; epoch < epochs; epoch++ {
 		Logger.Log.Log("Epoch " + fmt.Sprint(epoch))
@@ -66,7 +71,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 			wg := sync.WaitGroup{}
 			for j := 0; j < n; j++ {
 				wg.Add(1)
-				svm.idxChan <- IdxChan{Idx: i, IdxCol: j, Sum: &sumArr[i], Wg: &wg}
+				svm.idxChan <- IdxChan{Idx: i, IdxCol: j, Sum: &sumArr[i], Wg: &wg, Mut: &mut}
 			}
 			// wait for the go routines to finish
 			wg.Wait()
@@ -81,17 +86,18 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 				svm.Alpha[i] += C
 			}
 		}
+		// Delete the Mutex
 		Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + " done")
 	}
 
 	// End the go routines
-	close(svm.idxChan)
+	svm.Cancel()
 
 	// Calculate the bias
 	sum := 0.0
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			sum += svm.Alpha[j] * (*svm.Data[j].Payload)["Label"].(float64) * svm.Kernel(svm.Data[i].Data, svm.Data[j].Data)
+			sum += svm.Alpha[j] * float64((*svm.Data[j].Payload)["Label"].(int)) * svm.Kernel(svm.Data[i].Data, svm.Data[j].Data)
 		}
 	}
 	svm.Bias = float64((*svm.Data[0].Payload)["Label"].(int)) - sum
@@ -101,7 +107,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 func (svm *SVM) decisionFunction(x []float64) float64 {
 	sum := 0.0
 	for i := 0; i < len(svm.Data); i++ {
-		sum += svm.Alpha[i] * (*svm.Data[i].Payload)["Label"].(float64) * svm.Kernel(x, svm.Data[i].Data)
+		sum += svm.Alpha[i] * float64((*svm.Data[i].Payload)["Label"].(int)) * svm.Kernel(x, svm.Data[i].Data)
 	}
 	return sum
 }
@@ -121,8 +127,14 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 	}
 
 	for class := range classes {
-		svm := &SVM{Mut: sync.Mutex{}, idxChan: make(chan IdxChan, len(data))}
+		// create a new SVM
+		svm := &SVM{idxChan: make(chan IdxChan, len(data))}
+		ctx, cancel := context.WithCancel(context.Background())
+		svm.Ctx = ctx
+		svm.Cancel = cancel
 		svm.StartThreads() // Will start the go routines
+
+		// Create a new slice with the modified data
 		modifiedData := make([]*Vector.Vector, len(data))
 		for i, point := range data {
 			if int((*point.Payload)["Label"].(float64)) == class {
@@ -131,9 +143,9 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}}
 			}
 		}
-		fmt.Println("Training SVM for class ", class)
+		Logger.Log.Log("Training SVM for class " + fmt.Sprint(class))
 		svm.Train(modifiedData, epochs, C, degree)
-		fmt.Println("Training done for class ", class)
+		Logger.Log.Log("Training done for class " + fmt.Sprint(class))
 		mcs.Classifiers[class] = svm
 	}
 
@@ -172,10 +184,12 @@ func (svm *SVM) StartThreads() {
 				case idxchan := <-svm.idxChan:
 					sum := 0.0
 					sum = svm.Alpha[idxchan.IdxCol] * float64((*svm.Data[idxchan.IdxCol].Payload)["Label"].(int)) * svm.Kernel(svm.Data[idxchan.Idx].Data, svm.Data[idxchan.IdxCol].Data)
-					svm.Mut.Lock()
+					idxchan.Mut.Lock()
 					*idxchan.Sum += sum
-					svm.Mut.Unlock()
+					idxchan.Mut.Unlock()
 					idxchan.Wg.Done()
+				case <-svm.Ctx.Done():
+					return
 				}
 			}
 		}()
@@ -186,12 +200,3 @@ func (svm *SVM) StartThreads() {
 func NewMultiClassSVM(name string, collection string) *MultiClassSVM {
 	return &MultiClassSVM{Name: name, Collection: collection}
 }
-
-/*
-	var mcs MultiClassSVM
-	mcs.Train(data, 10, 1.0, 3)
-
-	testPoint := Point{Features: []float64{0.4, 0.6}}
-	prediction := mcs.Predict(testPoint.Features)
-	fmt.Printf("Vorhersage für Punkt (%.2f, %.2f): Klasse %d\n", testPoint.Features[0], testPoint.Features[1], prediction)
-*/

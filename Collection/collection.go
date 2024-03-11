@@ -188,6 +188,13 @@ func (c *Collection) TrainClassifier(name string, degree int, cValue float64, ep
 	}
 	// Train the classfifier
 	c.Classifiers[name].Train(data, epochs, cValue, degree)
+
+	// Save the classifier
+	err := c.SaveClassifier()
+	if err != nil {
+		Logger.Log.Log("Error saving classifier: " + err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -202,6 +209,10 @@ func (c *Collection) SaveClassifier() error {
 		return err
 	}
 	defer file.Close()
+
+	// Register the SVM structs
+	gob.Register(Svm.SVM{})
+	gob.Register(Svm.MultiClassSVM{})
 
 	// Save the classifiers
 	err = gob.NewEncoder(file).Encode(c.Classifiers)
