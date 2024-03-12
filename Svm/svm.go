@@ -104,7 +104,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 }
 
 // decisionFunction is a function that calculates the decision function
-func (svm *SVM) decisionFunction(x []float64) float64 {
+func (svm *SVM) decisionFunction(x []float64, collection string) float64 {
 	sum := 0.0
 	for i := 0; i < len(svm.Data); i++ {
 		sum += svm.Alpha[i] * float64((*svm.Data[i].Payload)["Label"].(int)) * svm.Kernel(x, svm.Data[i].Data)
@@ -138,9 +138,9 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 		modifiedData := make([]*Vector.Vector, len(data))
 		for i, point := range data {
 			if int((*point.Payload)["Label"].(float64)) == class {
-				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": 1}}
+				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": 1}, PayloadStart: point.PayloadStart}
 			} else {
-				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}}
+				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}, PayloadStart: point.PayloadStart}
 			}
 		}
 		Logger.Log.Log("Training SVM for class " + fmt.Sprint(class))
@@ -168,7 +168,14 @@ func (mcs *MultiClassSVM) Predict(features []float64) int {
 	maxScore := math.Inf(-1)
 
 	for class, svm := range mcs.Classifiers {
-		score := svm.decisionFunction(features)
+		// if not present - set the kernel to the polynomial kernel
+		if svm.Kernel == nil {
+			svm.Kernel = func(x, y []float64) float64 {
+				return polynomialKernel(x, y, svm.Degree)
+			}
+		}
+		// calculate the score
+		score := svm.decisionFunction(features, mcs.Collection)
 		if score > maxScore {
 			maxScore = score
 			maxClass = class

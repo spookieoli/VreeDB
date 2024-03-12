@@ -219,6 +219,9 @@ func (c *Collection) SaveClassifier() error {
 	if err != nil {
 		return err
 	}
+
+	Logger.Log.Log("Successfully saved classifier")
+
 	return nil
 }
 
