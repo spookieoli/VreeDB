@@ -77,6 +77,9 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 		Logger.Log.Log("Error saving vector to file: " + err.Error())
 		return err
 	}
+
+	// check ClassifierReadiness in a go routine
+	c.setClassifierReadiness(vector)
 	return nil
 }
 
@@ -293,4 +296,14 @@ func (c *Collection) ClassifierToSlice() []string {
 		slice = append(slice, k)
 	}
 	return slice
+}
+
+// SetClassifierReadiness will check if the given Vector as parameter has a payload with a "Label" key and a value of type float64 and if there more than 1 nodes in the collection
+func (c *Collection) setClassifierReadiness(v *Vector.Vector) {
+	// Function will only be called from an save mutex space
+	if (*v.Payload)["Label"] != nil && len(*c.Space) > 1 {
+		c.ClassifierReady = true
+		return
+	}
+	c.ClassifierReady = false
 }
