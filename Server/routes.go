@@ -52,6 +52,10 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Delete all Classifiers of the Collection
+		r.DB.Collections[dc.Name].DeleteAllClassifiers()
+
 		// Call the function in the Vdb
 		err = r.DB.DeleteCollection(dc.Name)
 		if err != nil {
@@ -69,6 +73,7 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 			Message: "Collection deleted",
 		}
 		json.NewEncoder(w).Encode(status)
+		Logger.Log.Log("Collection " + dc.Name + " deleted")
 		return
 	}
 }
@@ -399,6 +404,13 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+		// Check if Collection is ClassifierReady
+		if !r.DB.Collections[tc.CollectionName].ClassifierReady {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Collection is not ready for classification"))
+			return
+		}
+
 		// Create the classifier in the collection
 		err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
 		if err != nil {
@@ -408,7 +420,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 		}
 		// Train the classifier non blocking
 		go func() {
-			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
+			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C, tc.Epochs)
 			if err != nil {
 				Logger.Log.Log(err.Error())
 			}

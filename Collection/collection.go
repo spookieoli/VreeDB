@@ -29,6 +29,7 @@ type Collection struct {
 	DiagonalLength   float64
 	DistanceFuncName string
 	Classifiers      map[string]*Svm.MultiClassSVM
+	ClassifierReady  bool
 }
 
 // NewCollection returns a new Collection
@@ -48,7 +49,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	}
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
-		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]*Svm.MultiClassSVM)}
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]*Svm.MultiClassSVM), ClassifierReady: false}
 }
 
 // Insert inserts a vector into the collection
@@ -198,6 +199,13 @@ func (c *Collection) DeleteClassifier(name string) error {
 	return nil
 }
 
+// DeleteAllClassifiers deletes all classifiers from the Collection
+func (c *Collection) DeleteAllClassifiers() {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+	c.Classifiers = make(map[string]*Svm.MultiClassSVM)
+}
+
 // TrainClassifier will train a given classifier
 func (c *Collection) TrainClassifier(name string, degree int, cValue float64, epochs int) error {
 	c.Mut.RLock()
@@ -274,4 +282,15 @@ func (c *Collection) ReadClassifiers() error {
 		return err
 	}
 	return nil
+}
+
+// ClassifierToSlice will return a slice of all Classifiernames in this collection
+func (c *Collection) ClassifierToSlice() []string {
+	c.Mut.RLock()
+	defer c.Mut.RUnlock()
+	var slice []string
+	for k := range c.Classifiers {
+		slice = append(slice, k)
+	}
+	return slice
 }

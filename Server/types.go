@@ -70,10 +70,12 @@ type Routes struct {
 
 // Collection will display Collection related stuff
 type Collection struct {
-	Name           string  `json:"name"`
-	NodeCount      int     `json:"node_count"`
-	DistanceFunc   string  `json:"distance_func"`
-	DiagonalLength float64 `json:"diagonal_length"`
+	Name            string   `json:"name"`
+	NodeCount       int      `json:"node_count"`
+	DistanceFunc    string   `json:"distance_func"`
+	DiagonalLength  float64  `json:"diagonal_length"`
+	Classifier      []string `json:"classifier"`
+	ClassifierReady bool     `json:"classifier_ready"`
 }
 
 // RuntimeData is the struct that will be used to display Application runtime data
@@ -128,7 +130,7 @@ func NewData() Data {
 	data := Data{}
 	for _, collection := range Vdb.DB.Collections {
 		data.Collections = append(data.Collections, Collection{Name: collection.Name, NodeCount: len(*collection.Space),
-			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength})
+			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength, Classifier: collection.ClassifierToSlice()})
 	}
 	data.Application = RuntimeData{RamUsage: Utils.Utils.GetMemoryUsage(), FreeRam: Utils.Utils.GetAvailableRAM(),
 		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100, CollectionCount: len(Vdb.DB.Collections)}

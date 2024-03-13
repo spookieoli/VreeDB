@@ -26,6 +26,11 @@
         justify-content: center;
         align-items: center;
     }
+
+    .field {
+        display: flex;
+        align-items: center;
+    }
 </style>
 <body>
 
@@ -79,6 +84,33 @@
                 <p>Nodecount: {{.NodeCount}}</p>
                 <p>DistanceFunction: {{.DistanceFunc}}</p>
                 <p>DiagonalLength: {{.DiagonalLength}}</p>
+                {{if .ClassifierReady}}
+                    <p>Classifier: <span style="color:green;">&#10004;</span> Ready to create Classifier</p>
+                {{else}}
+                    <p>Collection Classifier Readiness: <span style="color:red;">&#10008;</span> Not Ready to create Classifier</p>
+                {{end}}
+                {{range .Classifier}}
+                    <p>Classifier: {{.}}</p>
+                {{end}}
+                <div class="ui form">
+                    <div class="fields">
+                        <div class="field">
+                            <input type="text" id="classifierName" placeholder="Name">
+                        </div>
+                        <div class="field">
+                            <input type="text" id="classifierDegree" placeholder="Degree">
+                        </div>
+                        <div class="field">
+                            <input type="text" id="classifierCValue" placeholder="CValue">
+                        </div>
+                        <div class="field">
+                            <input type="text" id="classifierEpochs" placeholder="Epochs">
+                        </div>
+                        <div class="field">
+                            <button class="ui button" id="createClassifierButton" data-collection-id="{{.Name}}" {{if not .ClassifierReady}}disabled{{end}}>Create Classifier</button>
+                        </div>
+                    </div>
+                </div>
                 <button class="ui red button" data-collection-id="{{.Name}}">Delete</button>
             </div>
         {{end}}
@@ -153,6 +185,41 @@
           readOnly: true
       });
       editor1.refresh();
+
+      $('#createClassifierButton').on('click', function() {
+          // Werte aus den Eingabefeldern abrufen
+          var classifierName = $('#classifierName').val();
+          var classifierDegree = parseInt($('#classifierDegree').val(), 10);
+          var classifierCValue = parseFloat($('#classifierCValue').val());
+          var classifierEpochs = parseInt($('#classifierEpochs').val(), 10);
+          var collectionName = $(this).data('collection-id');
+
+          // JSON-Objekt erstellen
+          var data = {
+              "collection_name": collectionName,
+              "classifier_name": classifierName,
+              "degree": classifierDegree,
+              "c": classifierCValue,
+              "epochs": classifierEpochs
+          };
+
+          // JSON-Objekt an den Server senden
+          $.ajax({
+              type: "PUT",
+              url: "/trainclassifier",
+              data: JSON.stringify(data),
+              contentType: "application/json; charset=utf-8",
+              dataType: "json",
+              success: function(response){
+                  // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn die Anfrage erfolgreich war
+                  console.log(response);
+              },
+              error: function(error){
+                  // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn ein Fehler aufgetreten ist
+                  console.log(error);
+              }
+          });
+      });
 
       // Initialisierung der Tabs und Akkordeons
       $('.menu .item').tab();
@@ -248,6 +315,7 @@
                   editor2.setValue(JSON.stringify(error, null, 2));
               }
           });
+
       });
   });
 
