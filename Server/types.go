@@ -128,6 +128,7 @@ type DeletePoint struct {
 // NewData creates new Data Structure for the web page
 func NewData() Data {
 	data := Data{}
+	// Add all the Collections
 	for _, collection := range Vdb.DB.Collections {
 		data.Collections = append(data.Collections, Collection{Name: collection.Name, NodeCount: len(*collection.Space),
 			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength,
