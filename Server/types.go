@@ -130,7 +130,8 @@ func NewData() Data {
 	data := Data{}
 	for _, collection := range Vdb.DB.Collections {
 		data.Collections = append(data.Collections, Collection{Name: collection.Name, NodeCount: len(*collection.Space),
-			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength, Classifier: collection.ClassifierToSlice()})
+			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength,
+			Classifier: collection.ClassifierToSlice(), ClassifierReady: collection.ClassifierReady})
 	}
 	data.Application = RuntimeData{RamUsage: Utils.Utils.GetMemoryUsage(), FreeRam: Utils.Utils.GetAvailableRAM(),
 		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100, CollectionCount: len(Vdb.DB.Collections)}
