@@ -73,7 +73,6 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 			Message: "Collection deleted",
 		}
 		json.NewEncoder(w).Encode(status)
-		Logger.Log.Log("Collection " + dc.Name + " deleted")
 		return
 	}
 }
@@ -227,8 +226,6 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 // AddPointBatch adds a batch of points to a Collection
 func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpointbatch" {
-		// Limit the size of the request
-		req.Body = http.MaxBytesReader(w, req.Body, 1000000)
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -257,19 +254,20 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Add the points to the Collection
-		for _, p := range pb.Points {
-			d := p.Payload // This is no longer necessary from GO >= 1.22
-			v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
-			err = r.DB.Collections[pb.CollectionName].Insert(v)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-				return
+		go func() {
+			for _, p := range pb.Points {
+				d := p.Payload // This is no longer necessary from GO >= 1.22
+				v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
+				err = r.DB.Collections[pb.CollectionName].Insert(v)
+				if err != nil {
+					Logger.Log.Log("Error in BulkAdd: " + err.Error())
+					return
+				}
 			}
-		}
+		}()
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Points added"))
+		w.Write([]byte("Points bulk added"))
 		return
 	}
 	// Notice the user that the route is not found under given information

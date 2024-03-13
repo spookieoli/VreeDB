@@ -1,0 +1,5 @@
+2024-03-13T22:17:33+01:00 VectorDatabase initialized
+2024-03-13T22:17:33+01:00 Server is listening on 0.0.0.0:8080
+2024-03-13T22:17:39+01:00 Collection test added
+2024-03-13T22:18:35+01:00 Collection test deleted
+2024-03-13T22:18:35+01:00 Collection test deleted
