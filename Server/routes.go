@@ -2,7 +2,6 @@ package Server
 
 import (
 	"VectoriaDB/Logger"
-	"VectoriaDB/Svm"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vdb"
 	"VectoriaDB/Vector"
@@ -401,7 +400,12 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Create the classifier in the collection
-		r.DB.Collections[tc.CollectionName].Classifiers[tc.ClassifierName] = Svm.NewMultiClassSVM(tc.ClassifierName, tc.CollectionName)
+		err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
 		// Train the classifier non blocking
 		go func() {
 			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, 3, 1.0, 10)
@@ -447,14 +451,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Delete the classifier from the collection
-		delete(r.DB.Collections[dc.CollectionName].Classifiers, dc.ClassifierName)
-		// save the classifiers in a gob file
-		go func() {
-			err := r.DB.Collections[dc.CollectionName].SaveClassifier()
-			if err != nil {
-				Logger.Log.Log(err.Error())
-			}
-		}()
+		r.DB.Collections[dc.CollectionName].DeleteClassifier(dc.ClassifierName)
 		// Log the deletion
 		Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
 		// Send the success or error message to the client

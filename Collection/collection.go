@@ -171,6 +171,33 @@ func (c *Collection) CheckID(id string) bool {
 	return ok
 }
 
+// AddClassifier adds a classifier to the Collection
+func (c *Collection) AddClassifier(name string) error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// Add the classifier to the Collection
+	c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
+	return nil
+}
+
+// DeleteClassifier deletes a classifier from the Collection
+func (c *Collection) DeleteClassifier(name string) error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// Delete the classifier from the Collection
+	delete(c.Classifiers, name)
+
+	// Delete the Classifiers again to make sure it is not saved
+	err := c.SaveClassifier()
+	if err != nil {
+		Logger.Log.Log(err.Error())
+		return err
+	}
+	return nil
+}
+
 // TrainClassifier will train a given classifier
 func (c *Collection) TrainClassifier(name string, degree int, cValue float64, epochs int) error {
 	c.Mut.RLock()
