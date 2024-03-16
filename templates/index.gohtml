@@ -135,6 +135,9 @@
         <div class="menu">
             <div class="item" data-value="delete">/delete</div>
             <div class="item" data-value="createcollection">/createcollection</div>
+            <div class="item" data-value="trainclassifier">/trainclassifier</div>
+            <div class="item" data-value="delteclassifier">/delteclassifier</div>
+            <div class="item" data-value="classify">/classify</div>
             <div class="item" data-value="search">/search</div>
             <div class="item" data-value="addpoint">/addpoint</div>
             <div class="item" data-value="listcollections">/listcollections</div>
@@ -284,14 +287,17 @@
                   break;
               case 'addpoint':
               case 'addpointbatch':
+              case 'trainclassifier':
                   method = 'PUT';
                   break;
               case 'delete':
               case 'deletepoint':
+              case 'deleteclassifier':
                   method = 'DELETE';
                   break;
               case 'search':
               case 'list':
+              case 'classify':
                   method = 'GET';
                   break;
               default:
