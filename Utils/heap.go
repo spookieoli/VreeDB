@@ -3,12 +3,22 @@ package Utils
 import (
 	"VectoriaDB/Node"
 	"container/heap"
+	"context"
 )
+
+// HeapChannelStruct is a struct that holds a channel and a heap
+type HeapChannelStruct struct {
+	node *Node.Node
+	dist float64
+}
 
 // HeapControl is a struct that holds a slice of HeapItems and the maximum number of entries
 type HeapControl struct {
 	Heap       Heap
 	maxEntries int
+	in         chan HeapChannelStruct
+	ctx        context.Context
+	abort      context.CancelFunc
 }
 
 // The HeapItem struct is used to store a Node and its distance to the query vector
@@ -51,9 +61,27 @@ func (h *Heap) Pop() interface{} {
 
 // NewHeapControl initializes the heap with a given size
 func NewHeapControl(n int) *HeapControl {
-	h := &HeapControl{maxEntries: n, Heap: Heap{}}
+	h := &HeapControl{maxEntries: n, Heap: Heap{}, in: make(chan HeapChannelStruct, 2)}
 	heap.Init(&h.Heap)
 	return h
+}
+
+// StartThreads starts the threads for the heap
+func (hc *HeapControl) StartThreads() {
+	go func() {
+		for {
+			select {
+			case item := <-hc.in:
+				hc.Insert(item.node, item.dist)
+			case <-hc.ctx.Done():
+			}
+		}
+	}()
+}
+
+// StopThreads stops the threads for the heap
+func (hc *HeapControl) StopThreads() {
+	hc.abort()
 }
 
 // Insert inserts a node into the heap
