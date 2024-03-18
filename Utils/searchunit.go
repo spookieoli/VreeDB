@@ -11,7 +11,7 @@ type SearchUnit struct {
 }
 
 // NearestNeighbors returns the results nearest neighbours to the given target vector
-func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *PriorityQueue, distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)) {
+func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl, distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)) {
 	if node == nil || node.Vector == nil {
 		return
 	}
@@ -23,7 +23,7 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	axisDiff := math.Abs(target.Data[axis] - node.Vector.Data[axis])
 
 	// Just push it into the queue if it is small enough it will be added
-	queue.Push(node, dist, axisDiff)
+	queue.In <- HeapChannelStruct{node: node, dist: dist, diff: axisDiff}
 
 	var primary, secondary *Node.Node
 	if target.Data[axis] < node.Vector.Data[axis] {
@@ -35,13 +35,13 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	s.NearestNeighbors(primary, target, queue, distanceFunc)
 
 	// Check if we should go further
-	if queue.IsNotFull() || axisDiff < queue.GetMaxDiff() {
+	if axisDiff < queue.GetMaxDiff() {
 		s.NearestNeighbors(secondary, target, queue, distanceFunc)
 	}
 }
 
 // NewSearchUnit returns a new SearchUnit
-func NewSearchUnit(node *Node.Node, target *Vector.Vector, queue *PriorityQueue, distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)) {
+func NewSearchUnit(node *Node.Node, target *Vector.Vector, queue *HeapControl, distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)) {
 	su := SearchUnit{}
 	su.NearestNeighbors(node, target, queue, distanceFunc)
 }

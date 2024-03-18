@@ -352,11 +352,11 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Search for the nearest neighbours
-		var queue *Utils.PriorityQueue
+		var queue *Utils.HeapControl
 		if p.Depth == 0 {
-			queue = Utils.NewPriorityQueue(3)
+			queue = Utils.NewHeapControl(3)
 		} else {
-			queue = Utils.NewPriorityQueue(p.Depth)
+			queue = Utils.NewHeapControl(p.Depth)
 		}
 		// Search for the nearest neighbours
 		results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)

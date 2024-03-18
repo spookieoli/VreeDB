@@ -4,7 +4,9 @@ import (
 	"VectoriaDB/Boot"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Vdb"
+	"VectoriaDB/Vector"
 	"log"
+	"math/rand"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -33,6 +35,48 @@ func NewServer(ip string, port int) *Server {
 	}
 	// Start  the bootup
 	server.DB.Collections = Boot.NewBootUp().Boot()
+
+	// Create a test Collection
+	err := server.DB.AddCollection("test", 800, "euclid")
+	if err != nil {
+		panic(err)
+	}
+
+	// Now we are adding 5000000 Vectors to the Collection with random values, 800 dimensions
+	for i := 0; i < 1000; i++ {
+		data := make([]float64, 800)
+		for j := 0; j < 800; j++ {
+			data[j] = rand.Float64()
+		}
+		payload := make(map[string]interface{})
+		err := server.DB.Collections["test"].Insert(Vector.NewVector("", data, &payload, "test"))
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// Add one special vector to check if we find the right one
+	data := make([]float64, 800)
+	for j := 0; j < 800; j++ {
+		data[j] = 0.5
+	}
+	payload := make(map[string]interface{})
+	err = server.DB.Collections["test"].Insert(Vector.NewVector("YEAH", data, &payload, "test"))
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 0; i < 1000; i++ {
+		data := make([]float64, 800)
+		for j := 0; j < 800; j++ {
+			data[j] = rand.Float64()
+		}
+		payload := make(map[string]interface{})
+		err := server.DB.Collections["test"].Insert(Vector.NewVector("", data, &payload, "test"))
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// Add the routes
 	server.addRoutes()
