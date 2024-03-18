@@ -81,7 +81,10 @@ func (hc *HeapControl) StartThreads() {
 
 // StopThreads stops the threads for the heap
 func (hc *HeapControl) StopThreads() {
+	// Send a signal to the context to stop the threads
 	hc.abort()
+	// Close the channel
+	close(hc.in)
 }
 
 // Insert inserts a node into the heap
