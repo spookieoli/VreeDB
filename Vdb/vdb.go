@@ -7,7 +7,7 @@ import (
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vector"
 	"fmt"
-	"sync"
+	"time"
 )
 
 type Vdb struct {
@@ -81,15 +81,18 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	// Start the Queue Thread
 	queue.StartThreads()
 
-	// Create a new WaitGroup and search for the nearest neighbours
-	wg := sync.WaitGroup{}
+	// Get the starting time
+	t := time.Now()
 	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc)
-	wg.Wait()
 
+	// Print the time it took
+	Logger.Log.Log("Search took: " + time.Since(t).String())
+	Logger.Log.Log("Searched: " + fmt.Sprint(Utils.Utils.Searched) + " nodes")
+
+	// reset the searched counter
+	Utils.Utils.Searched = 0
 	// Stop the Queue Thread
 	queue.StopThreads()
-
-	// DER WARTET NICHT!!!!!!!
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
@@ -105,20 +108,12 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 		}
 	}
 
-	fmt.Println("Data: ", data)
-
 	// Get the Payloads back from the Memory Map
 	for i := 0; i < len(data); i++ {
-		fmt.Println(data[i])
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: " + err.Error())
 			continue
-		}
-		fmt.Println("Payload: ", m)
-		fmt.Println("Vector", data[i].Node.Vector)
-		if data[i].Node.Vector == nil {
-			fmt.Println("Vector is nil")
 		}
 		data[i].Node.Vector.Payload = m
 	}

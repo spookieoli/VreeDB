@@ -4,7 +4,6 @@ import (
 	"VectoriaDB/Node"
 	"container/heap"
 	"context"
-	"fmt"
 	"sync"
 )
 
@@ -23,7 +22,7 @@ type HeapControl struct {
 	ctx        context.Context
 	abort      context.CancelFunc
 	MaxDiff    float64
-	Mut        sync.RWMutex
+	Wg         sync.WaitGroup
 }
 
 // The HeapItem struct is used to store a Node and its distance to the query vector
@@ -68,7 +67,7 @@ func (h *Heap) Pop() interface{} {
 // NewHeapControl initializes the heap with a given size
 func NewHeapControl(n int) *HeapControl {
 	ctx, cancel := context.WithCancel(context.Background())
-	h := &HeapControl{maxEntries: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 1), Mut: sync.RWMutex{}, ctx: ctx, abort: cancel, MaxDiff: 0}
+	h := &HeapControl{maxEntries: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 100000), ctx: ctx, abort: cancel, MaxDiff: 0}
 	heap.Init(&h.Heap)
 	return h
 }
@@ -80,6 +79,7 @@ func (hc *HeapControl) StartThreads() {
 			select {
 			case item := <-hc.In:
 				hc.Insert(item.node, item.dist, item.diff)
+				hc.Wg.Done()
 			case <-hc.ctx.Done():
 				return
 			}
@@ -89,6 +89,8 @@ func (hc *HeapControl) StartThreads() {
 
 // StopThreads stops the threads for the heap
 func (hc *HeapControl) StopThreads() {
+	// Wait for the WaitGroup to finish
+	hc.Wg.Wait()
 	// Send a signal to the context to stop the threads
 	hc.abort()
 	// Close the channel
@@ -99,24 +101,13 @@ func (hc *HeapControl) StopThreads() {
 func (hc *HeapControl) Insert(node *Node.Node, distance, diff float64) {
 	heap.Push(&hc.Heap, &HeapItem{Node: node, Distance: distance, Diff: diff})
 	if hc.Heap.Len() > hc.maxEntries {
-		fmt.Println("Popping")
 		heap.Pop(&hc.Heap)
 	}
-	// Set the Maxdiff
-	hc.Mut.Lock()
-	for i := 0; i < len(hc.Heap); i++ {
-		if hc.Heap[i].Diff > hc.MaxDiff {
-			hc.MaxDiff = hc.Heap[i].Diff
-		}
-	}
-	hc.Mut.Unlock()
 }
 
-// GetMaxDiff returns the maximum difference
-func (hc *HeapControl) GetMaxDiff() float64 {
-	hc.Mut.RLock()
-	defer hc.Mut.RUnlock()
-	return hc.MaxDiff
+// AddToWaitGroup adds a new item to the waitgroup
+func (hc *HeapControl) AddToWaitGroup() {
+	hc.Wg.Add(1)
 }
 
 // GetNodes returns the nodes from the heap
