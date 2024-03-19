@@ -7,8 +7,7 @@ import (
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vector"
 	"fmt"
-	"sort"
-	"sync"
+	"time"
 )
 
 type Vdb struct {
@@ -75,38 +74,49 @@ func (v *Vdb) ListCollections() []string {
 }
 
 // Search searches for the nearest neighbours of the given target vector
-func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.PriorityQueue, maxDistancePercent float64) []*Utils.ResultItem {
+func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64) []*Utils.HeapItem {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
-	wg := sync.WaitGroup{}
+
+	// Start the Queue Thread
+	queue.StartThreads()
+
+	// Get the starting time
+	t := time.Now()
 	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc)
-	wg.Wait()
+
+	// Print the time it took
+	Logger.Log.Log("Search took: " + time.Since(t).String())
+	Logger.Log.Log("Searched: " + fmt.Sprint(Utils.Utils.Searched) + " nodes")
+
+	// reset the searched counter
+	Utils.Utils.Searched = 0
+	// Stop the Queue Thread
+	queue.StopThreads()
+
+	// Get the nodes from the queue
+	data := queue.GetNodes()
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
-		for i := 0; i < len(queue.Nodes); i++ {
-			if queue.Nodes[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
-				queue.Nodes = append(queue.Nodes[:i], queue.Nodes[i+1:]...)
+		for i := 0; i < len(data); i++ {
+			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+				data = append(data[:i], data[i+1:]...)
 				i--
 			}
 		}
 	}
 
-	// Sort the results -- TODO: USE NEW SLICE SORTING
-	sort.Slice(queue.Nodes, func(i, j int) bool {
-		return queue.Nodes[i].Distance < queue.Nodes[j].Distance
-	})
-
 	// Get the Payloads back from the Memory Map
-	for i := 0; i < len(queue.Nodes); i++ {
-		m, err := FileMapper.Mapper.ReadPayload(queue.Nodes[i].Node.Vector.PayloadStart, collectionName)
+	for i := 0; i < len(data); i++ {
+		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: " + err.Error())
 			continue
 		}
-		queue.Nodes[i].Node.Vector.Payload = m
+		data[i].Node.Vector.Payload = m
 	}
 
-	return queue.Nodes
+	return data
 }
