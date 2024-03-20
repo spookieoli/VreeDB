@@ -26,19 +26,13 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	queue.AddToWaitGroup()
 	queue.In <- HeapChannelStruct{node: node, dist: dist, diff: axisDiff}
 
-	var primary, secondary *Node.Node
+	var primary *Node.Node
 	if target.Data[axis] < node.Vector.Data[axis] {
-		primary, secondary = node.Left, node.Right
+		primary = node.Left
 	} else {
-		primary, secondary = node.Right, node.Left
+		primary = node.Right
 	}
-
 	s.NearestNeighbors(primary, target, queue, distanceFunc)
-
-	// Check if we should go further
-	if target.Data[axis] > node.Vector.Data[axis] {
-		s.NearestNeighbors(secondary, target, queue, distanceFunc)
-	}
 }
 
 // NewSearchUnit returns a new SearchUnit
