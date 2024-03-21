@@ -4,9 +4,7 @@ import (
 	"VectoriaDB/Boot"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Vdb"
-	"VectoriaDB/Vector"
 	"log"
-	"math/rand"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -35,16 +33,6 @@ func NewServer(ip string, port int) *Server {
 	}
 	// Start  the bootup
 	server.DB.Collections = Boot.NewBootUp().Boot()
-
-	// add random vectors
-	for i := 0; i < 100000; i++ {
-		v := make([]float64, 800)
-		for j := 0; j < 800; j++ {
-			v[j] = rand.Float64()
-		}
-		m := make(map[string]interface{})
-		server.DB.Collections["test"].Insert(Vector.NewVector("", v, &m, "test"))
-	}
 
 	// Add the routes
 	server.addRoutes()
