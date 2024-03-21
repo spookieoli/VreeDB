@@ -83,7 +83,8 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// Get the starting time
 	t := time.Now()
-	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc)
+	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc,
+		v.Collections[collectionName].DimensionDiff, 0.1)
 
 	// Print the time it took
 	Logger.Log.Log("Search took: " + time.Since(t).String())
