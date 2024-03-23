@@ -7,7 +7,7 @@ import (
 	"html/template"
 )
 
-// CollectionCreator is the struct that creates a Collection in the VDB
+// CollectionCreator is the struct that creates a Collection in the VDB, when send by REST
 type CollectionCreator struct {
 	ApiKey           string `json:"api_key"` // Must not be present in the request
 	Name             string `json:"name"`
@@ -16,17 +16,17 @@ type CollectionCreator struct {
 	Wait             bool   `json:"wait"`
 }
 
-// Used to delete a Collection
+// Used to delete a Collection, when send by REST
 type DeleteCollection struct {
 	Name string `json:"name"`
 }
 
-// CollectionList is the struct that lists all the Collections (NAMES) in the VDB - Subject to Change
+// CollectionList is the struct that lists all the Collections (NAMES) in the VDB, when send by REST
 type CollectionList struct {
 	Collections []string `json:"collections"`
 }
 
-// Point is the struct that adds a point to a Collection
+// Point is the struct that adds a point to a Collection, when send by REST
 type Point struct {
 	Id                 string                 `json:"id"` // Must not be present in the request
 	ApiKey             string                 `json:"api_key"`
@@ -44,7 +44,7 @@ type PointItem struct {
 	Payload map[string]interface{} `json:"payload"` // Optional
 }
 
-// PointBatch is the struct that adds a batch of points to a Collection
+// PointBatch is the struct that adds a batch of points to a Collection, when send by REST
 type PointBatch struct {
 	ApiKey         string      `json:"api_key"`
 	CollectionName string      `json:"collection_name"`
@@ -97,14 +97,14 @@ type Classifier struct {
 	Epochs         int     `json:"epochs"`
 }
 
-// DeleteClassifier is the struct that will be used to delete a classifier
+// DeleteClassifier is the struct that will be used to delete a classifier, when send by REST
 type DeleteClassifier struct {
 	ApiKey         string `json:"api_key"`
 	CollectionName string `json:"collection_name"`
 	ClassifierName string `json:"classifier_name"`
 }
 
-// Classify will be the struct that will be used to classify a vector
+// Classify will be the struct that will be used to classify a vector, when send by REST
 type Classify struct {
 	ApiKey         string    `json:"api_key"`
 	CollectionName string    `json:"collection_name"`
@@ -118,7 +118,7 @@ type Data struct {
 	Application RuntimeData
 }
 
-// DeletePoint is the struct that will be used to delete a point from a Collection
+// DeletePoint is the struct that will be used to delete a point from a Collection, when send by REST
 type DeletePoint struct {
 	ApiKey         string `json:"api_key"`
 	CollectionName string `json:"collection_name"`
