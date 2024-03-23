@@ -57,6 +57,9 @@ func (v *Vector) Unindex() {
 	v.mut.Lock()
 	defer v.mut.Unlock()
 	// read the data from the file
+	if v.DataStart < 0 {
+		return
+	}
 	v.Data = *FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection)
 	v.Indexed = false
 }

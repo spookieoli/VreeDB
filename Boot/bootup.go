@@ -95,6 +95,10 @@ func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*
 	}
 
 	for _, v := range *m {
+		// Dont restore deleted vectors
+		if v.DataStart < 0 {
+			continue
+		}
 		vectors[v.VectorID] = Vector.NewVector(v.VectorID, nil, nil, "")
 		vectors[v.VectorID].Collection = collection
 		vectors[v.VectorID].DataStart = v.DataStart
