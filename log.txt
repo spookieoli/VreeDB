@@ -1,2 +1,0 @@
-2024-03-23T10:23:01+01:00 VectorDatabase initialized
-2024-03-23T10:23:01+01:00 Server is listening on 0.0.0.0:8080
