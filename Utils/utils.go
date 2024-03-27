@@ -8,7 +8,6 @@ import (
 )
 
 type Util struct {
-	Searched uint64
 }
 
 type CollectionConfig struct {

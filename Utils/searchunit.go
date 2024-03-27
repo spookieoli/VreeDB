@@ -4,7 +4,6 @@ import (
 	"VectoriaDB/Node"
 	"VectoriaDB/Vector"
 	"math"
-	"sync/atomic"
 )
 
 type SearchUnit struct {
@@ -17,7 +16,6 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	if node == nil || node.Vector == nil {
 		return
 	}
-	atomic.AddUint64(&Utils.Searched, 1)
 	axis := node.Depth % node.Vector.Length
 
 	// Use the vector Functions

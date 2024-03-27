@@ -88,10 +88,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// Print the time it took
 	Logger.Log.Log("Search took: " + time.Since(t).String())
-	Logger.Log.Log("Searched: " + fmt.Sprint(Utils.Utils.Searched) + " nodes")
 
-	// reset the searched counter
-	Utils.Utils.Searched = 0
 	// Stop the Queue Thread
 	queue.StopThreads()
 

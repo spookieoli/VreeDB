@@ -1,6 +1,7 @@
 package Server
 
 import (
+	"VectoriaDB/ArgsParser"
 	"VectoriaDB/Boot"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Vdb"
@@ -13,16 +14,24 @@ import (
 )
 
 type Server struct {
-	Ip     string
-	Port   int
-	Server *http.Server
-	DB     *Vdb.Vdb
+	Ip         string
+	Port       int
+	Server     *http.Server
+	DB         *Vdb.Vdb
+	ArgsParser *ArgsParser.ArgsParser
 }
 
 // NewServer returns a new Server
 func NewServer(ip string, port int) *Server {
+	// Create the ArgsParser
+	argsParser := ArgsParser.NewArgsParser()
+	if argsParser.ParseArgs() == false {
+		log.Fatal("Arguments are in the wrong format")
+	}
+
 	// Create the Server Object - booting up the DB
-	server := &Server{Ip: ip, Port: port, DB: Vdb.DB}
+	server := &Server{Ip: ip, Port: port, DB: Vdb.DB, ArgsParser: argsParser}
+
 	// Start the Webserver
 	server.Server = &http.Server{
 		Addr:              server.Ip + ":" + strconv.Itoa(server.Port),
@@ -31,6 +40,7 @@ func NewServer(ip string, port int) *Server {
 		WriteTimeout:      time.Second * 15,
 		IdleTimeout:       time.Second * 60,
 	}
+
 	// Start  the bootup
 	server.DB.Collections = Boot.NewBootUp().Boot()
 
