@@ -1,6 +1,7 @@
 package Server
 
 import (
+	"VectoriaDB/ApiKeyHandler"
 	"VectoriaDB/Logger"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vdb"
@@ -17,7 +18,8 @@ var RouteProvider *Routes
 
 // NewRoutes returns a new Routes struct
 func NewRoutes(db *Vdb.Vdb) *Routes {
-	return &Routes{templates: template.Must(template.ParseGlob("templates/*.gohtml")), DB: db}
+	return &Routes{templates: template.Must(template.ParseGlob("templates/*.gohtml")), DB: db,
+		ApiKeyHandler: ApiKeyHandler.ApiHandler}
 }
 
 /* ROUTES */
@@ -50,6 +52,13 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if the ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
 			return
 		}
 
@@ -109,6 +118,14 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if the ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(cc.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Check if name is empty
 		if cc.Name == "" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -157,9 +174,18 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/listcollections" {
 		// Create CollectionList type
 		cl := &CollectionList{}
+
+		// Check if api key is valid
+		if !r.ApiKeyHandler.CheckApiKey(cl.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Get the Collections
 		collections := r.DB.ListCollections()
 		cl.Collections = collections
+
 		// Send the collections to the client
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -192,18 +218,28 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(p.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Name, Vector are required
 		if p.CollectionName == "" || p.Vector == nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return
 		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[p.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Add the point to the Collection
 		v := Vector.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName)
 		err = r.DB.Collections[p.CollectionName].Insert(v)
@@ -212,11 +248,13 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
+
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Point added"))
 		return
 	}
+
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
@@ -233,6 +271,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error parsing form"))
 			return
 		}
+
 		// load the request into the PointBatch via json decode
 		pb := PointBatch{}
 		err = json.NewDecoder(req.Body).Decode(&pb)
@@ -241,18 +280,28 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(pb.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Name, Vector are required
 		if pb.CollectionName == "" || pb.Points == nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return
 		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[pb.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Add the points to the Collection
 		go func() {
 			for _, p := range pb.Points {
@@ -265,11 +314,13 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 				}
 			}
 		}()
+
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Points bulk added"))
 		return
 	}
+
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
@@ -296,12 +347,21 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(dp.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[dp.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Delete the point from the Collection
 		err = r.DB.Collections[dp.CollectionName].Delete(dp.Id)
 		if err != nil {
@@ -309,11 +369,13 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
+
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Point deleted"))
 		return
 	}
+
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
@@ -339,18 +401,28 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(p.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Name, Vector are required
 		if p.CollectionName == "" || p.Vector == nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return
 		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[p.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Search for the nearest neighbours
 		var queue *Utils.HeapControl
 		if p.Depth == 0 {
@@ -358,19 +430,23 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 		} else {
 			queue = Utils.NewHeapControl(p.Depth)
 		}
+
 		// Search for the nearest neighbours
 		results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
+
 		// Create the SearchResult
 		sr := &SearchResult{}
 		for _, r := range results {
 			sr.Results = append(sr.Results, &Result{Vector: r.Node.Vector, Distance: r.Distance})
 		}
+
 		// Send the results to the client
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(sr)
 		return
 	}
+
 	// Notice the user that the route is not found under given information
 	fmt.Println(req.Method, req.URL.String())
 	w.WriteHeader(http.StatusNotFound)
@@ -396,12 +472,21 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(tc.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[tc.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Check if Collection is ClassifierReady
 		if !r.DB.Collections[tc.CollectionName].ClassifierReady {
 			w.WriteHeader(http.StatusBadRequest)
@@ -416,6 +501,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
+
 		// Train the classifier non blocking
 		go func() {
 			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C, tc.Epochs)
@@ -423,11 +509,13 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				Logger.Log.Log(err.Error())
 			}
 		}()
+
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Classifier created and training started"))
 		return
 	}
+
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
@@ -439,6 +527,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -446,6 +535,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error parsing form"))
 			return
 		}
+
 		// load the request into the DeleteClassifier via json decode
 		dc := &DeleteClassifier{}
 		err = json.NewDecoder(req.Body).Decode(dc)
@@ -454,16 +544,27 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[dc.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Delete the classifier from the collection
 		r.DB.Collections[dc.CollectionName].DeleteClassifier(dc.ClassifierName)
+
 		// Log the deletion
 		Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
+
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Classifier deleted"))
@@ -485,6 +586,7 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error parsing form"))
 			return
 		}
+
 		// load the request into the Classify via json decode
 		c := &Classify{}
 		err = json.NewDecoder(req.Body).Decode(c)
@@ -493,26 +595,38 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(c.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		// Check if Collection exists
 		if _, ok := r.DB.Collections[c.CollectionName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Collection does not exist"))
 			return
 		}
+
 		// Check if Classifier exists
 		if _, ok := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Classifier does not exist"))
 			return
 		}
+
 		// Check if the vector is of the right dimension
 		if len(c.Vector) != r.DB.Collections[c.CollectionName].VectorDimension {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Vector has wrong dimension it should be " + fmt.Sprint(r.DB.Collections[c.CollectionName].VectorDimension) + " but is " + fmt.Sprint(len(c.Vector)) + " long"))
 			return
 		}
+
 		// Classify the vector
 		class := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName].Predict(c.Vector)
+
 		// Send the class to the client
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

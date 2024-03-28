@@ -78,6 +78,11 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
 
+	// if the collection is empty we return an empty slice
+	if v.Collections[collectionName].DiagonalLength == 0 {
+		return []*Utils.HeapItem{}
+	}
+
 	// Start the Queue Thread
 	queue.StartThreads()
 

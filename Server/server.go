@@ -19,18 +19,15 @@ type Server struct {
 	Server     *http.Server
 	DB         *Vdb.Vdb
 	ArgsParser *ArgsParser.ArgsParser
+	CertFile   string
+	KeyFile    string
+	Secure     bool
 }
 
 // NewServer returns a new Server
-func NewServer(ip string, port int) *Server {
-	// Create the ArgsParser
-	argsParser := ArgsParser.NewArgsParser()
-	if argsParser.ParseArgs() == false {
-		log.Fatal("Arguments are in the wrong format")
-	}
-
+func NewServer(ip string, port int, certfile, keyfile string, secure bool, ap *ArgsParser.ArgsParser) *Server {
 	// Create the Server Object - booting up the DB
-	server := &Server{Ip: ip, Port: port, DB: Vdb.DB, ArgsParser: argsParser}
+	server := &Server{Ip: ip, Port: port, DB: Vdb.DB, ArgsParser: ap, CertFile: certfile, KeyFile: keyfile, Secure: secure}
 
 	// Start the Webserver
 	server.Server = &http.Server{
@@ -72,5 +69,9 @@ func (s *Server) addRoutes() {
 // Start starts the server
 func (s *Server) Start() {
 	Logger.Log.Log("Server is listening on " + s.Ip + ":" + strconv.Itoa(s.Port))
-	log.Fatal(s.Server.ListenAndServe())
+	if s.Secure {
+		log.Fatal(s.Server.ListenAndServeTLS(s.CertFile, s.KeyFile))
+	} else {
+		log.Fatal(s.Server.ListenAndServe())
+	}
 }

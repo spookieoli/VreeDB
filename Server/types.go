@@ -1,6 +1,7 @@
 package Server
 
 import (
+	"VectoriaDB/ApiKeyHandler"
 	"VectoriaDB/Utils"
 	"VectoriaDB/Vdb"
 	"VectoriaDB/Vector"
@@ -18,11 +19,13 @@ type CollectionCreator struct {
 
 // Used to delete a Collection, when send by REST
 type DeleteCollection struct {
-	Name string `json:"name"`
+	ApiKey string `json:"api_key"`
+	Name   string `json:"name"`
 }
 
 // CollectionList is the struct that lists all the Collections (NAMES) in the VDB, when send by REST
 type CollectionList struct {
+	ApiKey      string   `json:"api_key"`
 	Collections []string `json:"collections"`
 }
 
@@ -64,8 +67,9 @@ type SearchResult struct {
 
 // Routes is the struct that contains all the routes
 type Routes struct {
-	templates *template.Template
-	DB        *Vdb.Vdb
+	templates     *template.Template
+	DB            *Vdb.Vdb
+	ApiKeyHandler *ApiKeyHandler.ApiKeyHandler
 }
 
 // Collection will display Collection related stuff
