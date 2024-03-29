@@ -11,7 +11,7 @@ type ArgsParser struct {
 	KeyFile  *string
 }
 
-// NewArgsParser returns a new ArgsParser // TODO: SUBJECT TO HEAVY CHANGE -- use flags instead
+// NewArgsParser returns a new ArgsParser
 func NewArgsParser() *ArgsParser {
 	// Create an new ArgsParser
 	ap := &ArgsParser{}
