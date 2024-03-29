@@ -12,6 +12,7 @@ VectoriaDB is a database project written in Go. It uses a k-d tree data structur
 - Supports multiple collections.
 - Backup and restore functionality for collections.
 - Thread-safe operations.
+- persistance ON by default in an append-only file style
 
 ## Getting Started
 
