@@ -6,14 +6,11 @@ import (
 )
 
 func main() {
-	// Vars
-	var b bool
-
 	// Create the ArgsParser
 	argsParser := ArgsParser.NewArgsParser()
 
 	// Start the Server
 	server := Server.NewServer(*argsParser.Ip, *argsParser.Port, *argsParser.CertFile,
-		*argsParser.KeyFile, b, argsParser)
+		*argsParser.KeyFile, *argsParser.Secure, argsParser)
 	server.Start()
 }
