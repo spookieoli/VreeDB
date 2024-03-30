@@ -6,11 +6,8 @@ import (
 )
 
 func main() {
-	// Create the ArgsParser
-	argsParser := ArgsParser.NewArgsParser()
-
 	// Start the Server
-	server := Server.NewServer(*argsParser.Ip, *argsParser.Port, *argsParser.CertFile,
-		*argsParser.KeyFile, *argsParser.Secure, argsParser)
+	server := Server.NewServer(*ArgsParser.Ap.Ip, *ArgsParser.Ap.Port, *ArgsParser.Ap.CertFile,
+		*ArgsParser.Ap.KeyFile, *ArgsParser.Ap.Secure)
 	server.Start()
 }
