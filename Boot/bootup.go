@@ -32,7 +32,11 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 	err := ApiKeyHandler.ApiHandler.LoadApiKeys()
 	if err != nil {
 		Logger.Log.Log("Error loading ApiKeys: " + err.Error())
-		panic(err) // Panic - we cant restore apikeys!
+
+		// Could be empty - ok...
+		if err.Error() != "EOF" {
+			panic(err)
+		}
 	}
 	collections := make(map[string]*Collection.Collection)
 

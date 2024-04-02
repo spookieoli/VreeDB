@@ -2,8 +2,10 @@ package ApiKeyHandler
 
 import (
 	"VectoriaDB/Logger"
+	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
+	"encoding/gob"
 	"fmt"
 	"os"
 )
@@ -67,21 +69,30 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 	k := fmt.Sprintf("%x", h.Sum(nil))
 	ap.ApiKeyHashes[k] = true
 
-	// Write the ApiKey to the file
-	file, err := os.OpenFile("collections/__apikeys", os.O_APPEND|os.O_WRONLY, 0600)
+	// Write the changes to the file using gob
+	file, err := os.OpenFile("collections/__apikeys", os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		Logger.Log.Log("Error opening file collections/__apikeys")
 		return "", err
 	}
 	defer file.Close()
 
-	// Write the ApiKey to the file
-	_, err = file.WriteString(k + "\n")
+	// Gob encode the map
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err = enc.Encode(ap.ApiKeyHashes)
 	if err != nil {
-		Logger.Log.Log("Error writing to file collections/__apikeys")
+		Logger.Log.Log("Error encoding map to file")
 		return "", err
 	}
-	Logger.Log.Log("ApiKey successfully created and saved")
+
+	// Write the map to the file
+	_, err = file.Write(buf.Bytes())
+	if err != nil {
+		Logger.Log.Log("Error writing map to file")
+		return "", err
+	}
+
 	return id, nil
 }
 
@@ -95,14 +106,12 @@ func (ap *ApiKeyHandler) LoadApiKeys() error {
 	}
 	defer file.Close()
 
-	// Read the file line by line
-	b := make([]byte, 64)
-	for {
-		_, err := file.Read(b)
-		if err != nil {
-			break
-		}
-		ap.ApiKeyHashes[string(b)] = true
+	// Read the file using gob decoding
+	dec := gob.NewDecoder(file)
+	err = dec.Decode(&ap.ApiKeyHashes)
+	if err != nil {
+		Logger.Log.Log("Error decoding file collections/__apikeys")
+		return err
 	}
 	return nil
 }
