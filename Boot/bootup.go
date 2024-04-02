@@ -1,6 +1,7 @@
 package Boot
 
 import (
+	"VectoriaDB/ApiKeyHandler"
 	"VectoriaDB/Collection"
 	"VectoriaDB/FileMapper"
 	"VectoriaDB/Logger"
@@ -27,6 +28,12 @@ func (b *BootUp) Boot() map[string]*Collection.Collection {
 
 // RestoreCollections restores the collection
 func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
+	// First retore the ApiKeyHashes
+	err := ApiKeyHandler.ApiHandler.LoadApiKeys()
+	if err != nil {
+		Logger.Log.Log("Error loading ApiKeys: " + err.Error())
+		panic(err) // Panic - we cant restore apikeys!
+	}
 	collections := make(map[string]*Collection.Collection)
 
 	// If collections directory does not exist, create it

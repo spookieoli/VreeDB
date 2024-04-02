@@ -19,7 +19,7 @@ var ApiHandler *ApiKeyHandler
 // init initializes the ApiKeyHandler
 func init() {
 	ApiHandler = &ApiKeyHandler{ApiKeyHashes: make(map[string]bool)}
-	if !ApiHandler.CheckActive() {
+	if ApiHandler.CheckActive() {
 		err := ApiHandler.CreateApiKeyFile()
 		if err != nil {
 			Logger.Log.Log("Error creating file collections/__apikeys")
@@ -83,6 +83,28 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 	}
 	Logger.Log.Log("ApiKey successfully created and saved")
 	return id, nil
+}
+
+// LoadApiKeys will load all ApiKeys Hashes from the file
+func (ap *ApiKeyHandler) LoadApiKeys() error {
+	// Open the file collections/__apikeys
+	file, err := os.Open("collections/__apikeys")
+	if err != nil {
+		Logger.Log.Log("Error opening file collections/__apikeys")
+		return err
+	}
+	defer file.Close()
+
+	// Read the file line by line
+	b := make([]byte, 64)
+	for {
+		_, err := file.Read(b)
+		if err != nil {
+			break
+		}
+		ap.ApiKeyHashes[string(b)] = true
+	}
+	return nil
 }
 
 // CheckApiKey will check if the ApiKey is valid
