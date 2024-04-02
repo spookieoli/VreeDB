@@ -18,6 +18,11 @@ VectoriaDB is a database project written in Go. It uses a k-d tree data structur
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
+## Please use Docker to compile / install VectoriaDB (WARNING! VECTORIADB IS IN EARLY ALPHA - DONT USE IT IN PRODUCTION!):
+- git clone https://github.com/spookieoli/VectoriaDB
+- docker build -t vectoriadb .
+- docker run -p 8080:8080 vectoriadb
+
 ### Documentation Outline
 
 #### Overview
