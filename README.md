@@ -7,7 +7,8 @@ VectoriaDB is a database project written in Go. It uses a k-d tree data structur
 
 - Efficient nearest neighbor search using k-d trees.
 - Easy to use
-- Platform independent
+- Platform independent (when using Docker)
+- Includes Classifiers (SVM / Neural Nets) - you can use the Database as Classifier (Pictures, Text, Sound etc etc)
 - "Distanceaware" Filtering
 - Supports multiple collections.
 - Backup and restore functionality for collections.
