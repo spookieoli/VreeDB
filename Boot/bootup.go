@@ -31,7 +31,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 	// First retore the ApiKeyHashes
 	err := ApiKeyHandler.ApiHandler.LoadApiKeys()
 	if err != nil {
-		Logger.Log.Log("Error loading ApiKeys: " + err.Error())
+		Logger.Log.Log("Error loading ApiKeys: " + err.Error() + " <- EOF Error OK on first run!")
 
 		// Could be empty - ok...
 		if err.Error() != "EOF" {

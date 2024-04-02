@@ -642,3 +642,93 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Not Found"))
 	return
 }
+
+// CreateApiKey creates a new ApiKey
+func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createapikey" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+
+		// load the request into the ApiKeyCreator via json decode
+		ac := &ApiKeyCreator{}
+		err = json.NewDecoder(req.Body).Decode(ac)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(ac.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
+		// Create the ApiKey
+		key, err := r.ApiKeyHandler.CreateApiKey()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		// Return the apikey to the client
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(ApiKeyCreator{
+			ApiKey: key,
+		})
+		return
+	}
+}
+
+// DeleteApiKey deletes an ApiKey
+func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteapikey" {
+		// Limit the size of the request
+		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+
+		// load the request into the DeleteApiKey via json decode
+		da := &ApiKeyCreator{}
+		err = json.NewDecoder(req.Body).Decode(da)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if ApiKey is valid
+		if !r.ApiKeyHandler.CheckApiKey(da.ApiKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
+		// Delete the ApiKey
+		err = r.ApiKeyHandler.DeleteApiKey(da.ApiKey)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		// Send the success or error message to the client
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ApiKey deleted"))
+		return
+	}
+}

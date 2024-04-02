@@ -8,11 +8,13 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"sync"
 )
 
 // ApiKeyHandler struct
 type ApiKeyHandler struct {
 	ApiKeyHashes map[string]bool
+	Mut          sync.RWMutex
 }
 
 // ApiHandler is the global ApiKeyHandler
@@ -20,7 +22,7 @@ var ApiHandler *ApiKeyHandler
 
 // init initializes the ApiKeyHandler
 func init() {
-	ApiHandler = &ApiKeyHandler{ApiKeyHashes: make(map[string]bool)}
+	ApiHandler = &ApiKeyHandler{ApiKeyHashes: make(map[string]bool), Mut: sync.RWMutex{}}
 	if ApiHandler.CheckActive() {
 		err := ApiHandler.CreateApiKeyFile()
 		if err != nil {
@@ -55,6 +57,8 @@ func (ap *ApiKeyHandler) CreateApiKeyFile() error {
 
 // CreateApiKey will add a new ApiKey to the ApiKeyHandler
 func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
+	ap.Mut.Lock()
+	defer ap.Mut.Unlock()
 	// Generate a (pseudo) random STRING - salted with crypto/rand
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
@@ -96,6 +100,43 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 	return id, nil
 }
 
+// DeleteApiKey will delete an ApiKey from the ApiKeyHandler
+func (ap *ApiKeyHandler) DeleteApiKey(apiKey string) error {
+	ap.Mut.Lock()
+	defer ap.Mut.Unlock()
+	// hash the ApiKey
+	h := sha512.New()
+	h.Write([]byte(apiKey))
+	k := fmt.Sprintf("%x", h.Sum(nil))
+	delete(ap.ApiKeyHashes, k)
+
+	// Write the changes to the file using gob
+	file, err := os.OpenFile("collections/__apikeys", os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		Logger.Log.Log("Error opening file collections/__apikeys")
+		return err
+	}
+	defer file.Close()
+
+	// Gob encode the map
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err = enc.Encode(ap.ApiKeyHashes)
+	if err != nil {
+		Logger.Log.Log("Error encoding map to file")
+		return err
+	}
+
+	// Write the map to the file
+	_, err = file.Write(buf.Bytes())
+	if err != nil {
+		Logger.Log.Log("Error writing map to file")
+		return err
+	}
+
+	return nil
+}
+
 // LoadApiKeys will load all ApiKeys Hashes from the file
 func (ap *ApiKeyHandler) LoadApiKeys() error {
 	// Open the file collections/__apikeys
@@ -110,7 +151,7 @@ func (ap *ApiKeyHandler) LoadApiKeys() error {
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(&ap.ApiKeyHashes)
 	if err != nil {
-		Logger.Log.Log("Error decoding file collections/__apikeys")
+		Logger.Log.Log("Error decoding file collections/__apikeys - EOF Error OK on first run!")
 		return err
 	}
 	return nil
@@ -118,6 +159,8 @@ func (ap *ApiKeyHandler) LoadApiKeys() error {
 
 // CheckApiKey will check if the ApiKey is valid
 func (ap *ApiKeyHandler) CheckApiKey(apiKey string) bool {
+	ap.Mut.RLock()
+	defer ap.Mut.RUnlock()
 	// If the map is empty we return true
 	if len(ap.ApiKeyHashes) == 0 {
 		return true

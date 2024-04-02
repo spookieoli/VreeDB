@@ -129,6 +129,16 @@ type DeletePoint struct {
 	Id             string `json:"id"`
 }
 
+// ApiKeyCreator is the struct that will be used to create a new Api key
+type ApiKeyCreator struct {
+	ApiKey string
+}
+
+// ApiKeyDeleter is the struct that will be used to delete an Api key
+type ApiKeyDeleter struct {
+	ApiKey string
+}
+
 // NewData creates new Data Structure for the web page
 func NewData() Data {
 	data := Data{}
