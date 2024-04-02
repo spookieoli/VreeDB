@@ -131,7 +131,7 @@ type DeletePoint struct {
 
 // ApiKeyCreator is the struct that will be used to create a new Api key
 type ApiKeyCreator struct {
-	ApiKey string
+	ApiKey string `json:"api_key"`
 }
 
 // NewData creates new Data Structure for the web page
