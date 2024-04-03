@@ -1,5 +1,5 @@
-# Usage: docker build -t vectoriadb .
-# Usage: docker run -p 8080:8080 vectoriadb
+# Usage: docker build -t vreedb .
+# Usage: docker run -p 8080:8080 vreedb
 
 # Start from the latest golang base image
 FROM golang:latest
