@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Logger struct
 type Logger struct {
 	Logfile *os.File
 	In      chan string
