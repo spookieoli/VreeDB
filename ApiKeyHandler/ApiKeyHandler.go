@@ -1,7 +1,7 @@
 package ApiKeyHandler
 
 import (
-	"VectoriaDB/Logger"
+	"VreeDB/Logger"
 	"bytes"
 	"crypto/rand"
 	"crypto/sha512"

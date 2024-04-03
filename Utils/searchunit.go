@@ -1,8 +1,8 @@
 package Utils
 
 import (
-	"VectoriaDB/Node"
-	"VectoriaDB/Vector"
+	"VreeDB/Node"
+	"VreeDB/Vector"
 	"math"
 )
 

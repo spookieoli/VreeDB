@@ -1,7 +1,7 @@
 package Utils
 
 import (
-	"VectoriaDB/Vector"
+	"VreeDB/Vector"
 	"math"
 	"runtime"
 	"sync"

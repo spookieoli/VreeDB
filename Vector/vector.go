@@ -1,7 +1,7 @@
 package Vector
 
 import (
-	"VectoriaDB/FileMapper"
+	"VreeDB/FileMapper"
 	"crypto/rand"
 	"fmt"
 	"sync"

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"VectoriaDB/ArgsParser"
-	"VectoriaDB/Server"
+	"VreeDB/ArgsParser"
+	"VreeDB/Server"
 )
 
 func main() {

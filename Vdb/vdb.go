@@ -1,11 +1,11 @@
 package Vdb
 
 import (
-	"VectoriaDB/Collection"
-	"VectoriaDB/FileMapper"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Utils"
-	"VectoriaDB/Vector"
+	"VreeDB/Collection"
+	"VreeDB/FileMapper"
+	"VreeDB/Logger"
+	"VreeDB/Utils"
+	"VreeDB/Vector"
 	"fmt"
 	"time"
 )

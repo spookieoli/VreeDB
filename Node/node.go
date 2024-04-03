@@ -1,7 +1,7 @@
 package Node
 
 import (
-	"VectoriaDB/Vector"
+	"VreeDB/Vector"
 	"time"
 )
 

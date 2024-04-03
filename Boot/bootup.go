@@ -1,12 +1,12 @@
 package Boot
 
 import (
-	"VectoriaDB/ApiKeyHandler"
-	"VectoriaDB/Collection"
-	"VectoriaDB/FileMapper"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Utils"
-	"VectoriaDB/Vector"
+	"VreeDB/ApiKeyHandler"
+	"VreeDB/Collection"
+	"VreeDB/FileMapper"
+	"VreeDB/Logger"
+	"VreeDB/Utils"
+	"VreeDB/Vector"
 	"encoding/json"
 	"os"
 	"strings"

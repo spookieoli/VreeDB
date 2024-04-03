@@ -1,11 +1,11 @@
 package Server
 
 import (
-	"VectoriaDB/ApiKeyHandler"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Utils"
-	"VectoriaDB/Vdb"
-	"VectoriaDB/Vector"
+	"VreeDB/ApiKeyHandler"
+	"VreeDB/Logger"
+	"VreeDB/Utils"
+	"VreeDB/Vdb"
+	"VreeDB/Vector"
 	"encoding/json"
 	"fmt"
 	"html/template"

@@ -1,3 +1,3 @@
-module VectoriaDB
+module VreeDB
 
 go 1.19

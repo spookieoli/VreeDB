@@ -1,10 +1,10 @@
 package Server
 
 import (
-	"VectoriaDB/ArgsParser"
-	"VectoriaDB/Boot"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Vdb"
+	"VreeDB/ArgsParser"
+	"VreeDB/Boot"
+	"VreeDB/Logger"
+	"VreeDB/Vdb"
 	"log"
 	"net/http"
 	"reflect"

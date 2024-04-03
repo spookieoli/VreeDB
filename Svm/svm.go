@@ -1,9 +1,9 @@
 package Svm
 
 import (
-	"VectoriaDB/FileMapper"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Vector"
+	"VreeDB/FileMapper"
+	"VreeDB/Logger"
+	"VreeDB/Vector"
 	"context"
 	"fmt"
 	"math"

@@ -1,7 +1,7 @@
 package FileMapper
 
 import (
-	"VectoriaDB/Logger"
+	"VreeDB/Logger"
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"

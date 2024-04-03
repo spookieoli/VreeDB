@@ -1,10 +1,10 @@
 package Server
 
 import (
-	"VectoriaDB/ApiKeyHandler"
-	"VectoriaDB/Utils"
-	"VectoriaDB/Vdb"
-	"VectoriaDB/Vector"
+	"VreeDB/ApiKeyHandler"
+	"VreeDB/Utils"
+	"VreeDB/Vdb"
+	"VreeDB/Vector"
 	"html/template"
 )
 

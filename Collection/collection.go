@@ -1,12 +1,12 @@
 package Collection
 
 import (
-	"VectoriaDB/FileMapper"
-	"VectoriaDB/Logger"
-	"VectoriaDB/Node"
-	"VectoriaDB/Svm"
-	"VectoriaDB/Utils"
-	"VectoriaDB/Vector"
+	"VreeDB/FileMapper"
+	"VreeDB/Logger"
+	"VreeDB/Node"
+	"VreeDB/Svm"
+	"VreeDB/Utils"
+	"VreeDB/Vector"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
