@@ -134,6 +134,7 @@
         <div class="default text">Select Action</div>
         <div class="menu">
             <div class="item" data-value="delete">/delete</div>
+            <div class="item" data-value="createapikey">/createapikey</div>
             <div class="item" data-value="createcollection">/createcollection</div>
             <div class="item" data-value="trainclassifier">/trainclassifier</div>
             <div class="item" data-value="delteclassifier">/delteclassifier</div>
@@ -288,6 +289,7 @@
               case 'addpoint':
               case 'addpointbatch':
               case 'trainclassifier':
+              case 'createapikey':
                   method = 'PUT';
                   break;
               case 'delete':
