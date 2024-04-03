@@ -1,7 +1,7 @@
-# VectoriaDB
+# VreeDB
 A simple, fast, no dependency, Go powered Vector Database
 
-VectoriaDB is a database project written in Go. It uses a k-d tree data structure for efficient search of nearest neighbors in a multi-dimensional space.
+VreeDB is a database project written in Go. It uses a k-d tree data structure for efficient search of nearest neighbors in a multi-dimensional space.
 
 ## Features
 
@@ -20,14 +20,14 @@ VectoriaDB is a database project written in Go. It uses a k-d tree data structur
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ## Please use Docker to compile / install VectoriaDB (WARNING! VECTORIADB IS IN EARLY ALPHA - DONT USE IT IN PRODUCTION!):
-- git clone https://github.com/spookieoli/VectoriaDB
-- docker build -t vectoriadb .
-- docker run -p 8080:8080 vectoriadb
+- git clone https://github.com/spookieoli/VreeDB
+- docker build -t vreedb .
+- docker run -p 8080:8080 vreedb
 
 ### Documentation Outline
 
 #### Overview
-- Brief introduction to the VectoriaDB and its RESTful interface.
+- Brief introduction to the VreeDB and its RESTful interface.
 - General notes on authentication, error handling, and response formats.
 
 #### Types Documentation
