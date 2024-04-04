@@ -36,7 +36,7 @@ func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 
 // Delete deletes a Collection
 func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/delete" {
+	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 		// Parse the form
