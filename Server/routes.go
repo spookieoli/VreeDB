@@ -11,6 +11,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // RouteProvider is the global variable that contains all the routes
@@ -19,22 +20,101 @@ var RouteProvider *Routes
 // NewRoutes returns a new Routes struct
 func NewRoutes(db *Vdb.Vdb) *Routes {
 	return &Routes{templates: template.Must(template.ParseGlob("templates/*.gohtml")), DB: db,
-		ApiKeyHandler: ApiKeyHandler.ApiHandler}
+		ApiKeyHandler: ApiKeyHandler.ApiHandler, SessionKeys: make(map[string]time.Time)}
+}
+
+// ValidateCookie validates cookies
+func (r *Routes) validateCookie(req *http.Request) bool {
+	cookie, err := req.Cookie("VreeDB")
+	if err != nil {
+		return false
+	}
+	if _, ok := r.SessionKeys[cookie.Value]; ok {
+		return true
+	}
+	return false
+}
+
+// CreateCookie creates a session cookie with a sessionkey (uuid)
+func (r *Routes) createCookie(w http.ResponseWriter) {
+	cookie := &http.Cookie{
+		Name:     "VreeDB",
+		Value:    Utils.Utils.CreateUUID(),
+		HttpOnly: true,
+		Secure:   true,
+	}
+	http.SetCookie(w, cookie)
+	r.SessionKeys[cookie.Value] = time.Now()
+}
+
+// DeleteCookie is called on logout
+func (r *Routes) deleteCookie(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("VreeDB")
+	if err != nil {
+		return
+	}
+	delete(r.SessionKeys, cookie.Value)
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
 }
 
 /* ROUTES */
 
+// Login is the login page
+func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
+	if req.Method == "GET" && req.URL.Path == "/login" {
+		err := r.templates.ExecuteTemplate(w, "login.gohtml", nil)
+		if err != nil {
+			panic(err.Error())
+		}
+	} else if req.Method == "POST" && req.URL.Path == "/login" {
+		// Get the POST data
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		// Check if the ApiKey is valid
+		if r.ApiKeyHandler.CheckApiKey(req.FormValue("password")) {
+			r.createCookie(w)
+			http.Redirect(w, req, "/", http.StatusSeeOther)
+			return
+		}
+	} else {
+		// Send the user to the login page
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+// Logout is the route to delete the cookie and so logout the user
+func (r *Routes) Logout(w http.ResponseWriter, req *http.Request) {
+	if req.Method == "POST" && req.URL.Path == "/logout" {
+		r.deleteCookie(w, req)
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
 // Index page
 func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" && req.URL.Path == "/" {
-		err := r.templates.ExecuteTemplate(w, "index.gohtml", NewData())
-		if err != nil {
-			panic(err.Error())
+		// Check if there are ApiKeys in the system
+		if len(r.ApiKeyHandler.ApiKeyHashes) == 0 || r.validateCookie(req) {
+			err := r.templates.ExecuteTemplate(w, "index.gohtml", NewData())
+			if err != nil {
+				panic(err.Error())
+			}
+		} else {
+			// Redirect to the login Page
+			http.Redirect(w, req, "/login", http.StatusSeeOther)
+			return
 		}
 	}
 }
 
-// Delete deletes a Collection
+// Delete deletes a Collection // TODO Rename to DeleteCollection
 func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request

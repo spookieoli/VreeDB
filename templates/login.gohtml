@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="/static/semantic.css">
+    <style>
+        body {
+            color: black;
+        }
+        .ui.button {
+            background-color: black;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="ui middle aligned center aligned grid" style="height: 100vh;">
+    <div class="column" style="max-width: 450px;">
+        <h2 class="ui teal image header">
+            <div class="content">
+                Enter your password
+            </div>
+        </h2>
+        <form class="ui large form" action="/login" method="POST">
+            <div class="ui stacked segment">
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" name="password" placeholder="Password">
+                    </div>
+                </div>
+                <button class="ui fluid large submit button">Submit</button>
+            </div>
+
+            <div class="ui error message"></div>
+
+        </form>
+    </div>
+</div>
+
+<script src="/static/jquery.js"></script>
+<script src="/static/semantic.js"></script>
+</body>
+</html>

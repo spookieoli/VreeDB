@@ -2,6 +2,8 @@ package Utils
 
 import (
 	"VreeDB/Vector"
+	"crypto/rand"
+	"fmt"
 	"math"
 	"runtime"
 	"sync"
@@ -108,4 +110,14 @@ func (u *Util) GetAvailableRAM() float64 {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	return float64(m.Sys) / 1024 / 1024
+}
+
+// Create a pseudo random UUID
+func (u *Util) CreateUUID() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

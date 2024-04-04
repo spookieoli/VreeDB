@@ -41,6 +41,7 @@
     <a class="item" data-tab="visualization">Visualization</a>
     <a class="item" data-tab="analytics">Analytics</a>
     <a class="item" data-tab="workbench">Workbench</a>
+    <a class="item" id="logoutButton" style="margin-left: auto;">Logout</a>
 </div>
 
 <!-- Hauptinhalt -->
@@ -323,12 +324,24 @@
                   editor2.setValue(JSON.stringify(error, null, 2));
               }
           });
+      });
 
+      $('#logoutButton').on('click', function() {
+          $.ajax({
+              type: "POST",
+              url: "/logout",
+              success: function(response){
+                  // Redirect to login page or show a success message
+                  window.location.href = "/login";
+              },
+              error: function(error){
+                  // Show an error message
+                  console.log(error);
+              }
+          });
       });
   });
 
-
 </script>
-
 </body>
 </html>

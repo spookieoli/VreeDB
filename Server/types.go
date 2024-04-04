@@ -6,6 +6,7 @@ import (
 	"VreeDB/Vdb"
 	"VreeDB/Vector"
 	"html/template"
+	"time"
 )
 
 // CollectionCreator is the struct that creates a Collection in the VDB, when send by REST
@@ -70,6 +71,7 @@ type Routes struct {
 	templates     *template.Template
 	DB            *Vdb.Vdb
 	ApiKeyHandler *ApiKeyHandler.ApiKeyHandler
+	SessionKeys   map[string]time.Time
 }
 
 // Collection will display Collection related stuff
