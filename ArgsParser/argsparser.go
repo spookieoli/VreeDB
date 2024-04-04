@@ -36,12 +36,14 @@ func init() {
 	// if CreateApiKey is true, then the program will create a new API and show it in the console
 	if *Ap.CreateApiKey {
 		// Create a new API key
-		apiKey, err := ApiKeyHandler.ApiHandler.CreateApiKey()
-		if err != nil {
-			panic(err)
-		} else {
-			// Show the API key
-			println("API Key: " + apiKey)
+		if len(ApiKeyHandler.ApiHandler.ApiKeyHashes) == 0 {
+			apiKey, err := ApiKeyHandler.ApiHandler.CreateApiKey()
+			if err != nil {
+				panic(err)
+			} else {
+				// Show the API key
+				println("API Key: " + apiKey)
+			}
 		}
 	}
 }
