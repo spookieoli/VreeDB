@@ -136,7 +136,7 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Check if the ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) {
+		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) || !r.validateCookie(req) { // added cookiecheck - because button ui
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("Unauthorized"))
 			return
