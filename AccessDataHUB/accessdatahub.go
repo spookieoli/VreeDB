@@ -59,10 +59,16 @@ func (al *AList) groupByIntervalAndType() []IntervalSum {
 		return al.AccessList[i].Time.Before(al.AccessList[j].Time)
 	})
 
+	// create intervalmap
 	intervalMap := make(map[string]map[time.Time]int)
 
 	for _, point := range al.AccessList {
 		interval := point.Time.Truncate(5 * time.Second)
+
+		// Is the interval completed?
+		if interval.After(time.Now()) {
+			continue
+		}
 
 		if _, ok := intervalMap[point.Type]; !ok {
 			intervalMap[point.Type] = make(map[time.Time]int)
@@ -88,7 +94,7 @@ func (al *AList) GetData() []IntervalSum {
 	al.Mut.RLock()
 	defer al.Mut.RUnlock()
 	data := al.groupByIntervalAndType()
-	// Delete all data in the AccessList
+	// Delete all data in the AccessList that is older than 5 seconds
 	al.AccessList = make([]ADPoint, 0)
 	// return the data
 	return data
