@@ -124,6 +124,7 @@
 <div class="ui tab segment" data-tab="analytics">
     <h2 class="ui header">Analytics</h2>
     <p>Analytics about your Server / Collections.</p>
+    <canvas id="analyticsChart"></canvas>
 </div>
 <div class="ui tab segment" data-tab="workbench">
     <h2 class="ui header">Workbench</h2>
@@ -144,6 +145,7 @@
             <div class="item" data-value="addpoint">/addpoint</div>
             <div class="item" data-value="listcollections">/listcollections</div>
             <div class="item" data-value="deletepoint">/deletepoint</div>
+            <div class="item" data-value="getaccessdata">/getaccessdata</div>
         </div>
     </div>
     <div class="editor-container">
@@ -159,9 +161,133 @@
 <script src="/static/semantic.js"></script>
 <script src="/static/codemirror.min.js"></script>
 <script src="/static/js.js"></script>
+<script src="/static/chartjs.js"></script>
+<script src="/static/chartjs_adapter_date.js"></script>
 
 <script>
+
+    function mergeDuplicatePoints(data) {
+        const mergedData = [];
+
+        data.forEach((item) => {
+            // Check if this item's type already exists in the mergedData
+            const existingItem = mergedData.find((mergedItem) => mergedItem.type === item.type && mergedItem.period === item.period);
+
+            if (existingItem) {
+                // If it does, add the current item's sum to the existing item's sum
+                existingItem.sum += item.sum;
+            } else {
+                // If it doesn't, add the current item to the mergedData
+                mergedData.push({...item});
+            }
+        });
+
+        return mergedData;
+    }
+
+    // Format the time in the x-axis of the chart
+    function formatTime(value) {
+        var date = new Date(value);
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var seconds = date.getSeconds();
+
+        // Pad the hours, minutes and seconds with leading zeros, if required
+        hours = (hours < 10) ? "0" + hours : hours;
+        minutes = (minutes < 10) ? "0" + minutes : minutes;
+        seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+        // Combine the hours, minutes and seconds
+        var timeString = hours + ":" + minutes + ":" + seconds;
+
+        return timeString;
+    }
+
   $(document).ready(function() {
+        // Chart
+      // Chart
+      var ctx = document.getElementById('analyticsChart').getContext('2d');
+      var analyticsChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              datasets: [
+                  { label: 'CLASSIFY', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false },
+                  { label: 'TRANSACTION', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
+                  { label: 'SEARCH', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false },
+                  { label: 'DELETE', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false },
+                  { label: 'ADD', data: [], borderColor: 'rgba(153, 102, 255, 1)', fill: false },
+                  { label: 'LOGIN', data: [], borderColor: 'rgba(255, 159, 64, 1)', fill: false },
+                  { label: 'SYSTEMEVENT', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false }
+              ]
+          },
+          options: {
+              scales: {
+                  x: {
+                      type: 'time',
+                      time: {
+                          unit: 'second'
+                      },
+                      ticks: {
+                          callback: function(value, index, values) {
+                              // Only show every 5th second
+                              if (index % 5 === 0) {
+                                  return formatTime(value);
+                              } else {
+                                  return '';
+                              }
+                          }
+                      }
+                  },
+                  y: {
+                      min: 0,
+                      max: 100
+                  }
+              }
+          }
+      });
+
+// Grouped data storage
+      var groupedData = {};
+
+// Set up an interval that fetches the new data from the server every 5 seconds
+      setInterval(function() {
+          $.ajax({
+              type: "POST",
+              url: "/getaccessdata",
+              success: function(response){
+                  var now = new Date();
+                  response.forEach(function(item) {
+                      var itemDate = new Date(item.period);
+                      // Only consider data from the last 10 minutes
+                      if ((now - itemDate) <= 10 * 60 * 1000) {
+                          console.log(item)
+                          if (!groupedData[item.type]) {
+                              groupedData[item.type] = [];
+                              var dataset = analyticsChart.data.datasets.find(function(dataset) {
+                                  return dataset.label === item.type;
+                              });
+                              if (dataset) {
+                                  dataset.data = groupedData[item.type];
+                              } else {
+                                  console.error('Unknown item type: ' + item.type);
+                              }
+                          }
+                          groupedData[item.type].push({
+                              x: itemDate,
+                              y: item.sum
+                          });
+                      }
+                  });
+
+                  // Update the chart
+                  analyticsChart.update();
+              },
+              error: function(error){
+                  console.log(error);
+              }
+          });
+      }, 10000);
+
       // Initialisierung der Tabs und Akkordeons
       $('.ui.accordion').accordion();
 
@@ -287,6 +413,7 @@
           var method;
           switch (selectedAction) {
               case 'createcollection':
+              case 'getaccessdata':
                   method = 'POST';
                   break;
               case 'addpoint':

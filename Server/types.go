@@ -72,6 +72,7 @@ type Routes struct {
 	DB            *Vdb.Vdb
 	ApiKeyHandler *ApiKeyHandler.ApiKeyHandler
 	SessionKeys   map[string]time.Time
+	AData         chan string
 }
 
 // Collection will display Collection related stuff

@@ -1,6 +1,7 @@
 package Server
 
 import (
+	"VreeDB/AccessDataHUB"
 	"VreeDB/ApiKeyHandler"
 	"VreeDB/Logger"
 	"VreeDB/Utils"
@@ -20,15 +21,24 @@ var RouteProvider *Routes
 // NewRoutes returns a new Routes struct
 func NewRoutes(db *Vdb.Vdb) *Routes {
 	return &Routes{templates: template.Must(template.ParseGlob("templates/*.gohtml")), DB: db,
-		ApiKeyHandler: ApiKeyHandler.ApiHandler, SessionKeys: make(map[string]time.Time)}
+		ApiKeyHandler: ApiKeyHandler.ApiHandler, SessionKeys: make(map[string]time.Time), AData: AccessDataHUB.AccessList.ReadChan}
 }
 
 // ValidateCookie validates cookies
 func (r *Routes) validateCookie(req *http.Request) bool {
+
+	// If empty - all access is granted
+	if len(r.SessionKeys) == 0 {
+		return true
+	}
+
+	// Get the cookie
 	cookie, err := req.Cookie("VreeDB")
 	if err != nil {
-		return false
+		return true
 	}
+
+	// check if the cookie is in the map
 	if _, ok := r.SessionKeys[cookie.Value]; ok {
 		return true
 	}
@@ -62,6 +72,7 @@ func (r *Routes) deleteCookie(w http.ResponseWriter, req *http.Request) {
 
 // Login is the login page
 func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "LOGIN"
 	if req.Method == "GET" && req.URL.Path == "/login" {
 		err := r.templates.ExecuteTemplate(w, "login.gohtml", nil)
 		if err != nil {
@@ -116,6 +127,7 @@ func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 
 // Delete deletes a Collection // TODO Rename to DeleteCollection
 func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "TRANSACTION"
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
@@ -180,6 +192,7 @@ func static(next http.Handler) http.Handler {
 
 // CreateCollection creates a new Collection
 func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "TRANSACTION"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createcollection" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
@@ -256,6 +269,7 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 
 // ListCollections lists all the Collections
 func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "TRANSACTION"
 	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/listcollections" {
 		// Create CollectionList type
 		cl := &CollectionList{}
@@ -286,6 +300,7 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 
 // AddPoint adds a point to a Collection
 func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "ADD"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 1000000)
@@ -389,6 +404,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			// Add the points to the Collection
 			go func() {
 				for _, p := range pb.Points {
+					r.AData <- "ADD"
 					d := p.Payload // This is no longer necessary from GO >= 1.22
 					v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
 					err = r.DB.Collections[pb.CollectionName].Insert(v)
@@ -420,6 +436,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 
 // DeletePoint deletes a point from a Collection
 func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "DELETE"
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deletepoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
@@ -477,6 +494,7 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 
 // Search searches for the nearest neighbours of the given target vector
 func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SEARCH"
 	if req.Method == http.MethodGet {
 		// Parse the form
 		err := req.ParseForm()
@@ -552,6 +570,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 
 // TrainClassifier trains a classifier // TODO - CHECK IF CLASSIFIER ALREADY TRAINS
 func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
 		// Parse the form
 		err := req.ParseForm()
@@ -623,6 +642,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 
 // DeleteClassifier will delete a classifier
 func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "TRANSACTION"
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
@@ -680,6 +700,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 
 // Classify will classify a vector
 func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "CLASSIFY"
 	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/classify" {
 		// Parse the form
 		err := req.ParseForm()
@@ -750,6 +771,7 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 
 // CreateApiKey creates a new ApiKey
 func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createapikey" {
 		// Parse the form
 		err := req.ParseForm()
@@ -801,6 +823,7 @@ func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
 
 // DeleteApiKey deletes an ApiKey
 func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteapikey" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
@@ -837,6 +860,32 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("ApiKey deleted"))
 			return
 		}
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+// GetAccessData will return the AccessData
+func (r *Routes) GetAccessData(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/getaccessdata" {
+		// Check if Auth is valid
+		if r.validateCookie(req) {
+			// Get the data
+			accessList := AccessDataHUB.AccessList.GetData()
+			// Send the AccessData to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(accessList)
+			return
+		}
+
 		// Not authorized
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Unauthorized"))
