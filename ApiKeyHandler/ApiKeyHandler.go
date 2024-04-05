@@ -30,6 +30,7 @@ func init() {
 			panic(err) // we cannot create the file - kill the server
 		}
 	}
+	ApiHandler.LoadApiKeys()
 	Logger.Log.Log("ApiKeyHandler initialized")
 }
 

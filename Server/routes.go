@@ -136,32 +136,32 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Check if the ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) || !r.validateCookie(req) { // added cookiecheck - because button ui
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		if r.validateCookie(req) || r.ApiKeyHandler.CheckApiKey(dc.ApiKey) { // added cookiecheck - because button ui
+			// Delete all Classifiers of the Collection
+			r.DB.Collections[dc.Name].DeleteAllClassifiers()
+
+			// Call the function in the Vdb
+			err = r.DB.DeleteCollection(dc.Name)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			status := struct {
+				Status  string `json:"status"`
+				Message string `json:"message"`
+			}{
+				Status:  "success",
+				Message: "Collection deleted",
+			}
+			json.NewEncoder(w).Encode(status)
 			return
 		}
-
-		// Delete all Classifiers of the Collection
-		r.DB.Collections[dc.Name].DeleteAllClassifiers()
-
-		// Call the function in the Vdb
-		err = r.DB.DeleteCollection(dc.Name)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		status := struct {
-			Status  string `json:"status"`
-			Message string `json:"message"`
-		}{
-			Status:  "success",
-			Message: "Collection deleted",
-		}
-		json.NewEncoder(w).Encode(status)
+		// Send the unauthorized message to the client
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
 	}
 }
@@ -199,50 +199,55 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if the ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(cc.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
-			return
-		}
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(cc.ApiKey) || r.validateCookie(req) {
 
-		// Check if name is empty
-		if cc.Name == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Name is required"))
-			return
-		}
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[cc.Name]; ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection with name " + cc.Name + " allready exists"))
-			return
-		}
-		if cc.Wait {
-			// Choose distance function from Distancefunction string
-			if strings.ToLower(cc.DistanceFunction) != "euclid" {
-				cc.DistanceFunction = "cosine"
-			}
-			err = r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
+			// Check if name is empty
+			if cc.Name == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Name is required"))
 				return
 			}
-			// Send the success or error message to the client
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Collection created"))
-			return
-		} else {
-			// Create the Collection
-			go r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
-			// Send the success or error message to the client
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Collection created"))
-			return
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[cc.Name]; ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection with name " + cc.Name + " allready exists"))
+				return
+			}
+
+			// There is a wait bool - if true the function will wait for the collection to be created
+			if cc.Wait {
+				// Choose distance function from Distancefunction string
+				if strings.ToLower(cc.DistanceFunction) != "euclid" {
+					cc.DistanceFunction = "cosine"
+				}
+				err = r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte(err.Error()))
+					return
+				}
+				// Send the success or error message to the client
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("Collection created"))
+				return
+			} else {
+				// Create the Collection
+				go r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
+				// Send the success or error message to the client
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("Collection created"))
+				return
+			}
 		}
 
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
 	}
+
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
@@ -255,21 +260,22 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 		// Create CollectionList type
 		cl := &CollectionList{}
 
-		// Check if api key is valid
-		if !r.ApiKeyHandler.CheckApiKey(cl.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(cl.ApiKey) || r.validateCookie(req) {
+			// Get the Collections
+			collections := r.DB.ListCollections()
+			cl.Collections = collections
+
+			// Send the collections to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cl)
 			return
 		}
 
-		// Get the Collections
-		collections := r.DB.ListCollections()
-		cl.Collections = collections
-
-		// Send the collections to the client
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(cl)
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
 	}
 	// Notice the user that the route is not found under given information
@@ -299,40 +305,43 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(p.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
+
+			// Checks if the CollectionName and the Vector are set
+			if p.CollectionName == "" || p.Vector == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Missing required fields"))
+				return
+			}
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[p.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Add the point to the Collection
+			v := Vector.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName)
+			err = r.DB.Collections[p.CollectionName].Insert(v)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Point added"))
 			return
 		}
 
-		// Name, Vector are required
-		if p.CollectionName == "" || p.Vector == nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Missing required fields"))
-			return
-		}
-
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[p.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Add the point to the Collection
-		v := Vector.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName)
-		err = r.DB.Collections[p.CollectionName].Insert(v)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Point added"))
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 
 	// Notice the user that the route is not found under given information
@@ -361,44 +370,46 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(pb.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
-			return
-		}
-
-		// Name, Vector are required
-		if pb.CollectionName == "" || pb.Points == nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Missing required fields"))
-			return
-		}
-
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[pb.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Add the points to the Collection
-		go func() {
-			for _, p := range pb.Points {
-				d := p.Payload // This is no longer necessary from GO >= 1.22
-				v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
-				err = r.DB.Collections[pb.CollectionName].Insert(v)
-				if err != nil {
-					Logger.Log.Log("Error in BulkAdd: " + err.Error())
-					return
-				}
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(pb.ApiKey) || r.validateCookie(req) {
+			// Name, Vector are required
+			if pb.CollectionName == "" || pb.Points == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Missing required fields"))
+				return
 			}
-		}()
 
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Points bulk added"))
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[pb.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Add the points to the Collection
+			go func() {
+				for _, p := range pb.Points {
+					d := p.Payload // This is no longer necessary from GO >= 1.22
+					v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
+					err = r.DB.Collections[pb.CollectionName].Insert(v)
+					if err != nil {
+						Logger.Log.Log("Error in BulkAdd: " + err.Error())
+						return
+					}
+				}
+			}()
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Points bulk added"))
+			return
+		}
+
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 
 	// Notice the user that the route is not found under given information
@@ -428,27 +439,29 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(dp.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
-			return
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(dp.ApiKey) || r.validateCookie(req) {
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[dp.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Delete the point from the Collection
+			err = r.DB.Collections[dp.CollectionName].Delete(dp.Id)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
 		}
 
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[dp.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Delete the point from the Collection
-		err = r.DB.Collections[dp.CollectionName].Delete(dp.Id)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
 
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
@@ -482,49 +495,52 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(p.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
+
+			// Name, Vector are required
+			if p.CollectionName == "" || p.Vector == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Missing required fields"))
+				return
+			}
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[p.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Search for the nearest neighbours
+			var queue *Utils.HeapControl
+			if p.Depth == 0 {
+				queue = Utils.NewHeapControl(3)
+			} else {
+				queue = Utils.NewHeapControl(p.Depth)
+			}
+
+			// Search for the nearest neighbours
+			results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
+
+			// Create the SearchResult
+			sr := &SearchResult{}
+			for _, r := range results {
+				sr.Results = append(sr.Results, &Result{Vector: r.Node.Vector, Distance: r.Distance})
+			}
+
+			// Send the results to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(sr)
 			return
 		}
 
-		// Name, Vector are required
-		if p.CollectionName == "" || p.Vector == nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Missing required fields"))
-			return
-		}
-
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[p.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Search for the nearest neighbours
-		var queue *Utils.HeapControl
-		if p.Depth == 0 {
-			queue = Utils.NewHeapControl(3)
-		} else {
-			queue = Utils.NewHeapControl(p.Depth)
-		}
-
-		// Search for the nearest neighbours
-		results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
-
-		// Create the SearchResult
-		sr := &SearchResult{}
-		for _, r := range results {
-			sr.Results = append(sr.Results, &Result{Vector: r.Node.Vector, Distance: r.Distance})
-		}
-
-		// Send the results to the client
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(sr)
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 
 	// Notice the user that the route is not found under given information
@@ -553,47 +569,50 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(tc.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
-			return
-		}
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(tc.ApiKey) || r.validateCookie(req) {
 
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[tc.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Check if Collection is ClassifierReady
-		if !r.DB.Collections[tc.CollectionName].ClassifierReady {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection is not ready for classification"))
-			return
-		}
-
-		// Create the classifier in the collection
-		err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		// Train the classifier non blocking
-		go func() {
-			err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C, tc.Epochs)
-			if err != nil {
-				Logger.Log.Log(err.Error())
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[tc.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
 			}
-		}()
 
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Classifier created and training started"))
+			// Check if Collection is ClassifierReady
+			if !r.DB.Collections[tc.CollectionName].ClassifierReady {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection is not ready for classification"))
+				return
+			}
+
+			// Create the classifier in the collection
+			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Train the classifier non blocking
+			go func() {
+				err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C, tc.Epochs)
+				if err != nil {
+					Logger.Log.Log(err.Error())
+				}
+			}()
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Classifier created and training started"))
+			return
+		}
+
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 
 	// Notice the user that the route is not found under given information
@@ -625,30 +644,33 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(dc.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(dc.ApiKey) || r.validateCookie(req) {
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[dc.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Delete the classifier from the collection
+			r.DB.Collections[dc.CollectionName].DeleteClassifier(dc.ClassifierName)
+
+			// Log the deletion
+			Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Classifier deleted"))
 			return
 		}
 
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[dc.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Delete the classifier from the collection
-		r.DB.Collections[dc.CollectionName].DeleteClassifier(dc.ClassifierName)
-
-		// Log the deletion
-		Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
-
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Classifier deleted"))
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
@@ -676,46 +698,49 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(c.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(c.ApiKey) || r.validateCookie(req) {
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[c.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Check if Classifier exists
+			if _, ok := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Classifier does not exist"))
+				return
+			}
+
+			// Check if the vector is of the right dimension
+			if len(c.Vector) != r.DB.Collections[c.CollectionName].VectorDimension {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Vector has wrong dimension it should be " + fmt.Sprint(r.DB.Collections[c.CollectionName].VectorDimension) + " but is " + fmt.Sprint(len(c.Vector)) + " long"))
+				return
+			}
+
+			// Classify the vector
+			class := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName].Predict(c.Vector)
+
+			// Send the class to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(struct {
+				Class int `json:"class"`
+			}{
+				Class: class,
+			})
 			return
 		}
 
-		// Check if Collection exists
-		if _, ok := r.DB.Collections[c.CollectionName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Collection does not exist"))
-			return
-		}
-
-		// Check if Classifier exists
-		if _, ok := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Classifier does not exist"))
-			return
-		}
-
-		// Check if the vector is of the right dimension
-		if len(c.Vector) != r.DB.Collections[c.CollectionName].VectorDimension {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Vector has wrong dimension it should be " + fmt.Sprint(r.DB.Collections[c.CollectionName].VectorDimension) + " but is " + fmt.Sprint(len(c.Vector)) + " long"))
-			return
-		}
-
-		// Classify the vector
-		class := r.DB.Collections[c.CollectionName].Classifiers[c.ClassifierName].Predict(c.Vector)
-
-		// Send the class to the client
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(struct {
-			Class int `json:"class"`
-		}{
-			Class: class,
-		})
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
+
 	}
 	// Notice the user that the route is not found under given information
 	w.WriteHeader(http.StatusNotFound)
@@ -743,29 +768,35 @@ func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(ac.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(ac.ApiKey) || r.validateCookie(req) {
+
+			// Create the ApiKey
+			key, err := r.ApiKeyHandler.CreateApiKey()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Return the apikey to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(ApiKeyCreator{
+				ApiKey: key,
+			})
 			return
 		}
 
-		// Create the ApiKey
-		key, err := r.ApiKeyHandler.CreateApiKey()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		// Return the apikey to the client
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(ApiKeyCreator{
-			ApiKey: key,
-		})
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
 	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
 }
 
 // DeleteApiKey deletes an ApiKey
@@ -791,24 +822,28 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Check if ApiKey is valid
-		if !r.ApiKeyHandler.CheckApiKey(da.ApiKey) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(da.ApiKey) || r.validateCookie(req) {
+			// Delete the ApiKey
+			err = r.ApiKeyHandler.DeleteApiKey(da.ApiKey)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ApiKey deleted"))
 			return
 		}
-
-		// Delete the ApiKey
-		err = r.ApiKeyHandler.DeleteApiKey(da.ApiKey)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		// Send the success or error message to the client
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ApiKey deleted"))
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
 		return
 	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
 }

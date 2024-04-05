@@ -236,20 +236,22 @@
           // Logik zum Löschen der Collection, z.B. AJAX-Request
           console.log('Löschen der Collection mit ID: ' + collectionId);
           // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
-            $.ajax({
-                type: "DELETE",
-                url: "/delete",
-                data: JSON.stringify({name: collectionId}),
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: function(data){
-                    location.reload();
-                },
-                error: function(data){
-                    console.log(data);
-                }
-
-            });
+          $.ajax({
+              type: "DELETE",
+              url: "/delete",
+              data: JSON.stringify({name: collectionId}),
+              contentType: "application/json; charset=utf-8",
+              dataType: "json",
+              xhrFields: {
+                  withCredentials: true
+              },
+              success: function(data){
+                  location.reload();
+              },
+              error: function(data){
+                  console.log(data);
+              }
+          });
       });
 
       // Event-Handler für den Senden-Button
@@ -315,6 +317,9 @@
               data: JSON.stringify(jsonData),
               contentType: "application/json; charset=utf-8",
               dataType: "json",
+              xhrFields: {
+                  withCredentials: true
+              },
               success: function(response){
                   // Setzen Sie die Antwort des Servers in editor2
                   editor2.setValue(JSON.stringify(response, null, 2));
