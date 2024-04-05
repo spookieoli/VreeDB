@@ -19,7 +19,7 @@ VreeDB is a database project written in Go. It uses a k-d tree data structure fo
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-## Please use Docker to compile / install VectoriaDB (WARNING! VECTORIADB IS IN EARLY ALPHA - DONT USE IT IN PRODUCTION!):
+## Please use Docker to compile / install VectoriaDB (WARNING! VREEDB IS IN EARLY ALPHA - DONT USE IT IN PRODUCTION!):
 - git clone https://github.com/spookieoli/VreeDB
 - docker build -t vreedb .
 - docker run -p 8080:8080 vreedb
