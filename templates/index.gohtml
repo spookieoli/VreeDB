@@ -240,7 +240,7 @@
                   },
                   y: {
                       min: 0,
-                      max: 100
+                      suggestedMax: 1000
                   }
               }
           }
@@ -260,7 +260,6 @@
                       var itemDate = new Date(item.period);
                       // Only consider data from the last 10 minutes
                       if ((now - itemDate) <= 10 * 60 * 1000) {
-                          console.log(item)
                           if (!groupedData[item.type]) {
                               groupedData[item.type] = [];
                               var dataset = analyticsChart.data.datasets.find(function(dataset) {

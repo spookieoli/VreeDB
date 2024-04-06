@@ -40,6 +40,17 @@ func (al *AList) StartThread() {
 	go al.writeFromChan()
 }
 
+// DeleteGT10 will delete all the ADPoints that are older than 10 Minutes
+func (al *AList) DeleteGT10() {
+	now := time.Now()
+	for i := 0; i < len(al.AccessList); i++ {
+		if now.Sub(al.AccessList[i].Time) > 10*time.Minute {
+			al.AccessList = append(al.AccessList[:i], al.AccessList[i+1:]...)
+			i--
+		}
+	}
+}
+
 // We will create a own goroutine that continuously reads from the ReadChan
 func (al *AList) writeFromChan() {
 	for {
@@ -47,6 +58,7 @@ func (al *AList) writeFromChan() {
 		case data := <-al.ReadChan:
 			al.Mut.Lock()
 			al.AccessList = append(al.AccessList, ADPoint{Type: data, Time: time.Now()})
+			al.DeleteGT10()
 			al.Mut.Unlock()
 		}
 	}
@@ -54,6 +66,13 @@ func (al *AList) writeFromChan() {
 
 // groupByIntervalAndType will group the ADPoints by Interval and Type
 func (al *AList) groupByIntervalAndType() []IntervalSum {
+	// Vars
+	var tempList []ADPoint
+	// now minus 5 seconds
+	now := time.Now().Add(-5 * time.Second)
+
+	al.Mut.Lock()
+	defer al.Mut.Unlock()
 	// Sortiere die ADPoints nach Zeit
 	sort.Slice(al.AccessList, func(i, j int) bool {
 		return al.AccessList[i].Time.Before(al.AccessList[j].Time)
@@ -66,7 +85,8 @@ func (al *AList) groupByIntervalAndType() []IntervalSum {
 		interval := point.Time.Truncate(5 * time.Second)
 
 		// Is the interval completed?
-		if interval.After(time.Now()) {
+		if interval.After(now) {
+			tempList = append(tempList, point)
 			continue
 		}
 
@@ -84,6 +104,9 @@ func (al *AList) groupByIntervalAndType() []IntervalSum {
 			result = append(result, IntervalSum{Type: typ, Period: interval, Sum: count})
 		}
 	}
+
+	// Clear the AccessList and insert all the points that are in the tempList
+	al.AccessList = tempList
 	return result
 }
 
@@ -91,11 +114,7 @@ func (al *AList) groupByIntervalAndType() []IntervalSum {
 func (al *AList) GetData() []IntervalSum {
 
 	// Group the data
-	al.Mut.RLock()
-	defer al.Mut.RUnlock()
 	data := al.groupByIntervalAndType()
-	// Delete all data in the AccessList that is older than 5 seconds
-	al.AccessList = make([]ADPoint, 0)
 	// return the data
 	return data
 }

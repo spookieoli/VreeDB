@@ -11,6 +11,9 @@
 .idea
 .idea/*
 
+# exclude the collections folder
+collections/*
+
 # Test binary, built with `go test -c`
 *.test
 
