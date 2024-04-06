@@ -12,6 +12,7 @@ import (
 type Util struct {
 }
 
+// CollectionConfig is a struct to hold the configuration of a Collection
 type CollectionConfig struct {
 	Name             string
 	VectorDimension  int
@@ -19,6 +20,13 @@ type CollectionConfig struct {
 	DiagonalLength   float64
 }
 
+// ResultSet is the result of a search
+type ResultSet struct {
+	Payload  *map[string]interface{}
+	Distance float64
+}
+
+// Utils is the main struct of the Utils
 var Utils *Util
 
 // init initializes the Util
