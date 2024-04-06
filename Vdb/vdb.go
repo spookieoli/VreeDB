@@ -7,9 +7,11 @@ import (
 	"VreeDB/Utils"
 	"VreeDB/Vector"
 	"fmt"
+	"sort"
 	"time"
 )
 
+// Vdb is the main struct of the VectorDatabase
 type Vdb struct {
 	Collections map[string]*Collection.Collection
 	Mapper      *FileMapper.FileMapper
@@ -74,13 +76,13 @@ func (v *Vdb) ListCollections() []string {
 }
 
 // Search searches for the nearest neighbours of the given target vector
-func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64) []*Utils.HeapItem {
+func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
 
 	// if the collection is empty we return an empty slice
 	if v.Collections[collectionName].DiagonalLength == 0 {
-		return []*Utils.HeapItem{}
+		return []*Utils.ResultSet{}
 	}
 
 	// Start the Queue Thread
@@ -111,6 +113,9 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 		}
 	}
 
+	// Create the ResultSet
+	results := make([]*Utils.ResultSet, len(data))
+
 	// Get the Payloads back from the Memory Map
 	for i := 0; i < len(data); i++ {
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
@@ -118,8 +123,13 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 			Logger.Log.Log("Error reading payload: " + err.Error())
 			continue
 		}
-		data[i].Node.Vector.Payload = m
+		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance}
 	}
 
-	return data
+	// Sort the results by distance, smallest first
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Distance < results[j].Distance
+	})
+
+	return results
 }

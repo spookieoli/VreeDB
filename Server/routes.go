@@ -541,16 +541,10 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			// Search for the nearest neighbours
 			results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
 
-			// Create the SearchResult
-			sr := &SearchResult{}
-			for _, r := range results {
-				sr.Results = append(sr.Results, &Result{Vector: r.Node.Vector, Distance: r.Distance})
-			}
-
 			// Send the results to the client
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(sr)
+			json.NewEncoder(w).Encode(results)
 			return
 		}
 

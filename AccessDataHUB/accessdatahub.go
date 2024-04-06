@@ -112,7 +112,6 @@ func (al *AList) groupByIntervalAndType() []IntervalSum {
 
 // GetData will return the grouped data
 func (al *AList) GetData() []IntervalSum {
-
 	// Group the data
 	data := al.groupByIntervalAndType()
 	// return the data
