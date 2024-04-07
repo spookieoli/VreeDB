@@ -30,6 +30,7 @@ type Collection struct {
 	DistanceFuncName string
 	Classifiers      map[string]*Svm.MultiClassSVM
 	ClassifierReady  bool
+	Indexes          map[string]*Index
 }
 
 // NewCollection returns a new Collection
