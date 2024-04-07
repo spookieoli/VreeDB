@@ -17,7 +17,7 @@ type Index struct {
 // NewIndex returns a new Index
 func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
-	index := &Index{Entries: make(map[string]*Node.Node)}
+	index := &Index{Entries: make(map[string]*Node.Node), CollectionName: collection}
 	// Create a vectorMap as startinpoint to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
 	// Check for errors
