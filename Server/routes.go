@@ -92,6 +92,11 @@ func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
 			http.Redirect(w, req, "/", http.StatusSeeOther)
 			return
 		}
+
+		// Send User back to login
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
+
 	} else {
 		// Send the user to the login page
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
