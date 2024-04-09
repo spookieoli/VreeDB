@@ -28,14 +28,14 @@ func NewRoutes(db *Vdb.Vdb) *Routes {
 func (r *Routes) validateCookie(req *http.Request) bool {
 
 	// If empty - all access is granted
-	if len(r.SessionKeys) == 0 {
+	if len(ApiKeyHandler.ApiHandler.ApiKeyHashes) == 0 {
 		return true
 	}
 
 	// Get the cookie
 	cookie, err := req.Cookie("VreeDB")
 	if err != nil {
-		return true
+		return false
 	}
 
 	// check if the cookie is in the map

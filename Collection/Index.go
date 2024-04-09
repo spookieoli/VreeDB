@@ -19,7 +19,7 @@ func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection st
 	// Create the Indexstruct
 	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection}
 
-	// Create a vectorMap as startinpoint to create the subtrees
+	// Create a vectorMap as starting point to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
 
 	// Check for errors
@@ -56,8 +56,10 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 
 	// Loop over all the entries
 	for _, vector := range *space {
+
 		// Check if key is in the Payload
 		if _, ok := (*vector.Payload)[payloadkey]; ok {
+
 			// Load the payload from the hdd
 			payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, i.CollectionName)
 			if err != nil {
