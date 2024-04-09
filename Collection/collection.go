@@ -297,3 +297,23 @@ func (c *Collection) ClassifierToSlice() []string {
 	}
 	return slice
 }
+
+// CreateIndex will create a new Index
+func (c *Collection) CreateIndex(name, key string) error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// Check if the Index already exists
+	if _, ok := c.Indexes[name]; ok {
+		return fmt.Errorf("Index with name %s already exists", name)
+	}
+
+	// Create the index
+	index, err := NewIndex(key, c.Space, c.Name)
+	if err != nil {
+		return err
+	}
+	// Add the index to the Collection
+	c.Indexes[name] = index
+	return nil
+}

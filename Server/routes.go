@@ -870,6 +870,62 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+// CreateIndex will create an index
+func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createindex" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+
+		// load the request into the IndexCreator via json decode
+		ic := &IndexCreator{}
+		err = json.NewDecoder(req.Body).Decode(ic)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if all field of the IndexCreator are set
+		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" || ic.IndexKey == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Missing required fields"))
+			return
+		}
+
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(ic.ApiKey) || r.validateCookie(req) {
+			// Create the Index
+			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexKey)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Index created"))
+			return
+		}
+
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+
+}
+
 // GetAccessData will return the AccessData
 func (r *Routes) GetAccessData(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"

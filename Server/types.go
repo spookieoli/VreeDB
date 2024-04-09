@@ -137,6 +137,13 @@ type ApiKeyCreator struct {
 	ApiKey string `json:"api_key"`
 }
 
+type IndexCreator struct {
+	ApiKey         string `json:"api_key"`
+	CollectionName string `json:"collection_name"`
+	IndexName      string `json:"index_name"`
+	IndexKey       string `json:"index_key"`
+}
+
 // NewData creates new Data Structure for the web page
 func NewData() Data {
 	data := Data{}

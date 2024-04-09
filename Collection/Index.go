@@ -12,12 +12,13 @@ type Index struct {
 	// Indexes are sub kd trees
 	Entries        map[any]*Node.Node
 	CollectionName string
+	Key            string
 }
 
 // NewIndex returns a new Index
 func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
-	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection}
+	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey}
 
 	// Create a vectorMap as starting point to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
