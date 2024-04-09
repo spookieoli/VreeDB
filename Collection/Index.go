@@ -10,16 +10,18 @@ import (
 // Index is the type to index specific vector payloads
 type Index struct {
 	// Indexes are sub kd trees
-	Entries        map[string]*Node.Node
+	Entries        map[any]*Node.Node
 	CollectionName string
 }
 
 // NewIndex returns a new Index
 func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
-	index := &Index{Entries: make(map[string]*Node.Node), CollectionName: collection}
+	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection}
+
 	// Create a vectorMap as startinpoint to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
+
 	// Check for errors
 	if err != nil {
 		return nil, err
@@ -33,16 +35,24 @@ func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection st
 		for _, vector := range vectors {
 			n.Insert(vector)
 		}
+
 		// Insert the Node into the Index
-		index.Entries[(*vectors[0].Payload)[payloadkey].(string)] = n
+		switch v := (*vectors[0].Payload)[payloadkey].(type) {
+		case int:
+		case float64:
+		case string:
+			index.Entries[v] = n
+		default:
+			return nil, fmt.Errorf("only string, float64 and int are allowed")
+		}
 	}
 	return index, nil
 }
 
 // getVectorFromPayloadIndex returns a map for a specific payload
-func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*Vector.Vector) (*map[string][]*Vector.Vector, error) {
+func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*Vector.Vector) (*map[any][]*Vector.Vector, error) {
 	// Create the map
-	vectorMap := make(map[string][]*Vector.Vector)
+	vectorMap := make(map[any][]*Vector.Vector)
 
 	// Loop over all the entries
 	for _, vector := range *space {
@@ -53,17 +63,20 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 			if err != nil {
 				return nil, err
 			}
-			//Check if the value is a string
-			if _, ok := (*payload)[payloadkey].(string); !ok {
-				return nil, fmt.Errorf("payload %s is not a string - this is not supported yet", payloadkey)
+
+			// only string, int and float64 are allowed
+			switch v := (*payload)[payloadkey].(type) {
+			case int:
+			case float64:
+			case string:
+				if _, ok := vectorMap[v]; !ok {
+					vectorMap[v] = []*Vector.Vector{}
+				}
+				// Add to the vectorMap
+				vectorMap[v] = append(vectorMap[v], vector)
+			default:
+				return nil, fmt.Errorf("only string, float64 and int are allowed")
 			}
-			// Check if the key is in the map
-			if _, ok := vectorMap[(*vector.Payload)[payloadkey].(string)]; !ok {
-				// add it to the map
-				vectorMap[(*vector.Payload)[payloadkey].(string)] = []*Vector.Vector{}
-			}
-			// add the vector to the map
-			vectorMap[(*vector.Payload)[payloadkey].(string)] = append(vectorMap[(*vector.Payload)[payloadkey].(string)], vector)
 		} else {
 			continue
 		}
