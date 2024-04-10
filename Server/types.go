@@ -45,7 +45,7 @@ type Point struct {
 	Depth              int                    `json:"depth"`                // Must not be present in the request default 3
 	Wait               bool                   `json:"wait"`                 // Must not be present in the request default false
 	MaxDistancePercent float64                `json:"max_distance_percent"` // Must not be present in the request default 0.0 (no limit)
-	Index              IndexName              `json:"index"`                // Must not be present in the request default ""
+	Index              *IndexName             `json:"index"`                // Must not be present in the request default ""
 }
 
 type PointItem struct {

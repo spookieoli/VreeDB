@@ -543,8 +543,18 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 				queue = Utils.NewHeapControl(p.Depth)
 			}
 
+			// Set the resultset
+			var results []*Utils.ResultSet
+
+			// Check if Index is set
+			switch p.Index {
+			case nil:
+				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent, p.Index.IndexName, p.Index.IndexValue)
+			default:
+				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
+			}
+
 			// Search for the nearest neighbours
-			results := r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
 
 			// Send the results to the client
 			w.Header().Set("Content-Type", "application/json")
