@@ -78,6 +78,13 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 		Logger.Log.Log("Error saving vector to file: " + err.Error())
 		return err
 	}
+
+	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
+	err = c.CheckIndex(vector)
+	if err != nil {
+		Logger.Log.Log("Error adding vector to Index: " + err.Error())
+	}
+
 	c.ClassifierReady = true
 	return nil
 }
@@ -315,5 +322,61 @@ func (c *Collection) CreateIndex(name, key string) error {
 	}
 	// Add the index to the Collection
 	c.Indexes[name] = index
+	return nil
+}
+
+// CheckIndex Check if a specific Index exists
+func (c *Collection) CheckIndex(vector *Vector.Vector) error {
+
+	// First check if there is an Index
+	if len(c.Indexes) == 0 {
+		return nil
+	}
+
+	// the result slice
+	var result []string
+
+	// Get the Payload from the hdd
+	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, c.Name)
+	if err != nil {
+		return err
+	}
+
+	// check if a Index Key is in the Payload
+	for k := range c.Indexes {
+		if _, ok := (*payload)[c.Indexes[k].Key]; ok {
+			result = append(result, k)
+		}
+	}
+
+	// If there is a result, add the vector to the Index
+	if len(result) > 0 {
+		err = c.addVectorToIndexes(result, vector)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// addVectorToIndexes to Add a vector to the Index(es)
+func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) error {
+	c.Mut.RLock()
+	defer c.Mut.RUnlock()
+
+	// Check if the vector exists
+	if _, ok := (*c.Space)[vector.Id]; !ok {
+		return fmt.Errorf("Vector with ID %s does not exist", vector.Id)
+	}
+
+	// Add the vector to the Indexes
+	for _, k := range keys {
+		if index, ok := c.Indexes[k]; ok {
+			err := index.AddToIndex(vector)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

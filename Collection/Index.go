@@ -86,3 +86,23 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 	}
 	return &vectorMap, nil
 }
+
+// AddToIndex adds a vector to the Index
+func (i *Index) AddToIndex(vector *Vector.Vector) error {
+
+	// Get the Payload from the hdd
+	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, i.CollectionName)
+	if err != nil {
+		return err
+	}
+
+	// Check if the key is in the Payload
+	if _, ok := i.Entries[(*payload)[i.Key]]; !ok {
+		// Add the key to the Index
+		i.Entries[(*payload)[i.Key]] = &Node.Node{Depth: 0}
+	}
+
+	// add it to the Node
+	i.Entries[(*vector.Payload)[i.Key]].Insert(vector)
+	return nil
+}
