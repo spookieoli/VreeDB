@@ -892,7 +892,7 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Check if all field of the IndexCreator are set
-		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" || ic.IndexKey == "" {
+		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return
@@ -901,7 +901,7 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(ic.ApiKey) || r.validateCookie(req) {
 			// Create the Index
-			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexKey)
+			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
@@ -951,5 +951,3 @@ func (r *Routes) GetAccessData(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Not Found"))
 	return
 }
-
-// TODO - Create route for indexsearch

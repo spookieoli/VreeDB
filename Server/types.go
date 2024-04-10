@@ -30,6 +30,11 @@ type CollectionList struct {
 	Collections []string `json:"collections"`
 }
 
+type IndexName struct {
+	IndexName  string `json:"index_name"`
+	IndexValue any    `json:"index_value"`
+}
+
 // Point is the struct that adds a point to a Collection, when send by REST
 type Point struct {
 	Id                 string                 `json:"id"` // Must not be present in the request
@@ -40,6 +45,7 @@ type Point struct {
 	Depth              int                    `json:"depth"`                // Must not be present in the request default 3
 	Wait               bool                   `json:"wait"`                 // Must not be present in the request default false
 	MaxDistancePercent float64                `json:"max_distance_percent"` // Must not be present in the request default 0.0 (no limit)
+	Index              IndexName              `json:"index"`                // Must not be present in the request default ""
 }
 
 type PointItem struct {
@@ -141,7 +147,6 @@ type IndexCreator struct {
 	ApiKey         string `json:"api_key"`
 	CollectionName string `json:"collection_name"`
 	IndexName      string `json:"index_name"`
-	IndexKey       string `json:"index_key"`
 }
 
 // NewData creates new Data Structure for the web page
