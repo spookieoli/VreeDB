@@ -28,14 +28,14 @@ func NewRoutes(db *Vdb.Vdb) *Routes {
 func (r *Routes) validateCookie(req *http.Request) bool {
 
 	// If empty - all access is granted
-	if len(r.SessionKeys) == 0 {
+	if len(ApiKeyHandler.ApiHandler.ApiKeyHashes) == 0 {
 		return true
 	}
 
 	// Get the cookie
 	cookie, err := req.Cookie("VreeDB")
 	if err != nil {
-		return true
+		return false
 	}
 
 	// check if the cookie is in the map
@@ -868,6 +868,62 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
 	return
+}
+
+// CreateIndex will create an index
+func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createindex" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+
+		// load the request into the IndexCreator via json decode
+		ic := &IndexCreator{}
+		err = json.NewDecoder(req.Body).Decode(ic)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if all field of the IndexCreator are set
+		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Missing required fields"))
+			return
+		}
+
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(ic.ApiKey) || r.validateCookie(req) {
+			// Create the Index
+			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Index created"))
+			return
+		}
+
+		// not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+
 }
 
 // GetAccessData will return the AccessData

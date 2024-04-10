@@ -30,6 +30,7 @@ type Collection struct {
 	DistanceFuncName string
 	Classifiers      map[string]*Svm.MultiClassSVM
 	ClassifierReady  bool
+	Indexes          map[string]*Index
 }
 
 // NewCollection returns a new Collection
@@ -55,7 +56,6 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 // Insert inserts a vector into the collection
 func (c *Collection) Insert(vector *Vector.Vector) error {
 	c.Mut.Lock()
-	defer c.Mut.Unlock()
 	if vector.Length != c.VectorDimension {
 		return fmt.Errorf("Vector length is %d, expected %d", vector.Length, c.VectorDimension)
 	} else if c.CheckID(vector.Id) {
@@ -77,7 +77,15 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 		Logger.Log.Log("Error saving vector to file: " + err.Error())
 		return err
 	}
+
+	// Set classifier ready to true
 	c.ClassifierReady = true
+
+	// unlock the Mut
+	c.Mut.Unlock()
+
+	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
+	go c.CheckIndex(vector)
 	return nil
 }
 
@@ -295,4 +303,79 @@ func (c *Collection) ClassifierToSlice() []string {
 		slice = append(slice, k)
 	}
 	return slice
+}
+
+// CreateIndex will create a new Index
+func (c *Collection) CreateIndex(name, key string) error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// Check if the Index already exists
+	if _, ok := c.Indexes[name]; ok {
+		return fmt.Errorf("Index with name %s already exists", name)
+	}
+
+	// Create the index
+	index, err := NewIndex(key, c.Space, c.Name)
+	if err != nil {
+		return err
+	}
+	// Add the index to the Collection
+	c.Indexes[name] = index
+	return nil
+}
+
+// CheckIndex Check if a specific Index exists
+func (c *Collection) CheckIndex(vector *Vector.Vector) error {
+
+	// First check if there is an Index
+	if len(c.Indexes) == 0 {
+		return nil
+	}
+
+	// the result slice
+	var result []string
+
+	// Get the Payload from the hdd
+	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, c.Name)
+	if err != nil {
+		return err
+	}
+
+	// check if an Index Key is in the Payload
+	for k := range c.Indexes {
+		c.Indexes[k].Mut.RLock()
+		if _, ok := (*payload)[c.Indexes[k].Key]; ok {
+			result = append(result, k)
+		}
+		c.Indexes[k].Mut.RUnlock()
+	}
+
+	// If there is a result, add the vector to the Index
+	if len(result) > 0 {
+		err = c.addVectorToIndexes(result, vector)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// addVectorToIndexes to Add a vector to the Index(es)
+func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) error {
+	c.Mut.RLock()
+	defer c.Mut.RUnlock()
+
+	// Add the vector to the Indexes
+	for _, k := range keys {
+		if index, ok := c.Indexes[k]; ok {
+			c.Indexes[k].Mut.Lock()
+			err := index.AddToIndex(vector)
+			c.Indexes[k].Mut.Unlock()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

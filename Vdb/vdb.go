@@ -133,3 +133,62 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	return results
 }
+
+func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
+	indexName string, indexValue any) []*Utils.ResultSet {
+	v.Collections[collectionName].Mut.RLock()
+	defer v.Collections[collectionName].Mut.RUnlock()
+
+	// if the collection is empty we return an empty slice
+	if v.Collections[collectionName].DiagonalLength == 0 {
+		return []*Utils.ResultSet{}
+	}
+
+	// Start the Queue Thread
+	queue.StartThreads()
+
+	// Get the starting time
+	t := time.Now()
+	Utils.NewSearchUnit(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, v.Collections[collectionName].DistanceFunc,
+		v.Collections[collectionName].DimensionDiff, 0.1)
+
+	// Print the time it took
+	Logger.Log.Log("Search took: " + time.Since(t).String())
+
+	// Stop the Queue Thread
+	queue.StopThreads()
+
+	// Get the nodes from the queue
+	data := queue.GetNodes()
+
+	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
+	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
+		for i := 0; i < len(data); i++ {
+			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+				data = append(data[:i], data[i+1:]...)
+				i--
+			}
+		}
+	}
+
+	// Create the ResultSet
+	results := make([]*Utils.ResultSet, len(data))
+
+	// Get the Payloads back from the Memory Map
+	for i := 0; i < len(data); i++ {
+		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
+		if err != nil {
+			Logger.Log.Log("Error reading payload: " + err.Error())
+			continue
+		}
+		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance}
+	}
+
+	// Sort the results by distance, smallest first
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Distance < results[j].Distance
+	})
+
+	return results
+}
