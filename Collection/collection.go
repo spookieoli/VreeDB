@@ -56,7 +56,6 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 // Insert inserts a vector into the collection
 func (c *Collection) Insert(vector *Vector.Vector) error {
 	c.Mut.Lock()
-	defer c.Mut.Unlock()
 	if vector.Length != c.VectorDimension {
 		return fmt.Errorf("Vector length is %d, expected %d", vector.Length, c.VectorDimension)
 	} else if c.CheckID(vector.Id) {
@@ -79,13 +78,14 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 		return err
 	}
 
-	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
-	err = c.CheckIndex(vector)
-	if err != nil {
-		Logger.Log.Log("Error adding vector to Index: " + err.Error())
-	}
-
+	// Set classifier ready to true
 	c.ClassifierReady = true
+
+	// unlock the Mut
+	c.Mut.Unlock()
+
+	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
+	go c.CheckIndex(vector)
 	return nil
 }
 
@@ -342,11 +342,13 @@ func (c *Collection) CheckIndex(vector *Vector.Vector) error {
 		return err
 	}
 
-	// check if a Index Key is in the Payload
+	// check if an Index Key is in the Payload
 	for k := range c.Indexes {
+		c.Indexes[k].Mut.RLock()
 		if _, ok := (*payload)[c.Indexes[k].Key]; ok {
 			result = append(result, k)
 		}
+		c.Indexes[k].Mut.RUnlock()
 	}
 
 	// If there is a result, add the vector to the Index
@@ -364,15 +366,12 @@ func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) er
 	c.Mut.RLock()
 	defer c.Mut.RUnlock()
 
-	// Check if the vector exists
-	if _, ok := (*c.Space)[vector.Id]; !ok {
-		return fmt.Errorf("Vector with ID %s does not exist", vector.Id)
-	}
-
 	// Add the vector to the Indexes
 	for _, k := range keys {
 		if index, ok := c.Indexes[k]; ok {
+			c.Indexes[k].Mut.Lock()
 			err := index.AddToIndex(vector)
+			c.Indexes[k].Mut.Unlock()
 			if err != nil {
 				return err
 			}

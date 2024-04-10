@@ -5,6 +5,7 @@ import (
 	"VreeDB/Node"
 	"VreeDB/Vector"
 	"fmt"
+	"sync"
 )
 
 // Index is the type to index specific vector payloads
@@ -13,12 +14,13 @@ type Index struct {
 	Entries        map[any]*Node.Node
 	CollectionName string
 	Key            string
+	Mut            *sync.RWMutex
 }
 
 // NewIndex returns a new Index
 func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
-	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey}
+	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey, Mut: &sync.RWMutex{}}
 
 	// Create a vectorMap as starting point to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
