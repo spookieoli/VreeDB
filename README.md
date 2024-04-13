@@ -24,6 +24,8 @@ These instructions will get you a copy of the project up and running on your loc
 - docker build -t vreedb .
 - docker run -p 8080:8080 vreedb
 
+Once up - you can access the UI at http://127.0.0.1:8080/
+
 ### Documentation Outline
 
 #### Overview
