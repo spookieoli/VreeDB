@@ -959,3 +959,36 @@ func (r *Routes) GetAccessData(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Not Found"))
 	return
 }
+
+// showapikey will show the apikey
+func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/showapikey" {
+		// This will only work if there is no APIKEY
+		if len(ApiKeyHandler.ApiHandler.ApiKeyHashes) == 0 {
+			// Create the APIKEY
+			key, err := r.ApiKeyHandler.CreateApiKey()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// Create the data for the template to show the apikey
+			data := struct {
+				Data string
+			}{
+				Data: key,
+			}
+			//  Show the template
+			err = r.templates.ExecuteTemplate(w, "showapikey.gohtml", data)
+			if err != nil {
+				Logger.Log.Log(err.Error())
+			}
+			return
+		} else {
+			// Redirect to login
+			http.Redirect(w, req, "/login", http.StatusSeeOther)
+			return
+		}
+	}
+}

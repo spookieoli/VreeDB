@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Page</title>
+    <link rel="stylesheet" type="text/css" href="/static/semantic.css">
+    <style>
+        .center-div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            padding: 20px;
+            box-shadow: 0px 0px 10px 0px #000;
+        }
+    </style>
+</head>
+<body>
+<div class="ui center aligned center-div">
+    <div class="ui input">
+        <input type="text" placeholder="Data" id="data-input" value="">
+    </div>
+    <button class="ui button" id="login-button">Login</button>
+</div>
+
+<script>
+    // Set the value of the input field to the data variable from Go
+    document.getElementById('data-input').value = "{{.Data}}";
+
+    // Add an event listener to the login button
+    document.getElementById('login-button').addEventListener('click', function() {
+        window.location.href = "/login";
+    });
+</script>
+</body>
+</html>

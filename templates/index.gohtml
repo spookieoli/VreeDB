@@ -5,7 +5,7 @@
     <title>VreeDB</title>
     <!-- Einbinden der Semantic UI CSS -->
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
-    <link rel="stylesheet" href="/static/codemirror.min.css" />
+    <link rel="stylesheet" href="/static/codemirror.min.css"/>
 </head>
 
 <style>
@@ -15,12 +15,15 @@
         border: 1px solid #eee;
         border-radius: 5px;
     }
+
     .CodeMirror-linenumbers {
         padding: 0 4px; /* Abstand für Zeilennummern */
     }
+
     .CodeMirror-lines {
         padding-left: 10px; /* Abstand für den Textbereich */
     }
+
     .centered-statistic {
         display: flex;
         justify-content: center;
@@ -86,9 +89,11 @@
                 <p>DistanceFunction: {{.DistanceFunc}}</p>
                 <p>DiagonalLength: {{.DiagonalLength}}</p>
                 {{if .ClassifierReady}}
-                    <p>Collection Classifier Readiness: <span style="color:green;">&#10004;</span> Ready to create Classifier</p>
+                    <p>Collection Classifier Readiness: <span style="color:green;">&#10004;</span> Ready to create
+                        Classifier</p>
                 {{else}}
-                    <p>Collection Classifier Readiness: <span style="color:red;">&#10008;</span> Not Ready to create Classifier</p>
+                    <p>Collection Classifier Readiness: <span style="color:red;">&#10008;</span> Not Ready to create
+                        Classifier</p>
                 {{end}}
                 {{range .Classifier}}
                     <p>Classifier: {{.}}</p>
@@ -108,7 +113,9 @@
                             <input type="text" id="classifierEpochs" placeholder="Epochs">
                         </div>
                         <div class="field">
-                            <button class="ui button" id="createClassifierButton" data-collection-id="{{.Name}}" {{if not .ClassifierReady}}disabled{{end}}>Create Classifier</button>
+                            <button class="ui button" id="createClassifierButton" data-collection-id="{{.Name}}"
+                                    {{if not .ClassifierReady}}disabled{{end}}>Create Classifier
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -203,275 +210,278 @@
         return timeString;
     }
 
-  $(document).ready(function() {
+    $(document).ready(function () {
         // Chart
-      // Chart
-      var ctx = document.getElementById('analyticsChart').getContext('2d');
-      var analyticsChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-              datasets: [
-                  { label: 'CLASSIFY', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false },
-                  { label: 'TRANSACTION', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false },
-                  { label: 'SEARCH', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false },
-                  { label: 'DELETE', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false },
-                  { label: 'ADD', data: [], borderColor: 'rgba(153, 102, 255, 1)', fill: false },
-                  { label: 'LOGIN', data: [], borderColor: 'rgba(255, 159, 64, 1)', fill: false },
-                  { label: 'SYSTEMEVENT', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false }
-              ]
-          },
-          options: {
-              scales: {
-                  x: {
-                      type: 'time',
-                      time: {
-                          unit: 'second'
-                      },
-                      ticks: {
-                          callback: function(value, index, values) {
-                              // Only show every 5th second
-                              if (index % 5 === 0) {
-                                  return formatTime(value);
-                              } else {
-                                  return '';
-                              }
-                          }
-                      }
-                  },
-                  y: {
-                      min: 0,
-                      suggestedMax: 1000
-                  }
-              }
-          }
-      });
+        // Chart
+        var ctx = document.getElementById('analyticsChart').getContext('2d');
+        var analyticsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {label: 'CLASSIFY', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false},
+                    {label: 'TRANSACTION', data: [], borderColor: 'rgba(54, 162, 235, 1)', fill: false},
+                    {label: 'SEARCH', data: [], borderColor: 'rgba(255, 206, 86, 1)', fill: false},
+                    {label: 'DELETE', data: [], borderColor: 'rgba(75, 192, 192, 1)', fill: false},
+                    {label: 'ADD', data: [], borderColor: 'rgba(153, 102, 255, 1)', fill: false},
+                    {label: 'LOGIN', data: [], borderColor: 'rgba(255, 159, 64, 1)', fill: false},
+                    {label: 'SYSTEMEVENT', data: [], borderColor: 'rgba(255, 99, 132, 1)', fill: false}
+                ]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second'
+                        },
+                        ticks: {
+                            callback: function (value, index, values) {
+                                // Only show every 5th second
+                                if (index % 5 === 0) {
+                                    return formatTime(value);
+                                } else {
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        suggestedMax: 1000
+                    }
+                }
+            }
+        });
 
 // Grouped data storage
-      var groupedData = {};
+        var groupedData = {};
 
 // Set up an interval that fetches the new data from the server every 5 seconds
-      setInterval(function() {
-          $.ajax({
-              type: "POST",
-              url: "/getaccessdata",
-              success: function(response){
-                  var now = new Date();
-                  response.forEach(function(item) {
-                      var itemDate = new Date(item.period);
-                      // Only consider data from the last 10 minutes
-                      if ((now - itemDate) <= 10 * 60 * 1000) {
-                          if (!groupedData[item.type]) {
-                              groupedData[item.type] = [];
-                              var dataset = analyticsChart.data.datasets.find(function(dataset) {
-                                  return dataset.label === item.type;
-                              });
-                              if (dataset) {
-                                  dataset.data = groupedData[item.type];
-                              } else {
-                                  console.error('Unknown item type: ' + item.type);
-                              }
-                          }
-                          groupedData[item.type].push({
-                              x: itemDate,
-                              y: item.sum
-                          });
-                      }
-                  });
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/getaccessdata",
+                success: function (response) {
+                    var now = new Date();
+                    response.forEach(function (item) {
+                        var itemDate = new Date(item.period);
+                        // Only consider data from the last 10 minutes
+                        if ((now - itemDate) <= 10 * 60 * 1000) {
+                            if (!groupedData[item.type]) {
+                                groupedData[item.type] = [];
+                                var dataset = analyticsChart.data.datasets.find(function (dataset) {
+                                    return dataset.label === item.type;
+                                });
+                                if (dataset) {
+                                    dataset.data = groupedData[item.type];
+                                } else {
+                                    console.error('Unknown item type: ' + item.type);
+                                }
+                            }
+                            groupedData[item.type].push({
+                                x: itemDate,
+                                y: item.sum
+                            });
+                        }
+                    });
 
-                  // Update the chart
-                  analyticsChart.update();
-              },
-              error: function(error){
-                  console.log(error);
-              }
-          });
-      }, 5000);
+                    // Update the chart
+                    analyticsChart.update();
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }, 5000);
 
-      // Initialisierung der Tabs und Akkordeons
-      $('.ui.accordion').accordion();
+        // Initialisierung der Tabs und Akkordeons
+        $('.ui.accordion').accordion();
 
-      // Event-Handler für Klick auf Menüpunkt
-      $('[data-tab]').on('click', function() {
-          var tabPath = $(this).attr('data-tab');
-          localStorage.setItem('activeTab', tabPath);
-      });
+        // Event-Handler für Klick auf Menüpunkt
+        $('[data-tab]').on('click', function () {
+            var tabPath = $(this).attr('data-tab');
+            localStorage.setItem('activeTab', tabPath);
+        });
 
-      var activeTab = localStorage.getItem('activeTab');
-      if (activeTab) {
-          $('[data-tab]').tab('change tab', activeTab);
-      }
+        var activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            $('[data-tab]').tab('change tab', activeTab);
+        }
 
-      var editor1 = CodeMirror(document.getElementById('editor1'), {
-          lineNumbers: true,
-          autoRefresh: true,
-          mode: 'javascript'
-      });
-      editor1.refresh();
+        var editor1 = CodeMirror(document.getElementById('editor1'), {
+            lineNumbers: true,
+            autoRefresh: true,
+            mode: 'javascript'
+        });
+        editor1.refresh();
 
-      var editor2 = CodeMirror(document.getElementById('editor2'), {
-          lineNumbers: true,
-          autoRefresh: true,
-          mode: 'javascript',
-          readOnly: true
-      });
-      editor1.refresh();
+        var editor2 = CodeMirror(document.getElementById('editor2'), {
+            lineNumbers: true,
+            autoRefresh: true,
+            mode: 'javascript',
+            readOnly: true
+        });
+        editor1.refresh();
 
-      $('#createClassifierButton').on('click', function() {
-          // Werte aus den Eingabefeldern abrufen
-          var classifierName = $('#classifierName').val();
-          var classifierDegree = parseInt($('#classifierDegree').val(), 10);
-          var classifierCValue = parseFloat($('#classifierCValue').val());
-          var classifierEpochs = parseInt($('#classifierEpochs').val(), 10);
-          var collectionName = $(this).data('collection-id');
+        $('#createClassifierButton').on('click', function () {
+            // Werte aus den Eingabefeldern abrufen
+            var classifierName = $('#classifierName').val();
+            var classifierDegree = parseInt($('#classifierDegree').val(), 10);
+            var classifierCValue = parseFloat($('#classifierCValue').val());
+            var classifierEpochs = parseInt($('#classifierEpochs').val(), 10);
+            var collectionName = $(this).data('collection-id');
 
-          // JSON-Objekt erstellen
-          var data = {
-              "collection_name": collectionName,
-              "classifier_name": classifierName,
-              "degree": classifierDegree,
-              "c": classifierCValue,
-              "epochs": classifierEpochs
-          };
+            // JSON-Objekt erstellen
+            var data = {
+                "collection_name": collectionName,
+                "classifier_name": classifierName,
+                "degree": classifierDegree,
+                "c": classifierCValue,
+                "epochs": classifierEpochs
+            };
 
-          // JSON-Objekt an den Server senden
-          $.ajax({
-              type: "PUT",
-              url: "/trainclassifier",
-              data: JSON.stringify(data),
-              contentType: "application/json; charset=utf-8",
-              dataType: "json",
-              success: function(response){
-                  // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn die Anfrage erfolgreich war
-                  console.log(response);
-              },
-              error: function(error){
-                  // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn ein Fehler aufgetreten ist
-                  console.log(error);
-              }
-          });
-      });
+            // JSON-Objekt an den Server senden
+            $.ajax({
+                type: "PUT",
+                url: "/trainclassifier",
+                data: JSON.stringify(data),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn die Anfrage erfolgreich war
+                    console.log(response);
+                },
+                error: function (error) {
+                    // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn ein Fehler aufgetreten ist
+                    console.log(error);
+                }
+            });
+        });
 
-      // Initialisierung der Tabs und Akkordeons
-      $('.menu .item').tab();
-      $('.ui.accordion').accordion();
+        // Initialisierung der Tabs und Akkordeons
+        $('.menu .item').tab();
+        $('.ui.accordion').accordion();
 
-      // Event-Handler für den Löschen-Button
-      $('.ui.accordion').on('click', '.ui.red.button', function() {
-          var collectionId = $(this).data('collection-id');
-          // Logik zum Löschen der Collection, z.B. AJAX-Request
-          console.log('Löschen der Collection mit ID: ' + collectionId);
-          // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
-          $.ajax({
-              type: "DELETE",
-              url: "/delete",
-              data: JSON.stringify({name: collectionId}),
-              contentType: "application/json; charset=utf-8",
-              dataType: "json",
-              xhrFields: {
-                  withCredentials: true
-              },
-              success: function(data){
-                  location.reload();
-              },
-              error: function(data){
-                  console.log(data);
-              }
-          });
-      });
+        // Event-Handler für den Löschen-Button
+        $('.ui.accordion').on('click', '.ui.red.button', function () {
+            var collectionId = $(this).data('collection-id');
+            // Logik zum Löschen der Collection, z.B. AJAX-Request
+            console.log('Löschen der Collection mit ID: ' + collectionId);
+            // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
+            $.ajax({
+                type: "DELETE",
+                url: "/delete",
+                data: JSON.stringify({name: collectionId}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function (data) {
+                    location.reload();
+                },
+                error: function (data) {
+                    console.log(data);
+                }
+            });
+        });
 
-      // Event-Handler für den Senden-Button
-      $('#sendButton').on('click', function() {
-          // Logik zum Senden der Daten, z.B. AJAX-Request
-          console.log('Senden der Daten');
-      });
-      // activate dropdown
-      $('#dropdownMenu').dropdown();
+        // Event-Handler für den Senden-Button
+        $('#sendButton').on('click', function () {
+            // Logik zum Senden der Daten, z.B. AJAX-Request
+            console.log('Senden der Daten');
+        });
+        // activate dropdown
+        $('#dropdownMenu').dropdown();
 
-      $('#sendButton').on('click', function() {
-          // Holen Sie sich die ausgewählte Aktion aus dem Dropdown-Menü
-          var selectedAction = $('#dropdownMenu').dropdown('get value');
+        $('#sendButton').on('click', function () {
+            // Holen Sie sich die ausgewählte Aktion aus dem Dropdown-Menü
+            var selectedAction = $('#dropdownMenu').dropdown('get value');
 
-          // Überprüfen Sie, ob eine Aktion ausgewählt wurde
-          if (!selectedAction) {
-              alert('Bitte wählen Sie eine Aktion aus dem Dropdown-Menü aus.');
-              return;
-          }
+            // Überprüfen Sie, ob eine Aktion ausgewählt wurde
+            if (!selectedAction) {
+                alert('Bitte wählen Sie eine Aktion aus dem Dropdown-Menü aus.');
+                return;
+            }
 
-          // Holen Sie sich den Inhalt von editor1
-          var editorContent = editor1.getValue();
+            // Holen Sie sich den Inhalt von editor1
+            var editorContent = editor1.getValue();
 
-          // Überprüfen Sie, ob der Inhalt von editor1 gültiges JSON ist
-          try {
-              var jsonData = JSON.parse(editorContent);
-          } catch (error) {
-              alert('Der Inhalt von editor1 ist kein gültiges JSON.');
-              return;
-          }
+            // Überprüfen Sie, ob der Inhalt von editor1 gültiges JSON ist
+            try {
+                var jsonData = JSON.parse(editorContent);
+            } catch (error) {
+                alert('Der Inhalt von editor1 ist kein gültiges JSON.');
+                return;
+            }
 
-          // Bestimmen Sie die Methode basierend auf der ausgewählten Aktion
-          var method;
-          switch (selectedAction) {
-              case 'createcollection':
-              case 'getaccessdata':
-                  method = 'POST';
-                  break;
-              case 'addpoint':
-              case 'addpointbatch':
-              case 'trainclassifier':
-              case 'createapikey':
-                  method = 'PUT';
-                  break;
-              case 'delete':
-              case 'deletepoint':
-              case 'deleteclassifier':
-                  method = 'DELETE';
-                  break;
-              case 'search':
-              case 'list':
-              case 'classify':
-                  method = 'GET';
-                  break;
-              default:
-                  alert('Unbekannte Aktion: ' + selectedAction);
-                  return;
-          }
+            // Bestimmen Sie die Methode basierend auf der ausgewählten Aktion
+            var method;
+            switch (selectedAction) {
+                case 'createcollection':
+                case 'getaccessdata':
+                    method = 'POST';
+                    break;
+                case 'addpoint':
+                case 'addpointbatch':
+                case 'trainclassifier':
+                case 'createapikey':
+                    method = 'PUT';
+                    break;
+                case 'delete':
+                case 'deletepoint':
+                case 'deleteclassifier':
+                    method = 'DELETE';
+                    break;
+                case 'search':
+                case 'list':
+                case 'classify':
+                    method = 'GET';
+                    break;
+                default:
+                    alert('Unbekannte Aktion: ' + selectedAction);
+                    return;
+            }
 
-          // Senden Sie den Inhalt von editor1 als JSON an den Server
-          $.ajax({
-              type: method,
-              url: "/" + selectedAction,
-              data: JSON.stringify(jsonData),
-              contentType: "application/json; charset=utf-8",
-              dataType: "json",
-              xhrFields: {
-                  withCredentials: true
-              },
-              success: function(response){
-                  // Setzen Sie die Antwort des Servers in editor2
-                  editor2.setValue(JSON.stringify(response, null, 2));
-              },
-              error: function(error){
-                  // Setzen Sie die Fehlermeldung in editor2
-                  editor2.setValue(JSON.stringify(error, null, 2));
-              }
-          });
-      });
+            // Senden Sie den Inhalt von editor1 als JSON an den Server
+            $.ajax({
+                type: method,
+                url: "/" + selectedAction,
+                data: JSON.stringify(jsonData),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function (response) {
+                    // Setzen Sie die Antwort des Servers in editor2
+                    editor2.setValue(JSON.stringify(response, null, 2));
+                },
+                error: function (error) {
+                    // Setzen Sie die Fehlermeldung in editor2
+                    editor2.setValue(JSON.stringify(error, null, 2));
+                }
+            });
+        });
 
-      $('#logoutButton').on('click', function() {
-          $.ajax({
-              type: "POST",
-              url: "/logout",
-              success: function(response){
-                  // Redirect to login page or show a success message
-                  window.location.href = "/login";
-              },
-              error: function(error){
-                  // Show an error message
-                  console.log(error);
-              }
-          });
-      });
-  });
+        var createApiKeyItem = $('<a class="item" href="/showapikey" style="color: red;">Create API-Key</a>');
+        $('#logoutButton').before(createApiKeyItem);
+
+        $('#logoutButton').on('click', function () {
+            $.ajax({
+                type: "POST",
+                url: "/logout",
+                success: function (response) {
+                    // Redirect to login page or show a success message
+                    window.location.href = "/login";
+                },
+                error: function (error) {
+                    // Show an error message
+                    console.log(error);
+                }
+            });
+        });
+    });
 
 </script>
 </body>
