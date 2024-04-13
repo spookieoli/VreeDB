@@ -221,9 +221,9 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 		if r.ApiKeyHandler.CheckApiKey(cc.ApiKey) || r.validateCookie(req) {
 
 			// Check if name is empty
-			if cc.Name == "" {
+			if cc.Name == "" || cc.Dimensions == 0 {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("Name is required"))
+				w.Write([]byte("Variables Missing"))
 				return
 			}
 
@@ -553,8 +553,6 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			default:
 				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
 			}
-
-			// Search for the nearest neighbours
 
 			// Send the results to the client
 			w.Header().Set("Content-Type", "application/json")
