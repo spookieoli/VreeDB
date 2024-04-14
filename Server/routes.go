@@ -757,6 +757,7 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 
+			// Type switch - a classifier can have various returns
 			switch class.(type) {
 			case int:
 				json.NewEncoder(w).Encode(struct {
