@@ -756,10 +756,11 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			// Send the class to the client
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
+			// TODO TYPE SWITCH
 			json.NewEncoder(w).Encode(struct {
 				Class int `json:"class"`
 			}{
-				Class: class,
+				Class: class.(int),
 			})
 			return
 		}

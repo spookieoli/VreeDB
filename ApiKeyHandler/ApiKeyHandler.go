@@ -22,6 +22,15 @@ var ApiHandler *ApiKeyHandler
 
 // init initializes the ApiKeyHandler
 func init() {
+
+	// If collections directory does not exist, create it
+	if _, err := os.Stat("collections"); os.IsNotExist(err) {
+		err := os.Mkdir("collections", 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	ApiHandler = &ApiKeyHandler{ApiKeyHashes: make(map[string]bool), Mut: sync.RWMutex{}}
 	if ApiHandler.CheckActive() {
 		err := ApiHandler.CreateApiKeyFile()

@@ -163,7 +163,7 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 }
 
 // Predict is a function that predicts the class of a given vector
-func (mcs *MultiClassSVM) Predict(features []float64) int {
+func (mcs *MultiClassSVM) Predict(features []float64) any {
 	var maxClass int
 	maxScore := math.Inf(-1)
 

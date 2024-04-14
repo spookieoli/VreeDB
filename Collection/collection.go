@@ -28,9 +28,14 @@ type Collection struct {
 	DimensionDiff    *Vector.Vector
 	DiagonalLength   float64
 	DistanceFuncName string
-	Classifiers      map[string]*Svm.MultiClassSVM
+	Classifiers      map[string]Classifier
 	ClassifierReady  bool
 	Indexes          map[string]*Index
+}
+
+// Interface for the Classifier
+type Classifier interface {
+	Predict([]float64) any
 }
 
 // NewCollection returns a new Collection
@@ -50,7 +55,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	}
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
-		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]*Svm.MultiClassSVM), ClassifierReady: false}
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier), ClassifierReady: false}
 }
 
 // Insert inserts a vector into the collection
@@ -213,7 +218,7 @@ func (c *Collection) DeleteClassifier(name string) error {
 func (c *Collection) DeleteAllClassifiers() {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
-	c.Classifiers = make(map[string]*Svm.MultiClassSVM)
+	c.Classifiers = make(map[string]Classifier)
 }
 
 // TrainClassifier will train a given classifier
@@ -232,7 +237,12 @@ func (c *Collection) TrainClassifier(name string, degree int, cValue float64, ep
 		data = append(data, v)
 	}
 	// Train the classfifier
-	c.Classifiers[name].Train(data, epochs, cValue, degree)
+	switch v := c.Classifiers[name].(type) {
+	case *Svm.MultiClassSVM:
+		v.Train(data, epochs, cValue, degree)
+	default:
+		// Neural Network
+	}
 
 	// Save the classifier
 	err := c.SaveClassifier()
