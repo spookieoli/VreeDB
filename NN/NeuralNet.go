@@ -70,21 +70,30 @@ type Neuron struct {
 }
 
 type Layer struct {
-	Neurons    []Neuron
-	Activation ActivationFunc
-	Derivative DerivativeFunc
+	Neurons        []Neuron
+	ActivationName string
+	Activation     ActivationFunc
+	Derivative     DerivativeFunc
 }
 
 func (l *Layer) Forward(inputs []float64) []float64 {
 	outputs := make([]float64, len(l.Neurons))
-	for i, neuron := range l.Neurons {
-		sum := neuron.Bias
-		for j, weight := range neuron.Weights {
-			sum += inputs[j] * weight
+	if l.ActivationName == "softmax" {
+		outputs = l.Activation(inputs).([]float64)
+		for i, output := range outputs {
+			l.Neurons[i].Output = output
 		}
-		output := l.Activation(sum)
-		l.Neurons[i].Output = output
-		outputs[i] = output
+		return outputs
+	} else {
+		for i, neuron := range l.Neurons {
+			sum := neuron.Bias
+			for j, weight := range neuron.Weights {
+				sum += inputs[j] * weight
+			}
+			output := l.Activation(sum)
+			l.Neurons[i].Output = output.(float64)
+			outputs[i] = output.(float64)
+		}
 	}
 	return outputs
 }
@@ -118,8 +127,8 @@ func (net *Network) Backpropagate(inputs, targets []float64, lr float64) {
 		}
 		for j, neuron := range layer.Neurons {
 			error := deltas[j]
-			if layer.Activation != Softmax {
-				error *= layer.Derivative(neuron.Output)
+			if layer.ActivationName != "softmax" {
+				error *= layer.Derivative(neuron.Output).(float64)
 			}
 			for k := range neuron.Weights {
 				neuron.Weights[k] -= lr * error * inputs[k]
@@ -154,8 +163,8 @@ func MSEDerivative(outputs, targets []float64) []float64 {
 // Sample
 func test() {
 	layers := []Layer{
-		{Neurons: make([]Neuron, 10), Activation: Sigmoid, Derivative: SigmoidDerivative},
-		{Neurons: make([]Neuron, 3), Activation: Softmax, Derivative: nil}, // This want work - Softmax has []float64
+		{Neurons: make([]Neuron, 10), ActivationName: "sigmoid", Activation: Sigmoid, Derivative: SigmoidDerivative},
+		{Neurons: make([]Neuron, 3), ActivationName: "softmax", Activation: Softmax, Derivative: nil}, // This want work - Softmax has []float64
 	}
 	network := NewNetwork(layers)
 	fmt.Println(network)
