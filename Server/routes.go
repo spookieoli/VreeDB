@@ -756,12 +756,27 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			// Send the class to the client
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			// TODO TYPE SWITCH
-			json.NewEncoder(w).Encode(struct {
-				Class int `json:"class"`
-			}{
-				Class: class.(int),
-			})
+
+			switch class.(type) {
+			case int:
+				json.NewEncoder(w).Encode(struct {
+					Class int `json:"class"`
+				}{
+					Class: class.(int),
+				})
+			case []float64:
+				json.NewEncoder(w).Encode(struct {
+					Class []float64 `json:"class"`
+				}{
+					Class: class.([]float64),
+				})
+			case float64:
+				json.NewEncoder(w).Encode(struct {
+					Class float64 `json:"class"`
+				}{
+					Class: class.(float64),
+				})
+			}
 			return
 		}
 
