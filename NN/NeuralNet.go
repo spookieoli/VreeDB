@@ -5,8 +5,31 @@ import (
 	"math"
 )
 
+// Types *************************************
+
+type NeuralNet struct {
+	Name   string
+	Layers []Layer
+}
+
+type Neuron struct {
+	Weights []float64
+	Bias    float64
+	Output  float64
+	Delta   float64
+}
+
+type Layer struct {
+	Neurons        []Neuron
+	ActivationName string
+	Activation     ActivationFunc
+	Derivative     DerivativeFunc
+}
+
 type ActivationFunc func(any) any
 type DerivativeFunc func(any) any
+
+// *****************************************
 
 // Activationfunctions
 func Sigmoid(x any) any {
@@ -60,20 +83,6 @@ func Softmax(x any) any {
 		result[i] /= sum
 	}
 	return result
-}
-
-type Neuron struct {
-	Weights []float64
-	Bias    float64
-	Output  float64
-	Delta   float64
-}
-
-type Layer struct {
-	Neurons        []Neuron
-	ActivationName string
-	Activation     ActivationFunc
-	Derivative     DerivativeFunc
 }
 
 func (l *Layer) Forward(inputs []float64) []float64 {
