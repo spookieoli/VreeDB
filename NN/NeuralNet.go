@@ -1,56 +1,57 @@
 package NN
 
 import (
+	"fmt"
 	"math"
 )
 
-type ActivationFunc func(float64) any
-type DerivativeFunc func(float64) any
+type ActivationFunc func(any) any
+type DerivativeFunc func(any) any
 
 // Activationfunctions
-func Sigmoid(x float64) float64 {
-	return 1 / (1 + math.Exp(-x))
+func Sigmoid(x any) any {
+	return 1 / (1 + math.Exp(-x.(float64)))
 }
 
-func SigmoidDerivative(x float64) float64 {
-	s := Sigmoid(x)
+func SigmoidDerivative(x any) any {
+	s := Sigmoid(x.(float64)).(float64)
 	return s * (1 - s)
 }
 
-func Tanh(x float64) float64 {
-	return math.Tanh(x)
+func Tanh(x any) any {
+	return math.Tanh(x.(float64))
 }
 
-func TanhDerivative(x float64) float64 {
-	return 1 - math.Pow(math.Tanh(x), 2)
+func TanhDerivative(x any) any {
+	return 1 - math.Pow(math.Tanh(x.(float64)), 2)
 }
 
-func ReLU(x float64) float64 {
-	if x > 0 {
+func ReLU(x any) any {
+	if x.(float64) > 0 {
 		return x
 	}
 	return 0
 }
 
-func ReLUDerivative(x float64) float64 {
-	if x > 0 {
+func ReLUDerivative(x any) any {
+	if x.(float64) > 0 {
 		return 1
 	}
 	return 0
 }
 
 // Softmax will be executed on the output layer
-func Softmax(x []float64) []float64 {
-	max := x[0]
-	for _, v := range x {
+func Softmax(x any) any {
+	max := x.([]float64)[0]
+	for _, v := range x.([]float64) {
 		if v > max {
 			max = v
 		}
 	}
 
 	sum := 0.0
-	result := make([]float64, len(x))
-	for i, v := range x {
+	result := make([]float64, len(x.([]float64)))
+	for i, v := range x.([]float64) {
 		result[i] = math.Exp(v - max)
 		sum += result[i]
 	}
@@ -157,5 +158,6 @@ func test() {
 		{Neurons: make([]Neuron, 3), Activation: Softmax, Derivative: nil}, // This want work - Softmax has []float64
 	}
 	network := NewNetwork(layers)
+	fmt.Println(network)
 	//...
 }
