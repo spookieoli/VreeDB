@@ -4,8 +4,8 @@ import (
 	"math"
 )
 
-type ActivationFunc func(float64) float64
-type DerivativeFunc func(float64) float64
+type ActivationFunc func(float64) any
+type DerivativeFunc func(float64) any
 
 // Activationfunctions
 func Sigmoid(x float64) float64 {
