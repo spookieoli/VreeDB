@@ -1,8 +1,11 @@
 package NN
 
 import (
+	"VreeDB/Logger"
 	"fmt"
 	"math"
+	"math/rand"
+	"strings"
 )
 
 // Types *************************************
@@ -32,24 +35,102 @@ type DerivativeFunc func(any) any
 
 // *****************************************
 
-// Activationfunctions
+// NewNetwork creates a new network with the given layers
+func NewNetwork(layers []Layer) (*Network, error) {
+	// Check every layer - set the activation function
+	for i, layer := range layers {
+		if strings.ToLower(layer.ActivationName) == "sigmoid" {
+			layers[i].Activation = Sigmoid
+			layers[i].Derivative = SigmoidDerivative
+		} else if strings.ToLower(layer.ActivationName) == "tanh" {
+			layers[i].Activation = Tanh
+			layers[i].Derivative = TanhDerivative
+		} else if strings.ToLower(layer.ActivationName) == "relu" {
+			layers[i].Activation = ReLU
+			layers[i].Derivative = ReLUDerivative
+		} else if strings.ToLower(layer.ActivationName) == "softmax" {
+			layers[i].Activation = Softmax
+		} else {
+			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
+			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
+		}
+	}
+	return &Network{Layers: layers}, nil
+}
+
+// MSE is the mean squared error loss function
+func (n *Network) MSE(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += math.Pow(output-targets[i], 2)
+	}
+	return sum / float64(len(outputs))
+}
+
+// MSEDerivative is the derivative of the mean squared error loss function
+func (n *Network) MSEDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		deltas[i] = 2 * (output - targets[i])
+	}
+	return deltas
+}
+
+// Train - initializes the weights and biases and trains the network
+func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs int, lr float64) {
+
+	// Initialize the weights and biases
+	for i := range n.Layers {
+		for j := range n.Layers[i].Neurons {
+			n.Layers[i].Neurons[j].Weights = make([]float64, len(trainingData[0]))
+			for k := range n.Layers[i].Neurons[j].Weights {
+				n.Layers[i].Neurons[j].Weights[k] = rand.Float64()
+			}
+			n.Layers[i].Neurons[j].Bias = rand.Float64()
+		}
+	}
+
+	// Trainloop
+	for epoch := 0; epoch < epochs; epoch++ {
+		totalLoss := 0.0
+		for i, input := range trainingData {
+			output := n.Forward(input)
+			n.Backpropagate(input, targets[i], lr)
+			totalLoss += n.MSE(output, targets[i])
+		}
+		if epoch%1000 == 0 {
+			fmt.Printf("Epoch %d, Loss: %.4f\n", epoch, totalLoss/float64(len(trainingData)))
+		}
+	}
+}
+
+// Predict - predicts the output for the given input
+func (n *Network) Predict(input []float64) []float64 {
+	return n.Forward(input)
+}
+
+// Sigmoid Activation is used for hidden layers
 func Sigmoid(x any) any {
 	return 1 / (1 + math.Exp(-x.(float64)))
 }
 
+// SigmoidDerivative is the derivative of the sigmoid activation function
 func SigmoidDerivative(x any) any {
 	s := Sigmoid(x.(float64)).(float64)
 	return s * (1 - s)
 }
 
+// Tanh Activation is used for hidden layers
 func Tanh(x any) any {
 	return math.Tanh(x.(float64))
 }
 
+// TanhDerivative is the derivative of the tanh activation function
 func TanhDerivative(x any) any {
 	return 1 - math.Pow(math.Tanh(x.(float64)), 2)
 }
 
+// Relu Activation is used for hidden layers
 func ReLU(x any) any {
 	if x.(float64) > 0 {
 		return x
@@ -57,6 +138,7 @@ func ReLU(x any) any {
 	return 0
 }
 
+// ReLUDerivative is the derivative of the ReLU activation function
 func ReLUDerivative(x any) any {
 	if x.(float64) > 0 {
 		return 1
@@ -86,6 +168,7 @@ func Softmax(x any) any {
 	return result
 }
 
+// Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
 	outputs := make([]float64, len(l.Neurons))
 	if l.ActivationName == "softmax" {
@@ -108,25 +191,27 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 	return outputs
 }
 
-func (net *Network) Forward(inputs []float64) []float64 {
-	for _, layer := range net.Layers {
+// Forward feed forwards the inputs through the network
+func (n *Network) Forward(inputs []float64) []float64 {
+	for _, layer := range n.Layers {
 		inputs = layer.Forward(inputs)
 	}
 	return inputs
 }
 
-func (net *Network) Backpropagate(inputs, targets []float64, lr float64) {
-	outputs := net.Forward(inputs)
-	deltas := net.LossDerivative(outputs, targets)
+// Backpropagate backpropages the error through the network
+func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
+	outputs := n.Forward(inputs)
+	deltas := n.LossDerivative(outputs, targets)
 
-	// Rückwärts durch das Netz
-	for i := len(net.Layers) - 1; i >= 0; i-- {
-		layer := &net.Layers[i]
+	// Backwards pass
+	for i := len(n.Layers) - 1; i >= 0; i-- {
+		layer := &n.Layers[i]
 		inputs := inputs
 		if i > 0 {
-			inputs = make([]float64, len(net.Layers[i-1].Neurons))
-			for j := range net.Layers[i-1].Neurons {
-				inputs[j] = net.Layers[i-1].Neurons[j].Output
+			inputs = make([]float64, len(n.Layers[i-1].Neurons))
+			for j := range n.Layers[i-1].Neurons {
+				inputs[j] = n.Layers[i-1].Neurons[j].Output
 			}
 		}
 		for j, neuron := range layer.Neurons {
@@ -141,35 +226,4 @@ func (net *Network) Backpropagate(inputs, targets []float64, lr float64) {
 			neuron.Bias -= lr * error
 		}
 	}
-}
-
-func NewNetwork(layers []Layer) *Network {
-	return &Network{Layers: layers}
-}
-
-func MSE(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += math.Pow(output-targets[i], 2)
-	}
-	return sum / float64(len(outputs))
-}
-
-func MSEDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = 2 * (output - targets[i])
-	}
-	return deltas
-}
-
-// Sample
-func test() {
-	layers := []Layer{
-		{Neurons: make([]Neuron, 10), ActivationName: "sigmoid", Activation: Sigmoid, Derivative: SigmoidDerivative},
-		{Neurons: make([]Neuron, 3), ActivationName: "softmax", Activation: Softmax, Derivative: nil}, // This want work - Softmax has []float64
-	}
-	network := NewNetwork(layers)
-	fmt.Println(network)
-	//...
 }
