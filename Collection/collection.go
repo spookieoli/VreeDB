@@ -61,6 +61,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 // Insert inserts a vector into the collection
 func (c *Collection) Insert(vector *Vector.Vector) error {
 	c.Mut.Lock()
+	defer c.Mut.Unlock()
 	if vector.Length != c.VectorDimension {
 		return fmt.Errorf("Vector length is %d, expected %d", vector.Length, c.VectorDimension)
 	} else if c.CheckID(vector.Id) {
@@ -85,9 +86,6 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 	// Set classifier ready to true
 	c.ClassifierReady = true
-
-	// unlock the Mut
-	c.Mut.Unlock()
 
 	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
 	go c.CheckIndex(vector)
@@ -337,7 +335,6 @@ func (c *Collection) CreateIndex(name, key string) error {
 
 // CheckIndex Check if a specific Index exists
 func (c *Collection) CheckIndex(vector *Vector.Vector) error {
-
 	// First check if there is an Index
 	if len(c.Indexes) == 0 {
 		return nil
