@@ -7,9 +7,10 @@ import (
 
 // Types *************************************
 
-type NeuralNet struct {
-	Name   string
-	Layers []Layer
+type Network struct {
+	Layers         []Layer
+	Loss           func([]float64, []float64) float64
+	LossDerivative func([]float64, []float64) []float64
 }
 
 type Neuron struct {
@@ -107,12 +108,6 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 	return outputs
 }
 
-type Network struct {
-	Layers         []Layer
-	Loss           func([]float64, []float64) float64
-	LossDerivative func([]float64, []float64) []float64
-}
-
 func (net *Network) Forward(inputs []float64) []float64 {
 	for _, layer := range net.Layers {
 		inputs = layer.Forward(inputs)
@@ -152,7 +147,6 @@ func NewNetwork(layers []Layer) *Network {
 	return &Network{Layers: layers}
 }
 
-// Hier kann eine quadratische Verlustfunktion implementiert werden
 func MSE(outputs, targets []float64) float64 {
 	sum := 0.0
 	for i, output := range outputs {
