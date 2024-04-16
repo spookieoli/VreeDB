@@ -308,7 +308,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "ADD"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
-		req.Body = http.MaxBytesReader(w, req.Body, 1000000)
+		req.Body = http.MaxBytesReader(w, req.Body, 10000000)
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
