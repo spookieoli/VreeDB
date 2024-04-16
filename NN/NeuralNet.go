@@ -215,15 +215,17 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 			}
 		}
 		for j, neuron := range layer.Neurons {
-			error := deltas[j]
+			errors := deltas[j]
 			if layer.ActivationName != "softmax" {
-				error *= layer.Derivative(neuron.Output).(float64)
+				errors *= layer.Derivative(neuron.Output).(float64)
 			}
 			for k := range neuron.Weights {
-				neuron.Weights[k] -= lr * error * inputs[k]
-				deltas[k] += error * neuron.Weights[k]
+				neuron.Weights[k] -= lr * errors * inputs[k]
+				deltas[k] += errors * neuron.Weights[k]
 			}
-			neuron.Bias -= lr * error
+			neuron.Bias -= lr * errors
 		}
 	}
 }
+
+// TODO: an routing anbauen, Function um vectoren und payload (label) zu übergeben
