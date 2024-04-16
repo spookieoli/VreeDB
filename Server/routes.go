@@ -575,7 +575,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// TrainClassifier trains a classifier // TODO - CHECK IF CLASSIFIER ALREADY TRAINS
+// TrainClassifier trains a classifier
 func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
@@ -612,8 +612,15 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
+			// Check if Type exists
+			if tc.Type == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Type is missing"))
+				return
+			}
+
 			// Create the classifier in the collection
-			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
+			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName, tc.Type)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))

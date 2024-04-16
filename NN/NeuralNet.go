@@ -107,7 +107,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 }
 
 // CreateTrainData creates the training data for the training
-func (n *Network) CreateTrainData(vectors map[string]*Vector.Vector) ([][]float64, [][]float64, error) {
+func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]float64, error) {
 	// Create Vars
 	var x [][]float64
 	var y [][]float64
@@ -149,30 +149,8 @@ func (n *Network) CreateTrainData(vectors map[string]*Vector.Vector) ([][]float6
 	return x, y, nil
 }
 
-// CreateNeuralNetwork creates a new network with the given layers
-func CreateNeuralNetwork(layers []Layer, vectorSpace map[string]*Vector.Vector, epochs int, lr float64) (*Network, error) {
-	// Create the network
-	n, err := NewNetwork(layers)
-	if err != nil {
-		Logger.Log.Log("Error creating NeuralNet: " + err.Error())
-		return nil, err
-	}
-
-	// Create the Traindata
-	x, y, err := n.CreateTrainData(vectorSpace)
-	if err != nil {
-		Logger.Log.Log("Error creating NeuralNet Traindata: " + err.Error())
-		return nil, err
-	}
-
-	// Train the network
-	n.Train(x, y, epochs, lr)
-
-	return n, nil
-}
-
 // Predict - predicts the output for the given input
-func (n *Network) Predict(input []float64) []float64 {
+func (n *Network) Predict(input []float64) any {
 	return n.Forward(input)
 }
 

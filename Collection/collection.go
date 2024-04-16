@@ -3,6 +3,7 @@ package Collection
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
+	"VreeDB/NN"
 	"VreeDB/Node"
 	"VreeDB/Svm"
 	"VreeDB/Utils"
@@ -186,12 +187,29 @@ func (c *Collection) CheckID(id string) bool {
 }
 
 // AddClassifier adds a classifier to the Collection
-func (c *Collection) AddClassifier(name string) error {
+func (c *Collection) AddClassifier(name string, typ string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
 	// Add the classifier to the Collection
-	c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
+	switch typ {
+	case "SVM":
+		c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
+	case "NN":
+		// First implementation of nn - under heavy construction
+		layer := []NN.Layer{
+			{Neurons: make([]NN.Neuron, c.VectorDimension), ActivationName: "relu"},
+			{Neurons: make([]NN.Neuron, 3), ActivationName: "relu"},
+			{Neurons: make([]NN.Neuron, 1), ActivationName: "sigmoid"},
+		}
+		// create the network
+		n, err := NN.NewNetwork(layer)
+		if err != nil {
+			return err
+		}
+		c.Classifiers[name] = n
+	}
+
 	return nil
 }
 
@@ -220,7 +238,7 @@ func (c *Collection) DeleteAllClassifiers() {
 }
 
 // TrainClassifier will train a given classifier
-func (c *Collection) TrainClassifier(name string, degree int, cValue float64, epochs int) error {
+func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs int) error {
 	c.Mut.RLock()
 	defer c.Mut.RUnlock()
 
@@ -237,9 +255,14 @@ func (c *Collection) TrainClassifier(name string, degree int, cValue float64, ep
 	// Train the classfifier
 	switch v := c.Classifiers[name].(type) {
 	case *Svm.MultiClassSVM:
-		v.Train(data, epochs, cValue, degree)
-	default:
+		v.Train(data, epochs, lr, degree)
+	case *NN.Network:
 		// Neural Network
+		x, y, err := v.CreateTrainData(data)
+		if err != nil {
+			return err
+		}
+		v.Train(x, y, epochs, lr)
 	}
 
 	// Save the classifier
@@ -266,15 +289,14 @@ func (c *Collection) SaveClassifier() error {
 	// Register the SVM structs
 	gob.Register(Svm.SVM{})
 	gob.Register(Svm.MultiClassSVM{})
+	gob.Register(NN.Network{})
 
 	// Save the classifiers
 	err = gob.NewEncoder(file).Encode(c.Classifiers)
 	if err != nil {
 		return err
 	}
-
 	Logger.Log.Log("Successfully saved classifier")
-
 	return nil
 }
 
