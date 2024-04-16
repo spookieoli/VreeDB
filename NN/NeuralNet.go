@@ -1,7 +1,9 @@
 package NN
 
 import (
+	"VreeDB/FileMapper"
 	"VreeDB/Logger"
+	"VreeDB/Vector"
 	"fmt"
 	"math"
 	"math/rand"
@@ -104,6 +106,71 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 	}
 }
 
+// CreateTrainData creates the training data for the training
+func (n *Network) CreateTrainData(vectors map[string]*Vector.Vector) ([][]float64, [][]float64, error) {
+	// Create Vars
+	var x [][]float64
+	var y [][]float64
+
+	// Loop through the vectors
+	for _, v := range vectors {
+		// First we need to get the payload of the vector
+		payload, err := FileMapper.Mapper.ReadPayload(v.PayloadStart, v.Collection)
+		if err != nil {
+			Logger.Log.Log("Error reading payload while creating NeuralNet Traindata: " + err.Error())
+			return nil, nil, err
+		}
+
+		// if Label exists as key in payload
+		if _, ok := (*payload)["Label"]; !ok {
+			continue
+		}
+
+		// Label must be of type []float64
+		switch v := (*payload)["Label"].(type) {
+		case []float64:
+			// Add the vector to the target data
+			y = append(y, v)
+		default:
+			continue
+		}
+
+		// Add the vector to the training data
+		x = append(x, v.Data)
+	}
+
+	// Check if the data is gt 0
+	if len(x) == 0 {
+		Logger.Log.Log("No NeuralNet Traindata created")
+		return nil, nil, fmt.Errorf("No NeuralNet Traindata created")
+	} else {
+		Logger.Log.Log("NeuralNet Traindata created successfully, x: " + fmt.Sprint(len(x)) + ", y: " + fmt.Sprint(len(y)))
+	}
+	return x, y, nil
+}
+
+// CreateNeuralNetwork creates a new network with the given layers
+func CreateNeuralNetwork(layers []Layer, vectorSpace map[string]*Vector.Vector, epochs int, lr float64) (*Network, error) {
+	// Create the network
+	n, err := NewNetwork(layers)
+	if err != nil {
+		Logger.Log.Log("Error creating NeuralNet: " + err.Error())
+		return nil, err
+	}
+
+	// Create the Traindata
+	x, y, err := n.CreateTrainData(vectorSpace)
+	if err != nil {
+		Logger.Log.Log("Error creating NeuralNet Traindata: " + err.Error())
+		return nil, err
+	}
+
+	// Train the network
+	n.Train(x, y, epochs, lr)
+
+	return n, nil
+}
+
 // Predict - predicts the output for the given input
 func (n *Network) Predict(input []float64) []float64 {
 	return n.Forward(input)
@@ -130,7 +197,7 @@ func TanhDerivative(x any) any {
 	return 1 - math.Pow(math.Tanh(x.(float64)), 2)
 }
 
-// Relu Activation is used for hidden layers
+// RelU Activation is used for hidden layers
 func ReLU(x any) any {
 	if x.(float64) > 0 {
 		return x
