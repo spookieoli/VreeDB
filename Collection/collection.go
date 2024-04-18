@@ -3,6 +3,7 @@ package Collection
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
+	"VreeDB/NN"
 	"VreeDB/Node"
 	"VreeDB/Svm"
 	"VreeDB/Utils"
@@ -28,9 +29,14 @@ type Collection struct {
 	DimensionDiff    *Vector.Vector
 	DiagonalLength   float64
 	DistanceFuncName string
-	Classifiers      map[string]*Svm.MultiClassSVM
+	Classifiers      map[string]Classifier
 	ClassifierReady  bool
 	Indexes          map[string]*Index
+}
+
+// Interface for the Classifier
+type Classifier interface {
+	Predict([]float64) any
 }
 
 // NewCollection returns a new Collection
@@ -50,7 +56,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	}
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
-		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]*Svm.MultiClassSVM), ClassifierReady: false}
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier), ClassifierReady: false}
 }
 
 // Insert inserts a vector into the collection
@@ -181,12 +187,29 @@ func (c *Collection) CheckID(id string) bool {
 }
 
 // AddClassifier adds a classifier to the Collection
-func (c *Collection) AddClassifier(name string) error {
+func (c *Collection) AddClassifier(name string, typ string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
 	// Add the classifier to the Collection
-	c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
+	switch typ {
+	case "SVM":
+		c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
+	case "NN":
+		// First implementation of nn - under heavy construction
+		layer := []NN.Layer{
+			{Neurons: make([]NN.Neuron, 9), ActivationName: "relu"},
+			{Neurons: make([]NN.Neuron, 3), ActivationName: "relu"},
+			{Neurons: make([]NN.Neuron, 1), ActivationName: "sigmoid"},
+		}
+		// create the network
+		n, err := NN.NewNetwork(layer)
+		if err != nil {
+			return err
+		}
+		c.Classifiers[name] = n
+	}
+
 	return nil
 }
 
@@ -211,11 +234,11 @@ func (c *Collection) DeleteClassifier(name string) error {
 func (c *Collection) DeleteAllClassifiers() {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
-	c.Classifiers = make(map[string]*Svm.MultiClassSVM)
+	c.Classifiers = make(map[string]Classifier)
 }
 
 // TrainClassifier will train a given classifier
-func (c *Collection) TrainClassifier(name string, degree int, cValue float64, epochs int) error {
+func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs int) error {
 	c.Mut.RLock()
 	defer c.Mut.RUnlock()
 
@@ -230,7 +253,17 @@ func (c *Collection) TrainClassifier(name string, degree int, cValue float64, ep
 		data = append(data, v)
 	}
 	// Train the classfifier
-	c.Classifiers[name].Train(data, epochs, cValue, degree)
+	switch v := c.Classifiers[name].(type) {
+	case *Svm.MultiClassSVM:
+		v.Train(data, epochs, lr, degree)
+	case *NN.Network:
+		// Neural Network
+		x, y, err := v.CreateTrainData(data)
+		if err != nil {
+			return err
+		}
+		v.Train(x, y, epochs, lr)
+	}
 
 	// Save the classifier
 	err := c.SaveClassifier()
@@ -256,15 +289,14 @@ func (c *Collection) SaveClassifier() error {
 	// Register the SVM structs
 	gob.Register(Svm.SVM{})
 	gob.Register(Svm.MultiClassSVM{})
+	gob.Register(NN.Network{})
 
 	// Save the classifiers
 	err = gob.NewEncoder(file).Encode(c.Classifiers)
 	if err != nil {
 		return err
 	}
-
 	Logger.Log.Log("Successfully saved classifier")
-
 	return nil
 }
 
@@ -325,7 +357,6 @@ func (c *Collection) CreateIndex(name, key string) error {
 
 // CheckIndex Check if a specific Index exists
 func (c *Collection) CheckIndex(vector *Vector.Vector) error {
-
 	// First check if there is an Index
 	if len(c.Indexes) == 0 {
 		return nil

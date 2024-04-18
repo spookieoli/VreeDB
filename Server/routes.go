@@ -308,7 +308,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "ADD"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
-		req.Body = http.MaxBytesReader(w, req.Body, 1000000)
+		req.Body = http.MaxBytesReader(w, req.Body, 10000000)
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -575,7 +575,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// TrainClassifier trains a classifier // TODO - CHECK IF CLASSIFIER ALREADY TRAINS
+// TrainClassifier trains a classifier
 func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
@@ -612,8 +612,15 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
+			// Check if Type exists
+			if tc.Type == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Type is missing"))
+				return
+			}
+
 			// Create the classifier in the collection
-			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName)
+			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName, tc.Type)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
@@ -756,11 +763,28 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 			// Send the class to the client
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(struct {
-				Class int `json:"class"`
-			}{
-				Class: class,
-			})
+
+			// Type switch - a classifier can have various returns
+			switch class.(type) {
+			case int:
+				json.NewEncoder(w).Encode(struct {
+					Class int `json:"class"`
+				}{
+					Class: class.(int),
+				})
+			case []float64:
+				json.NewEncoder(w).Encode(struct {
+					Class []float64 `json:"class"`
+				}{
+					Class: class.([]float64),
+				})
+			case float64:
+				json.NewEncoder(w).Encode(struct {
+					Class float64 `json:"class"`
+				}{
+					Class: class.(float64),
+				})
+			}
 			return
 		}
 

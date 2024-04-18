@@ -29,13 +29,6 @@ func (b *BootUp) Boot() map[string]*Collection.Collection {
 func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 	collections := make(map[string]*Collection.Collection)
 
-	// If collections directory does not exist, create it
-	if _, err := os.Stat("collections"); os.IsNotExist(err) {
-		err := os.Mkdir("collections", 0755)
-		if err != nil {
-			panic(err)
-		}
-	}
 	// open directory collections ans list all *json files
 	entries, err := os.ReadDir("collections")
 	if err != nil {

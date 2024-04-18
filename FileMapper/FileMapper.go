@@ -138,6 +138,8 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	// Map in einen Byte-Slice serialisieren
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
+	gob.Register(map[string]interface{}{})
+	gob.Register([]interface{}{})
 	err := enc.Encode(payload)
 	if err != nil {
 		Logger.Log.Log("Error encoding payload: " + err.Error())
