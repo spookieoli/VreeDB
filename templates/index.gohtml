@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>VreeDB</title>
-    <!-- Einbinden der Semantic UI CSS -->
+    <!-- Include Semantic UI CSS -->
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
     <link rel="stylesheet" href="/static/codemirror.min.css"/>
 </head>
@@ -17,11 +17,11 @@
     }
 
     .CodeMirror-linenumbers {
-        padding: 0 4px; /* Abstand für Zeilennummern */
+        padding: 0 4px; /* Spacing for line numbers */
     }
 
     .CodeMirror-lines {
-        padding-left: 10px; /* Abstand für den Textbereich */
+        padding-left: 10px; /* Spacing for the text area */
     }
 
     .centered-statistic {
@@ -37,7 +37,7 @@
 </style>
 <body>
 
-<!-- Navigationsmenü -->
+<!-- Navigation menu -->
 <div class="ui inverted menu">
     <a class="active item" data-tab="dashboard">Dashboard</a>
     <a class="item" data-tab="collections">Collections</a>
@@ -47,7 +47,7 @@
     <a class="item" id="logoutButton" style="margin-left: auto;">Logout</a>
 </div>
 
-<!-- Hauptinhalt -->
+<!-- Main content -->
 <div class="ui active tab segment" data-tab="dashboard">
     <h2 class="ui header">Dashboard</h2>
     <p>Your VreeDB Server.</p>
@@ -163,7 +163,7 @@
     </div>
 </div>
 
-<!-- Einbinden von jQuery und Semantic UI JavaScript -->
+<!-- Include jQuery and Semantic UI JavaScript -->
 <script src="/static/jquery.js"></script>
 <script src="/static/semantic.js"></script>
 <script src="/static/codemirror.min.js"></script>
@@ -294,10 +294,10 @@
             });
         }, 5000);
 
-        // Initialisierung der Tabs und Akkordeons
+        // Initialize the tabs and accordions
         $('.ui.accordion').accordion();
 
-        // Event-Handler für Klick auf Menüpunkt
+        // Event handler for menu item click
         $('[data-tab]').on('click', function () {
             var tabPath = $(this).attr('data-tab');
             localStorage.setItem('activeTab', tabPath);
@@ -324,14 +324,14 @@
         editor1.refresh();
 
         $('#createClassifierButton').on('click', function () {
-            // Werte aus den Eingabefeldern abrufen
+            // Get values from input fields
             var classifierName = $('#classifierName').val();
             var classifierDegree = parseInt($('#classifierDegree').val(), 10);
             var classifierCValue = parseFloat($('#classifierCValue').val());
             var classifierEpochs = parseInt($('#classifierEpochs').val(), 10);
             var collectionName = $(this).data('collection-id');
 
-            // JSON-Objekt erstellen
+            // Create JSON object
             var data = {
                 "collection_name": collectionName,
                 "classifier_name": classifierName,
@@ -340,7 +340,7 @@
                 "epochs": classifierEpochs
             };
 
-            // JSON-Objekt an den Server senden
+            // Send JSON object to the server
             $.ajax({
                 type: "PUT",
                 url: "/trainclassifier",
@@ -348,25 +348,25 @@
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function (response) {
-                    // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn die Anfrage erfolgreich war
+                    // Here you can add code that will be executed when the request was successful.
                     console.log(response);
                 },
                 error: function (error) {
-                    // Hier können Sie Code hinzufügen, der ausgeführt wird, wenn ein Fehler aufgetreten ist
+                    // Here you can add code that will be executed when an error has occurred.
                     console.log(error);
                 }
             });
         });
 
-        // Initialisierung der Tabs und Akkordeons
+        // Initialization of tabs and accordions
         $('.menu .item').tab();
         $('.ui.accordion').accordion();
 
-        // Event-Handler für den Löschen-Button
+        // Event-Handler for the Delete Button
         $('.ui.accordion').on('click', '.ui.red.button', function () {
             var collectionId = $(this).data('collection-id');
-            // Logik zum Löschen der Collection, z.B. AJAX-Request
-            console.log('Löschen der Collection mit ID: ' + collectionId);
+            // Logic for deleting the collection, e.g., AJAX request.
+            console.log('Deleting the collection with ID: ' + collectionId);
             // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
             $.ajax({
                 type: "DELETE",
@@ -386,36 +386,36 @@
             });
         });
 
-        // Event-Handler für den Senden-Button
+        // Event-Handler for the Send Button
         $('#sendButton').on('click', function () {
-            // Logik zum Senden der Daten, z.B. AJAX-Request
-            console.log('Senden der Daten');
+            // Logic for sending data, e.g., AJAX request.
+            console.log('Sending the data.');
         });
         // activate dropdown
         $('#dropdownMenu').dropdown();
 
         $('#sendButton').on('click', function () {
-            // Holen Sie sich die ausgewählte Aktion aus dem Dropdown-Menü
+            // Get the selected action from the dropdown menu
             var selectedAction = $('#dropdownMenu').dropdown('get value');
 
-            // Überprüfen Sie, ob eine Aktion ausgewählt wurde
+            // Check if an action has been selected
             if (!selectedAction) {
-                alert('Bitte wählen Sie eine Aktion aus dem Dropdown-Menü aus.');
+                alert('Please select an action from the dropdown menu.');
                 return;
             }
 
-            // Holen Sie sich den Inhalt von editor1
+            // Get the content from editor1
             var editorContent = editor1.getValue();
 
-            // Überprüfen Sie, ob der Inhalt von editor1 gültiges JSON ist
+            // Check if the content of editor1 is valid JSON
             try {
                 var jsonData = JSON.parse(editorContent);
             } catch (error) {
-                alert('Der Inhalt von editor1 ist kein gültiges JSON.');
+                alert('The content of editor1 is not valid JSON.');
                 return;
             }
 
-            // Bestimmen Sie die Methode basierend auf der ausgewählten Aktion
+            // Determine the method based on the selected action
             var method;
             switch (selectedAction) {
                 case 'createcollection':
@@ -439,11 +439,11 @@
                     method = 'GET';
                     break;
                 default:
-                    alert('Unbekannte Aktion: ' + selectedAction);
+                    alert('Unknown action: ' + selectedAction);
                     return;
             }
 
-            // Senden Sie den Inhalt von editor1 als JSON an den Server
+            // Send the contents of editor1 as JSON to the server
             $.ajax({
                 type: method,
                 url: "/" + selectedAction,
@@ -454,11 +454,11 @@
                     withCredentials: true
                 },
                 success: function (response) {
-                    // Setzen Sie die Antwort des Servers in editor2
+                    // Set the server's response in editor2
                     editor2.setValue(JSON.stringify(response, null, 2));
                 },
                 error: function (error) {
-                    // Setzen Sie die Fehlermeldung in editor2
+                    // Set the error message in editor2
                     editor2.setValue(JSON.stringify(error, null, 2));
                 }
             });
