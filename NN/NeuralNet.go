@@ -83,12 +83,17 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 
 	// Initialize the weights and biases
 	for i := range n.Layers {
+		inputLength := len(trainingData[0])
+		if i > 0 {
+			inputLength = len(n.Layers[i-1].Neurons)
+		}
+
 		for j := range n.Layers[i].Neurons {
-			n.Layers[i].Neurons[j].Weights = make([]float64, len(trainingData[0]))
+			n.Layers[i].Neurons[j].Weights = make([]float64, inputLength)
 			for k := range n.Layers[i].Neurons[j].Weights {
-				n.Layers[i].Neurons[j].Weights[k] = rand.Float64()
+				n.Layers[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
 			}
-			n.Layers[i].Neurons[j].Bias = rand.Float64()
+			n.Layers[i].Neurons[j].Bias = 0 // Initialize biases to zero
 		}
 	}
 
@@ -100,8 +105,9 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 			n.Backpropagate(input, targets[i], lr)
 			totalLoss += n.MSE(output, targets[i])
 		}
-		if epoch%1000 == 0 {
-			fmt.Printf("Epoch %d, Loss: %.4f\n", epoch, totalLoss/float64(len(trainingData)))
+		// Print loss every 10 epochs
+		if epoch%10 == 0 {
+			Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(trainingData))) + ", totalLoss: " + fmt.Sprint(totalLoss))
 		}
 	}
 }
@@ -127,11 +133,18 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 		}
 
 		// Label must be of type []float64
-		switch v := (*payload)["Label"].(type) {
-		case []float64:
-			// Add the vector to the target data
-			y = append(y, v)
-		default:
+		if v, ok := (*payload)["Label"].([]interface{}); ok {
+			//make float64 from int
+			var label []float64
+			for _, l := range v {
+				if f, ok := l.(float64); ok {
+					label = append(label, f)
+				} else {
+					continue
+				}
+			}
+			y = append(y, label)
+		} else {
 			continue
 		}
 
@@ -141,7 +154,6 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 
 	// Check if the data is gt 0
 	if len(x) == 0 {
-		Logger.Log.Log("No NeuralNet Traindata created")
 		return nil, nil, fmt.Errorf("No NeuralNet Traindata created")
 	} else {
 		Logger.Log.Log("NeuralNet Traindata created successfully, x: " + fmt.Sprint(len(x)) + ", y: " + fmt.Sprint(len(y)))
@@ -228,9 +240,17 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 			for j, weight := range neuron.Weights {
 				sum += inputs[j] * weight
 			}
-			output := l.Activation(sum)
-			l.Neurons[i].Output = output.(float64)
-			outputs[i] = output.(float64)
+
+			var output float64
+
+			if v, ok := l.Activation(sum).(int); ok {
+				output = float64(v)
+			} else if v, ok := l.Activation(sum).(float64); ok {
+				output = v
+			}
+
+			l.Neurons[i].Output = output
+			outputs[i] = output
 		}
 	}
 	return outputs
@@ -244,33 +264,53 @@ func (n *Network) Forward(inputs []float64) []float64 {
 	return inputs
 }
 
-// Backpropagate backpropages the error through the network
+// Backpropagate - backpropagates the error through the network
 func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 	outputs := n.Forward(inputs)
-	deltas := n.LossDerivative(outputs, targets)
+	deltas := n.MSEDerivative(outputs, targets) // Annahme: MSE Derivative ist korrekt implementiert
 
 	// Backwards pass
 	for i := len(n.Layers) - 1; i >= 0; i-- {
 		layer := &n.Layers[i]
-		inputs := inputs
+		// if it is not the output layer, we need to calculate the deltas for the next layer
+		var newDeltas []float64
 		if i > 0 {
-			inputs = make([]float64, len(n.Layers[i-1].Neurons))
+			newDeltas = make([]float64, len(n.Layers[i-1].Neurons))
+		} else {
+			newDeltas = make([]float64, len(inputs))
+		}
+
+		inputsForLayer := inputs // Inputs für die allererste Schicht
+		if i > 0 {
+			inputsForLayer = make([]float64, len(n.Layers[i-1].Neurons))
 			for j := range n.Layers[i-1].Neurons {
-				inputs[j] = n.Layers[i-1].Neurons[j].Output
+				inputsForLayer[j] = n.Layers[i-1].Neurons[j].Output
 			}
 		}
+
 		for j, neuron := range layer.Neurons {
-			errors := deltas[j]
+			errorTerm := deltas[j]
 			if layer.ActivationName != "softmax" {
-				errors *= layer.Derivative(neuron.Output).(float64)
+				// Check if the derivative is int or float64
+				if v, ok := layer.Derivative(neuron.Output).(int); ok {
+					errorTerm *= float64(v)
+				} else if v, ok := layer.Derivative(neuron.Output).(float64); ok {
+					errorTerm *= v
+				}
 			}
-			for k := range neuron.Weights {
-				neuron.Weights[k] -= lr * errors * inputs[k]
-				deltas[k] += errors * neuron.Weights[k]
+			for k, input := range inputsForLayer {
+				grad := errorTerm * input
+				neuron.Weights[k] -= lr * grad
+				if i > 0 { // Accumulate the gradients for the next layer's deltas
+					newDeltas[k] += neuron.Weights[k] * errorTerm
+				}
 			}
-			neuron.Bias -= lr * errors
+			neuron.Bias -= lr * errorTerm
+		}
+
+		// for the first layer, we need to set the deltas
+		if i > 0 {
+			deltas = newDeltas
 		}
 	}
 }
-
-// TODO: an routing anbauen, Function um vectoren und payload (label) zu übergeben

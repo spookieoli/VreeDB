@@ -198,7 +198,7 @@ func (c *Collection) AddClassifier(name string, typ string) error {
 	case "NN":
 		// First implementation of nn - under heavy construction
 		layer := []NN.Layer{
-			{Neurons: make([]NN.Neuron, c.VectorDimension), ActivationName: "relu"},
+			{Neurons: make([]NN.Neuron, 9), ActivationName: "relu"},
 			{Neurons: make([]NN.Neuron, 3), ActivationName: "relu"},
 			{Neurons: make([]NN.Neuron, 1), ActivationName: "sigmoid"},
 		}
