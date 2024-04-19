@@ -20,11 +20,6 @@ type CollectionConfig struct {
 	DiagonalLength   float64
 }
 
-// Filter is a struct to hold the filter for a search
-type Filter struct {
-	Filter map[string]map[string]interface{}
-}
-
 // ResultSet is the result of a search
 type ResultSet struct {
 	Payload  *map[string]interface{}
