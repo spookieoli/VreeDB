@@ -521,6 +521,13 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
 
+			// Check if possible Filter is valid
+			if err := p.ValidateFilter(); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
 			// Name, Vector are required
 			if p.CollectionName == "" || p.Vector == nil {
 				w.WriteHeader(http.StatusBadRequest)
