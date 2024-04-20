@@ -2,6 +2,7 @@ package Server
 
 import (
 	"VreeDB/ApiKeyHandler"
+	"VreeDB/Filter"
 	"VreeDB/Utils"
 	"VreeDB/Vdb"
 	"VreeDB/Vector"
@@ -46,7 +47,7 @@ type Point struct {
 	Wait               bool                   `json:"wait"`                 // Must not be present in the request default false
 	MaxDistancePercent float64                `json:"max_distance_percent"` // Must not be present in the request default 0.0 (no limit)
 	Index              *IndexName             `json:"index"`                // Must not be present in the request default ""
-	Filter             *[]Utils.Filter        `json:"filter"`               // Must not be present in the request default nil
+	Filter             *[]Filter.Filter       `json:"filter"`               // Must not be present in the request default nil
 }
 
 type PointItem struct {
