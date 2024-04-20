@@ -556,9 +556,11 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			// Check if Index is set
 			switch p.Index {
 			case nil:
-				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
+				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
+					p.MaxDistancePercent, p.Filter)
 			default:
-				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent, p.Index.IndexName, p.Index.IndexValue)
+				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""),
+					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue)
 			}
 
 			// Send the results to the client

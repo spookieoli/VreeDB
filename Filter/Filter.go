@@ -46,7 +46,6 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	// Check if the field exists in the payload
 	if _, ok := (*payload)[f.Field]; !ok {
 		return false, nil
@@ -56,35 +55,33 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 	// the value is of type float64, float32 or int
 	switch f.Op {
 	case Equal, NotEqual:
-		if (*payload)[f.Field] == f.Value {
-			return true, nil
-		}
-	case GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
 		switch v := f.Value.(type) {
-		case int64:
-		case int:
-		case float32:
-		case float64:
+		case int, int64, float32, float64:
 			switch f.Op {
-			case GreaterThan:
-				if (*payload)[f.Field].(float64) > v {
+			case Equal:
+				if (*payload)[f.Field] == v {
 					return true, nil
 				}
-			case GreaterThanOrEqual:
-				if (*payload)[f.Field].(float64) >= v {
-					return true, nil
-				}
-			case LessThan:
-				if (*payload)[f.Field].(float64) < v {
-
-				}
-			case LessThanOrEqual:
-				if (*payload)[f.Field].(float64) <= v {
+			case NotEqual:
+				if (*payload)[f.Field] != v {
 					return true, nil
 				}
 			}
+		case string:
+			switch f.Op {
+			case Equal:
+				if (*payload)[f.Field] == f.Value {
+					return true, nil
+				}
+			case NotEqual:
+				if (*payload)[f.Field] != f.Value {
+					return true, nil
+				}
+			}
+			// TBD: GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
 		default:
 			return false, nil
+
 		}
 	}
 	return false, nil

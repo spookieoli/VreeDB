@@ -1,6 +1,8 @@
 package Utils
 
 import (
+	"VreeDB/Filter"
+	"VreeDB/Logger"
 	"VreeDB/Node"
 	"container/heap"
 	"context"
@@ -9,9 +11,10 @@ import (
 
 // HeapChannelStruct is a struct that holds a channel and a heap
 type HeapChannelStruct struct {
-	node *Node.Node
-	dist float64
-	diff float64
+	node   *Node.Node
+	dist   float64
+	diff   float64
+	Filter *[]Filter.Filter
 }
 
 // HeapControl is a struct that holds a slice of HeapItems and the maximum number of entries
@@ -78,6 +81,16 @@ func (hc *HeapControl) StartThreads() {
 		for {
 			select {
 			case item := <-hc.In:
+				// Validate the filters
+				if ok, err := hc.ValidateFilters(&item); !ok {
+					// If the filters are not valid log the possible error
+					if err != nil {
+						Logger.Log.Log("Error validating filters: " + err.Error())
+					}
+					hc.Wg.Done()
+					continue
+				}
+				// Insert the item into the heap
 				hc.Insert(item.node, item.dist, item.diff)
 				hc.Wg.Done()
 			case <-hc.ctx.Done():
@@ -85,6 +98,21 @@ func (hc *HeapControl) StartThreads() {
 			}
 		}
 	}()
+}
+
+// ValidateFilters will validate the filters on a given Node
+func (hc *HeapControl) ValidateFilters(hcs *HeapChannelStruct) (bool, error) {
+	// Dont do anything if there are no filters
+	if hcs.Filter == nil {
+		return true, nil
+	}
+	// Validate the filters
+	for _, f := range *hcs.Filter {
+		if ok, err := f.ValidateFilter(hcs.node.Vector); !ok {
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // StopThreads stops the threads for the heap
