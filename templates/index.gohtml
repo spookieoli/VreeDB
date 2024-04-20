@@ -230,8 +230,24 @@
             .then(response => response.text())
             .then(html => {
                 neuralNetBuilder.innerHTML = html;
+                executeScripts(neuralNetBuilder);
             })
             .catch(err => console.error('Error fetching the HTML:', err));
+
+        function executeScripts(container) {
+            const scripts = Array.from(container.querySelectorAll('script'));
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                if (script.src) {
+                    newScript.src = script.src;
+                } else {
+                    newScript.textContent = script.textContent;
+                }
+                document.head.appendChild(newScript);
+                script.parentNode.removeChild(script);
+            });
+        }
+
         // Chart
         // Chart
         var ctx = document.getElementById('analyticsChart').getContext('2d');

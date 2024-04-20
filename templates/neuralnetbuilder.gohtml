@@ -18,11 +18,10 @@
 <body>
 <div>
     <div class="ui input">
-        <input type="text" placeholder="Data" id="data-input" value="">
+        <input type="text" placeholder="{{.Data}}" id="data-input" value="">
     </div>
     <button class="ui button" id="test-button">Test</button>
 </div>
-
 <script>
     // Set the value of the input field to the data variable from Go
     document.getElementById('data-input').value = "{{.Data}}";
