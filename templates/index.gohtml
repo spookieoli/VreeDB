@@ -253,11 +253,11 @@
             }
         });
 
-// Grouped data storage
+        // Grouped data storage
         var groupedData = {};
 
-// Set up an interval that fetches the new data from the server every 5 seconds
-        setInterval(function () {
+        // Function to fetch data from the server
+        function dataFetch() {
             $.ajax({
                 type: "POST",
                 url: "/getaccessdata",
@@ -292,7 +292,12 @@
                     console.log(error);
                 }
             });
-        }, 5000);
+        }
+
+        dataFetch();
+
+        // Set up an interval that fetches the new data from the server every 5 seconds
+        setInterval(dataFetch(), 5000);
 
         // Initialize the tabs and accordions
         $('.ui.accordion').accordion();
