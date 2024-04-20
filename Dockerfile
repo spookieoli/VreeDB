@@ -10,6 +10,9 @@ LABEL maintainer="spookieoli"
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
 
+# Set the default environment to DEV
+ENV ENV DEV
+
 # create the collections folder
 RUN mkdir -p /collections
 

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -68,13 +69,28 @@ func (r *Routes) deleteCookie(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, cookie)
 }
 
+func (r *Routes) renderTemplate(templateName string, w http.ResponseWriter, data any) error {
+	// Parse the template file anew every time
+	// This pattern is not performance-efficient for production but is useful for development
+	t := r.templates
+
+	if os.Getenv("ENV") == "DEV" {
+		t = template.Must(template.ParseFiles(fmt.Sprintf("templates/%s.gohtml", templateName)))
+	}
+
+	//  Render the template
+	err := t.ExecuteTemplate(w, fmt.Sprintf("%s.gohtml", templateName), data)
+
+	return err
+}
+
 /* ROUTES */
 
 // Login is the login page
 func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "LOGIN"
 	if req.Method == "GET" && req.URL.Path == "/login" {
-		err := r.templates.ExecuteTemplate(w, "login.gohtml", nil)
+		err := r.renderTemplate("login", w, nil)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -118,7 +134,7 @@ func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" && req.URL.Path == "/" {
 		// Check if there are ApiKeys in the system
 		if len(r.ApiKeyHandler.ApiKeyHashes) == 0 || r.validateCookie(req) {
-			err := r.templates.ExecuteTemplate(w, "index.gohtml", NewData())
+			err := r.renderTemplate("index", w, NewData())
 			if err != nil {
 				panic(err.Error())
 			}
@@ -1004,7 +1020,7 @@ func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
 				Data: key,
 			}
 			//  Show the template
-			err = r.templates.ExecuteTemplate(w, "showapikey.gohtml", data)
+			err = r.renderTemplate("showapikey", w, data)
 			if err != nil {
 				Logger.Log.Log(err.Error())
 			}
