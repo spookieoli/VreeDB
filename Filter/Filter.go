@@ -8,6 +8,12 @@ import (
 
 type Operator string
 
+type Filter struct {
+	Field    string      `json:"field"`
+	Operator Operator    `json:"operator"`
+	Value    interface{} `json:"value"`
+}
+
 // Operators
 const (
 	// Equal operator
@@ -31,16 +37,6 @@ func (o Operator) IsValid() error {
 		return nil
 	}
 	return fmt.Errorf("Invalid operator: %s", o)
-}
-
-// Filter is the struct that will be used to filter the data
-type Filter struct {
-	// Field is the field that will be used to filter
-	Field string `json:"field"`
-	// Operator is the operator that will be used to filter
-	Operator Operator `json:"operator"`
-	// Value is the value that will be used to filter
-	Value interface{} `json:"value"`
 }
 
 // ValidateFilter will validate the filters on a given Vector
