@@ -78,11 +78,10 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 					return true, nil
 				}
 			}
-			// TBD: GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
 		default:
 			return false, nil
-
 		}
+		// TBD: GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
 	default:
 		// May never happen
 		return false, nil
