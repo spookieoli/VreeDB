@@ -156,7 +156,7 @@ type IndexCreator struct {
 func (p *Point) ValidateFilter() error {
 	if p.Filter != nil {
 		for _, filter := range *p.Filter {
-			if err := filter.Operator.IsValid(); err != nil {
+			if err := filter.Op.IsValid(); err != nil {
 				return err
 			}
 		}

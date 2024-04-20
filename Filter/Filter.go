@@ -9,9 +9,9 @@ import (
 type Operator string
 
 type Filter struct {
-	Field    string      `json:"field"`
-	Operator Operator    `json:"operator"`
-	Value    interface{} `json:"value"`
+	Field string      `json:"field"`
+	Op    Operator    `json:"operator"`
+	Value interface{} `json:"value"`
 }
 
 // Operators
@@ -54,7 +54,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 
 	// If the operator is == or !=, we can compare the values with all variable types, otherwise we need to check if
 	// the value is of type float64, float32 or int
-	switch f.Operator {
+	switch f.Op {
 	case Equal, NotEqual:
 		if (*payload)[f.Field] == f.Value {
 			return true, nil
@@ -65,7 +65,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		case int:
 		case float32:
 		case float64:
-			switch f.Operator {
+			switch f.Op {
 			case GreaterThan:
 				if (*payload)[f.Field].(float64) > v {
 					return true, nil
