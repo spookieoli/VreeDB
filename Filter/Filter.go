@@ -83,6 +83,9 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			return false, nil
 
 		}
+	default:
+		// May never happen
+		return false, nil
 	}
 	return false, nil
 }
