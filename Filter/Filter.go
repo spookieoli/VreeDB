@@ -2,8 +2,10 @@ package Filter
 
 import (
 	"VreeDB/FileMapper"
+	"VreeDB/Logger"
 	"VreeDB/Vector"
 	"fmt"
+	"unsafe"
 )
 
 type Operator string
@@ -51,6 +53,11 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		return false, nil
 	}
 
+	// Check if they are of the same type
+	if !f.checkSameType((*payload)[f.Field], f.Value) {
+		return false, nil
+	}
+
 	// If the operator is == or !=, we can compare the values with all variable types, otherwise we need to check if
 	// the value is of type float64, float32 or int
 	switch f.Op {
@@ -81,10 +88,107 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		default:
 			return false, nil
 		}
-		// TBD: GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
+	// TBD: GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual
+	case GreaterThan:
+		switch v := f.Value.(type) {
+		case int:
+			if (*payload)[f.Field].(int) > v {
+				return true, nil
+			}
+		case int64:
+			if (*payload)[f.Field].(int64) > v {
+				return true, nil
+			}
+		case float32:
+			if (*payload)[f.Field].(float32) > v {
+				return true, nil
+			}
+		case float64:
+			if (*payload)[f.Field].(float64) > v {
+				return true, nil
+			}
+		default:
+			return false, nil
+		}
+	case GreaterThanOrEqual:
+		switch v := f.Value.(type) {
+		case int:
+			if (*payload)[f.Field].(int) >= v {
+				return true, nil
+			}
+		case int64:
+			if (*payload)[f.Field].(int64) >= v {
+				return true, nil
+			}
+		case float32:
+			if (*payload)[f.Field].(float32) >= v {
+				return true, nil
+			}
+		case float64:
+			if (*payload)[f.Field].(float64) >= v {
+				return true, nil
+			}
+		default:
+			return false, nil
+		}
+	case LessThan:
+		switch v := f.Value.(type) {
+		case int:
+			if (*payload)[f.Field].(int) < v {
+				return true, nil
+			}
+		case int64:
+			if (*payload)[f.Field].(int64) < v {
+				return true, nil
+			}
+		case float32:
+			if (*payload)[f.Field].(float32) < v {
+				return true, nil
+			}
+		case float64:
+			if (*payload)[f.Field].(float64) < v {
+				return true, nil
+			}
+		default:
+			return false, nil
+		}
+	case LessThanOrEqual:
+		switch v := f.Value.(type) {
+		case int:
+			if (*payload)[f.Field].(int) <= v {
+				return true, nil
+			}
+		case int64:
+			if (*payload)[f.Field].(int64) <= v {
+				return true, nil
+			}
+		case float32:
+			if (*payload)[f.Field].(float32) <= v {
+				return true, nil
+			}
+		case float64:
+			if (*payload)[f.Field].(float64) <= v {
+				return true, nil
+			}
+		default:
+			return false, nil
+		}
 	default:
 		// May never happen
+		Logger.Log.Log("invalid operator in filter - this is a bug - please report")
 		return false, nil
 	}
 	return false, nil
+}
+
+// CheckSameType checks if the two values are of the same type
+func (f *Filter) checkSameType(a, b any) bool {
+	typeOfA := *(*uintptr)(unsafe.Pointer(&a))
+	typeOfB := *(*uintptr)(unsafe.Pointer(&b))
+
+	// Check if the types are the same
+	if typeOfA == typeOfB {
+		return true
+	}
+	return false
 }
