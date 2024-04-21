@@ -3,6 +3,7 @@ package Vdb
 import (
 	"VreeDB/Collection"
 	"VreeDB/FileMapper"
+	"VreeDB/Filter"
 	"VreeDB/Logger"
 	"VreeDB/Utils"
 	"VreeDB/Vector"
@@ -76,7 +77,8 @@ func (v *Vdb) ListCollections() []string {
 }
 
 // Search searches for the nearest neighbours of the given target vector
-func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64) []*Utils.ResultSet {
+func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
+	filter *[]Filter.Filter) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
 
@@ -90,7 +92,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// Get the starting time
 	t := time.Now()
-	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc,
+	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, filter, v.Collections[collectionName].DistanceFunc,
 		v.Collections[collectionName].DimensionDiff, 0.1)
 
 	// Print the time it took
@@ -134,7 +136,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	return results
 }
 
-func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
+func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64, filter *[]Filter.Filter,
 	indexName string, indexValue any) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
@@ -149,7 +151,7 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 
 	// Get the starting time
 	t := time.Now()
-	Utils.NewSearchUnit(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, v.Collections[collectionName].DistanceFunc,
+	Utils.NewSearchUnit(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, filter, v.Collections[collectionName].DistanceFunc,
 		v.Collections[collectionName].DimensionDiff, 0.1)
 
 	// Print the time it took

@@ -537,6 +537,13 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
 
+			// Check if possible Filter is valid
+			if err := p.ValidateFilter(); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
 			// Name, Vector are required
 			if p.CollectionName == "" || p.Vector == nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -565,9 +572,11 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			// Check if Index is set
 			switch p.Index {
 			case nil:
-				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent)
+				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
+					p.MaxDistancePercent, p.Filter)
 			default:
-				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue, p.MaxDistancePercent, p.Index.IndexName, p.Index.IndexValue)
+				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""),
+					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue)
 			}
 
 			// Send the results to the client

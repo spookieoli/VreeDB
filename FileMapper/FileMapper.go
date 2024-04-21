@@ -133,13 +133,19 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	// Lock the file for writing
 	f.Mut[collection].Lock()
 	defer f.Mut[collection].Unlock()
+
 	// Unmap the file from memory
 	f.Unmap(collection)
+
 	// Map in einen Byte-Slice serialisieren
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
+
+	// Register types
 	gob.Register(map[string]interface{}{})
 	gob.Register([]interface{}{})
+
+	// Encode the payload
 	err := enc.Encode(payload)
 	if err != nil {
 		Logger.Log.Log("Error encoding payload: " + err.Error())
@@ -202,6 +208,10 @@ func (f *FileMapper) ReadPayload(offset int64, collection string) (*map[string]i
 	defer f.Mut[collection].RUnlock()
 	// Bytes-Slice ab der gegebenen Position erstellen
 	data := f.MappedData[collection][offset:]
+
+	// Gob register types
+	gob.Register(map[string]interface{}{})
+	gob.Register([]interface{}{})
 
 	// Daten deserialisieren
 	var m map[string]interface{}
