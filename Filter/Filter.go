@@ -187,8 +187,5 @@ func (f *Filter) checkSameType(a, b any) bool {
 	typeOfB := *(*uintptr)(unsafe.Pointer(&b))
 
 	// Check if the types are the same
-	if typeOfA == typeOfB {
-		return true
-	}
-	return false
+	return typeOfA == typeOfB
 }
