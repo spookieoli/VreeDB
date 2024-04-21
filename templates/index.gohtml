@@ -230,11 +230,11 @@
             .then(response => response.text())
             .then(html => {
                 neuralNetBuilder.innerHTML = html;
-                executeScripts(neuralNetBuilder);
+                copyAndInsertScripts(neuralNetBuilder);
             })
             .catch(err => console.error('Error fetching the HTML:', err));
 
-        function executeScripts(container) {
+        function copyAndInsertScripts(container) {
             const scripts = Array.from(container.querySelectorAll('script'));
             scripts.forEach(script => {
                 const newScript = document.createElement('script');
