@@ -87,11 +87,10 @@ func (hc *HeapControl) StartThreads() {
 					if err != nil {
 						Logger.Log.Log("Error validating filters: " + err.Error())
 					}
-					hc.Wg.Done()
-					continue
+				} else {
+					// Insert the item into the heap
+					hc.Insert(item.node, item.dist, item.diff)
 				}
-				// Insert the item into the heap
-				hc.Insert(item.node, item.dist, item.diff)
 				hc.Wg.Done()
 			case <-hc.ctx.Done():
 				return
