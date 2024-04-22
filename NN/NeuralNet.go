@@ -63,12 +63,13 @@ func NewNetwork(layers []Layer, lossfunction string) (*Network, error) {
 	n.Layers = layers
 
 	// Add Loss function
-	if strings.ToLower(lossfunction) == "mse" {
+	switch strings.ToLower(lossfunction) {
+	case "mse":
 		n.Loss = n.MSE
 		n.LossDerivative = n.MSEDerivative
-	} else {
-		Logger.Log.Log("Unknown loss function: " + lossfunction)
-		return nil, fmt.Errorf("Unknown loss function: %s", lossfunction)
+	case "mae":
+		n.Loss = n.MAE
+		n.LossDerivative = n.MAEDerivative
 	}
 	return n, nil
 }
@@ -87,6 +88,28 @@ func (n *Network) MSEDerivative(outputs, targets []float64) []float64 {
 	deltas := make([]float64, len(outputs))
 	for i, output := range outputs {
 		deltas[i] = 2 * (output - targets[i])
+	}
+	return deltas
+}
+
+// MAE is the mean absolute error loss function
+func (n *Network) MAE(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += math.Abs(output - targets[i])
+	}
+	return sum / float64(len(outputs))
+}
+
+// MAEDerivative is the derivative of the mean absolute error loss function
+func (n *Network) MAEDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		if output > targets[i] {
+			deltas[i] = 1
+		} else {
+			deltas[i] = -1
+		}
 	}
 	return deltas
 }
