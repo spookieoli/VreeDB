@@ -187,7 +187,7 @@ func (c *Collection) CheckID(id string) bool {
 }
 
 // AddClassifier adds a classifier to the Collection
-func (c *Collection) AddClassifier(name string, typ string) error {
+func (c *Collection) AddClassifier(name string, typ string, loss string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
@@ -203,7 +203,7 @@ func (c *Collection) AddClassifier(name string, typ string) error {
 			{Neurons: make([]NN.Neuron, 1), ActivationName: "sigmoid"},
 		}
 		// create the network
-		n, err := NN.NewNetwork(layer)
+		n, err := NN.NewNetwork(layer, loss)
 		if err != nil {
 			return err
 		}

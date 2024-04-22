@@ -645,7 +645,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 			}
 
 			// Create the classifier in the collection
-			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName, tc.Type)
+			err = r.DB.Collections[tc.CollectionName].AddClassifier(tc.ClassifierName, tc.Type, tc.Loss)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))

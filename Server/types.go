@@ -111,6 +111,7 @@ type Classifier struct {
 	C              float64 `json:"c"`
 	Epochs         int     `json:"epochs"`
 	Type           string  `json:"type"`
+	Loss           string  `json:"loss"`
 }
 
 // DeleteClassifier is the struct that will be used to delete a classifier, when send by REST
