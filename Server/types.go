@@ -112,6 +112,7 @@ type Classifier struct {
 	Epochs         int     `json:"epochs"`
 	Type           string  `json:"type"`
 	Loss           string  `json:"loss"`
+	Batchsize      int     `json:"batchsize"`
 }
 
 // DeleteClassifier is the struct that will be used to delete a classifier, when send by REST

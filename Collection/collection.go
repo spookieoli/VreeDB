@@ -238,7 +238,7 @@ func (c *Collection) DeleteAllClassifiers() {
 }
 
 // TrainClassifier will train a given classifier
-func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs int) error {
+func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs int, batchsize int) error {
 	c.Mut.RLock()
 	defer c.Mut.RUnlock()
 
@@ -262,7 +262,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		if err != nil {
 			return err
 		}
-		v.Train(x, y, epochs, lr)
+		v.Train(x, y, epochs, lr, batchsize)
 	}
 
 	// Save the classifier

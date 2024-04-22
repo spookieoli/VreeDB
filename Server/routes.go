@@ -654,7 +654,8 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 
 			// Train the classifier non blocking
 			go func() {
-				err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C, tc.Epochs)
+				err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C,
+					tc.Epochs, tc.Batchsize)
 				if err != nil {
 					Logger.Log.Log(err.Error())
 				}
