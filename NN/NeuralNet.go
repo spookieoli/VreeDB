@@ -38,7 +38,10 @@ type DerivativeFunc func(any) any
 // *****************************************
 
 // NewNetwork creates a new network with the given layers
-func NewNetwork(layers []Layer) (*Network, error) {
+func NewNetwork(layers []Layer, lossfunction string) (*Network, error) {
+	// Create Network
+	n := &Network{}
+
 	// Check every layer - set the activation function
 	for i, layer := range layers {
 		if strings.ToLower(layer.ActivationName) == "sigmoid" {
@@ -57,7 +60,17 @@ func NewNetwork(layers []Layer) (*Network, error) {
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
 		}
 	}
-	return &Network{Layers: layers}, nil
+	n.Layers = layers
+
+	// Add Loss function
+	if strings.ToLower(lossfunction) == "mse" {
+		n.Loss = n.MSE
+		n.LossDerivative = n.MSEDerivative
+	} else {
+		Logger.Log.Log("Unknown loss function: " + lossfunction)
+		return nil, fmt.Errorf("Unknown loss function: %s", lossfunction)
+	}
+	return n, nil
 }
 
 // MSE is the mean squared error loss function
