@@ -178,7 +178,7 @@ func NewData() Data {
 	}
 	data.Application = RuntimeData{RamUsage: Utils.Utils.GetMemoryUsage(), FreeRam: Utils.Utils.GetAvailableRAM(),
 		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100,
-		CollectionCount: len(Vdb.DB.Collections), ApiKeyExists: ApiKeyHandler.ApiHandler.CheckIfEmpty()}
+		CollectionCount: len(Vdb.DB.Collections), ApiKeyExists: !ApiKeyHandler.ApiHandler.CheckIfEmpty()}
 
 	return data
 }
