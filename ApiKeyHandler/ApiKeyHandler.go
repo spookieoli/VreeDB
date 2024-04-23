@@ -185,3 +185,13 @@ func (ap *ApiKeyHandler) CheckApiKey(apiKey string) bool {
 	}
 	return false
 }
+
+// CheckIfEmpty checks if there are any ApiKeys stored
+func (ap *ApiKeyHandler) CheckIfEmpty() bool {
+	ap.Mut.RLock()
+	defer ap.Mut.RUnlock()
+	if len(ap.ApiKeyHashes) == 0 {
+		return true
+	}
+	return false
+}
