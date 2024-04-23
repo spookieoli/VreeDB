@@ -469,8 +469,10 @@
             });
         });
 
+        {{if not .Application.ApiKeyExists}}
         var createApiKeyItem = $('<a class="item" href="/showapikey" style="color: red;">Create API-Key</a>');
         $('#logoutButton').before(createApiKeyItem);
+        {{end}}
 
         $('#logoutButton').on('click', function () {
             $.ajax({

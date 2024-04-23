@@ -100,6 +100,7 @@ type RuntimeData struct {
 	FreeRam         float64
 	Percent         float64
 	Uptime          int64
+	ApiKeyExists    bool
 }
 
 // Classifier is the struct that will be used to create a new classifier
@@ -176,7 +177,8 @@ func NewData() Data {
 			Classifier: collection.ClassifierToSlice(), ClassifierReady: collection.ClassifierReady})
 	}
 	data.Application = RuntimeData{RamUsage: Utils.Utils.GetMemoryUsage(), FreeRam: Utils.Utils.GetAvailableRAM(),
-		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100, CollectionCount: len(Vdb.DB.Collections)}
+		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100,
+		CollectionCount: len(Vdb.DB.Collections), ApiKeyExists: !ApiKeyHandler.ApiHandler.CheckIfEmpty()}
 
 	return data
 }
