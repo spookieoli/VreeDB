@@ -314,7 +314,7 @@ func (n *Network) Forward(inputs []float64) []float64 {
 // Backpropagate - backpropagates the error through the network
 func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 	outputs := n.Forward(inputs)
-	deltas := n.MSEDerivative(outputs, targets) // Annahme: MSE Derivative ist korrekt implementiert
+	deltas := n.LossDerivative(outputs, targets)
 
 	// Backwards pass
 	for i := len(n.Layers) - 1; i >= 0; i-- {
