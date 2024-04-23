@@ -149,7 +149,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 			for i, input := range batchData {
 				output := n.Forward(input)
 				n.Backpropagate(input, batchTargets[i], lr)
-				totalLoss += n.MSE(output, batchTargets[i])
+				totalLoss += n.Loss(output, batchTargets[i])
 			}
 			// Print loss every 10 epochs
 			if epoch%10 == 0 {
