@@ -38,7 +38,10 @@ type DerivativeFunc func(any) any
 // *****************************************
 
 // NewNetwork creates a new network with the given layers
-func NewNetwork(layers []Layer) (*Network, error) {
+func NewNetwork(layers []Layer, lossfunction string) (*Network, error) {
+	// Create Network
+	n := &Network{}
+
 	// Check every layer - set the activation function
 	for i, layer := range layers {
 		if strings.ToLower(layer.ActivationName) == "sigmoid" {
@@ -57,7 +60,18 @@ func NewNetwork(layers []Layer) (*Network, error) {
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
 		}
 	}
-	return &Network{Layers: layers}, nil
+	n.Layers = layers
+
+	// Add Loss function
+	switch strings.ToLower(lossfunction) {
+	case "mse":
+		n.Loss = n.MSE
+		n.LossDerivative = n.MSEDerivative
+	case "mae":
+		n.Loss = n.MAE
+		n.LossDerivative = n.MAEDerivative
+	}
+	return n, nil
 }
 
 // MSE is the mean squared error loss function
@@ -78,8 +92,30 @@ func (n *Network) MSEDerivative(outputs, targets []float64) []float64 {
 	return deltas
 }
 
+// MAE is the mean absolute error loss function
+func (n *Network) MAE(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += math.Abs(output - targets[i])
+	}
+	return sum / float64(len(outputs))
+}
+
+// MAEDerivative is the derivative of the mean absolute error loss function
+func (n *Network) MAEDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		if output > targets[i] {
+			deltas[i] = 1
+		} else {
+			deltas[i] = -1
+		}
+	}
+	return deltas
+}
+
 // Train - initializes the weights and biases and trains the network
-func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs int, lr float64) {
+func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs int, lr float64, batchSize int) {
 
 	// Initialize the weights and biases
 	for i := range n.Layers {
@@ -99,15 +135,26 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 
 	// Trainloop
 	for epoch := 0; epoch < epochs; epoch++ {
-		totalLoss := 0.0
-		for i, input := range trainingData {
-			output := n.Forward(input)
-			n.Backpropagate(input, targets[i], lr)
-			totalLoss += n.MSE(output, targets[i])
-		}
-		// Print loss every 10 epochs
-		if epoch%10 == 0 {
-			Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(trainingData))) + ", totalLoss: " + fmt.Sprint(totalLoss))
+		// Split trainingData and targets into batches
+		for i := 0; i < len(trainingData); i += batchSize {
+			end := i + batchSize
+			if end > len(trainingData) {
+				end = len(trainingData)
+			}
+			batchData := trainingData[i:end]
+			batchTargets := targets[i:end]
+
+			// Train on batch
+			totalLoss := 0.0
+			for i, input := range batchData {
+				output := n.Forward(input)
+				n.Backpropagate(input, batchTargets[i], lr)
+				totalLoss += n.Loss(output, batchTargets[i])
+			}
+			// Print loss every 10 epochs
+			if epoch%10 == 0 {
+				Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))) + ", totalLoss: " + fmt.Sprint(totalLoss))
+			}
 		}
 	}
 }

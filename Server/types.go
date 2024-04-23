@@ -2,6 +2,7 @@ package Server
 
 import (
 	"VreeDB/ApiKeyHandler"
+	"VreeDB/Filter"
 	"VreeDB/Utils"
 	"VreeDB/Vdb"
 	"VreeDB/Vector"
@@ -46,6 +47,7 @@ type Point struct {
 	Wait               bool                   `json:"wait"`                 // Must not be present in the request default false
 	MaxDistancePercent float64                `json:"max_distance_percent"` // Must not be present in the request default 0.0 (no limit)
 	Index              *IndexName             `json:"index"`                // Must not be present in the request default ""
+	Filter             *[]Filter.Filter       `json:"filter"`               // Must not be present in the request default nil
 }
 
 type PointItem struct {
@@ -109,6 +111,8 @@ type Classifier struct {
 	C              float64 `json:"c"`
 	Epochs         int     `json:"epochs"`
 	Type           string  `json:"type"`
+	Loss           string  `json:"loss"`
+	Batchsize      int     `json:"batchsize"`
 }
 
 // DeleteClassifier is the struct that will be used to delete a classifier, when send by REST
@@ -148,6 +152,18 @@ type IndexCreator struct {
 	ApiKey         string `json:"api_key"`
 	CollectionName string `json:"collection_name"`
 	IndexName      string `json:"index_name"`
+}
+
+// ValidateFilter will validate the filters in Point
+func (p *Point) ValidateFilter() error {
+	if p.Filter != nil {
+		for _, filter := range *p.Filter {
+			if err := filter.Op.IsValid(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // NewData creates new Data Structure for the web page
