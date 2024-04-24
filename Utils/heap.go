@@ -17,6 +17,7 @@ type HeapChannelStruct struct {
 	Filter *[]Filter.Filter
 }
 
+/* HEAP WILL NO SET SO MANY WAITGROUPS*/
 // HeapControl is a struct that holds a slice of HeapItems and the maximum number of entries
 type HeapControl struct {
 	Heap       Heap
