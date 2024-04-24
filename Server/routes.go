@@ -1042,3 +1042,27 @@ func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 }
+
+// NeuralNetBuilder will show the NeuralNetBuilder to enable the user to build a neural net
+func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/neuralnetbuilder" {
+		// Create the data for the template to show the apikey
+		neuralNetData := "Neural Net Builder"
+		data := struct {
+			Data string
+		}{
+			Data: neuralNetData,
+		}
+		//  Show the template
+		err := r.renderTemplate("neuralnetbuilder", w, data)
+		if err != nil {
+			Logger.Log.Log(err.Error())
+		}
+		return
+	} else {
+		// Redirect to login
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
+	}
+}
