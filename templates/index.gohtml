@@ -247,7 +247,7 @@
                     },
                     y: {
                         min: 0,
-                        suggestedMax: 1000
+                        suggestedMax: 100
                     }
                 }
             }
@@ -299,10 +299,8 @@
             });
         }
 
-        dataFetch();
-
         // Set up an interval that fetches the new data from the server every 5 seconds
-        setInterval(dataFetch(), 5000);
+        setInterval(dataFetch, 5000);
 
         // Initialize the tabs and accordions
         $('.ui.accordion').accordion();

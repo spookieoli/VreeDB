@@ -1,7 +1,6 @@
 package AccessDataHUB
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -116,6 +115,5 @@ func (al *AList) GetData() []IntervalSum {
 	// Group the data
 	data := al.groupByIntervalAndType()
 	// return the data
-	fmt.Println(data)
 	return data
 }
