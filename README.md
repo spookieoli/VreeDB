@@ -1,4 +1,4 @@
-# VreeDB (Vector-Tree Database)
+# VreeDB ((V)ector-T(R)ee Database)
 A simple, fast, no dependency, Go powered Vector Database
 
 VreeDB is a database project written in Go. It uses a k-d tree data structure for efficient search of nearest neighbors in a multi-dimensional space.
