@@ -284,7 +284,7 @@
                     },
                     y: {
                         min: 0,
-                        suggestedMax: 1000
+                        suggestedMax: 100
                     }
                 }
             }
@@ -299,6 +299,11 @@
                 type: "POST",
                 url: "/getaccessdata",
                 success: function (response) {
+                    // If the response is null, do nothing and return
+                    if (response === null) {
+                        return;
+                    }
+
                     var now = new Date();
                     response.forEach(function (item) {
                         var itemDate = new Date(item.period);
@@ -331,10 +336,8 @@
             });
         }
 
-        dataFetch();
-
         // Set up an interval that fetches the new data from the server every 5 seconds
-        setInterval(dataFetch(), 5000);
+        setInterval(dataFetch, 5000);
 
         // Initialize the tabs and accordions
         $('.ui.accordion').accordion();
