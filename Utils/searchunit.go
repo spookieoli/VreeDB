@@ -25,7 +25,6 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	axisDiff := math.Abs(target.Data[axis] - node.Vector.Data[axis])
 
 	// Just push it into the queue if it is small enough it will be added
-	queue.AddToWaitGroup()
 	queue.In <- HeapChannelStruct{node: node, dist: dist, diff: axisDiff, Filter: s.Filter}
 
 	var primary, secondary *Node.Node
