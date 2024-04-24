@@ -262,6 +262,11 @@
                 type: "POST",
                 url: "/getaccessdata",
                 success: function (response) {
+                    // If the response is null, do nothing and return
+                    if (response === null) {
+                        return;
+                    }
+
                     var now = new Date();
                     response.forEach(function (item) {
                         var itemDate = new Date(item.period);
