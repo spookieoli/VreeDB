@@ -15,7 +15,7 @@ type ADPoint struct {
 // AList is the struct that holds the AccessList
 type AList struct {
 	AccessList []ADPoint
-	Mut        sync.RWMutex
+	Mut        sync.Mutex
 	ReadChan   chan string
 }
 
@@ -31,7 +31,7 @@ var AccessList AList
 
 // init initializes the AccessList
 func init() {
-	AccessList = AList{AccessList: make([]ADPoint, 0), Mut: sync.RWMutex{}, ReadChan: make(chan string, 1000)}
+	AccessList = AList{AccessList: make([]ADPoint, 0), Mut: sync.Mutex{}, ReadChan: make(chan string, 1000)}
 	AccessList.StartThread()
 }
 
