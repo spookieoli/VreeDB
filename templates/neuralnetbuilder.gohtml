@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neural Net Builler</title>
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/components/icon.min.css" integrity="sha512-rTyypI20S663Wq9zrzMSOP1MNPHaYX7+ug5OZ/DTqCDLwRdErCo2W30Hdme3aUzJSvAUap3SmBk0r5j0vRxyGw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 <div>
@@ -21,64 +22,102 @@
             <div class="ui column ten wide">
             </div>
             <div class="ui column four wide right aligned" style="padding-top:12px; padding-right:25px;">
-                <label style="padding-right:5px;">Loss Function:</label>
-                <select class="ui dropdown">
-                    <option value="mse">MSE</option>
-                    <option value="mae">MAE</option>
-                    <!-- Add more options here -->
-                </select>
+                <div class="ui grid">
+                    <div class="ui column twelve wide right aligned">
+                        <label>Loss Function:</label>
+                    </div>
+                    <div class="ui column four wide right aligned" style="padding-left:0px;">
+                        <div class="ui dropdown">
+                            <div class="text">MSE</div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="item">MSE</div>
+                                <div class="item">MAE</div>
+                                <!-- Add more options here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="ui row">
-            <div class="ui column">
-            </div>
-            <div class="ui column three wide">
-                <div class="ui input focus">
-                    <input type="text" placeholder="LayerName1:str">
+            <div class="ui column nine wide center aligned">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column">
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input focus">
+                                <input type="text" placeholder="LayerName1:str">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input type="number" value="32">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui selection dropdown">
+                                <input type="hidden" name="activationFunction">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">Activation Function</div>
+                                <div class="menu transition hidden">
+                                    <div class="item" data-value="0">RELU</div>
+                                    <div class="item" data-value="1">Sigmoid</div>
+                                    <div class="item" data-value="2">SoftMax</div>
+                                    <div class="item" data-value="3">TanH</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="ui column three wide">
-                <div class="ui input">
-                    <input type="number" value="32">
+            <div class="ui column seven wide center aligned">
+                <div class="ui buttons">
+                    <button class="ui negative button"><i class="minus circle icon"></i>Remove Layer</button>
+                    <div class="or"></div>
+                    <button class="ui positive button"><i class="plus circle icon"></i>Add Layer</button>
                 </div>
-            </div>
-            <div class="ui column two wide">
-                <select class="ui dropdown">
-                    <option value="relu">RELU</option>
-                    <!-- Add more options here -->
-                </select>
-            </div>
-            <div class="ui column three wide">
-                <button class="ui button" type="button">Remove Layer</button>
-            </div>
-            <div class="ui column three wide">
-                <button class="ui button" type="button">Add Layer</button>
             </div>
         </div>
         <div class="ui row">
-            <div class="ui column">
-            </div>
-            <div class="ui column three wide">
-                <div class="ui input">
-                    <input class="ui input" type="text" placeholder="LayerName2:str">
+            <div class="ui column nine wide center aligned">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column">
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input class="ui input" type="text" placeholder="LayerName2:str">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input type="number" placeholder="NeuralsCount:int">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui selection dropdown">
+                                <input type="hidden" name="activationFunction">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">Activation Function</div>
+                                <div class="menu transition hidden">
+                                    <div class="item" data-value="0">RELU</div>
+                                    <div class="item" data-value="1">Sigmoid</div>
+                                    <div class="item" data-value="2">SoftMax</div>
+                                    <div class="item" data-value="3">TanH</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="ui column three wide">
-                <div class="ui input">
-                    <input type="number" placeholder="NeuralsCount:int">
+            <div class="ui column seven wide center aligned">
+                <div class="ui buttons">
+                    <button class="ui negative button"><i class="minus circle icon"></i>Remove Layer</button>
+                    <div class="or"></div>
+                    <button class="ui positive button"><i class="plus circle icon"></i>Add Layer</button>
                 </div>
-            </div>
-            <div class="ui column two wide">
-                <select class="ui dropdown">
-                    <option value="relu">RELU</option>
-                    <!-- Add more options here -->
-                </select>
-            </div>
-            <div class="ui column three wide">
-                <button class="ui button" type="button">Remove Layer</button>
-            </div>
-            <div class="ui column three wide">
-                <button class="ui button" type="button">Add Layer</button>
             </div>
         </div>
         <div class="ui row">
@@ -89,7 +128,7 @@
             </div>
             <div class="ui column six wide right aligned">
                 <div class="ui grid">
-                    <div class="ui column six wide right aligned" style="padding-right:8px;">
+                    <div class="ui column six wide right aligned" style="padding-right:25px;">
                         <label>Training Progress:</label>
                     </div>
                     <div class="ui column ten wide right aligned" style="padding-left:0px; padding-right:25px;">
@@ -108,7 +147,7 @@
 </div>
 <script>
     // Initialize dropdowns
-    // $('select.dropdown').dropdown();
+    $('.ui.dropdown').dropdown();
 
     var $progress = $('#neural-progress')
 
