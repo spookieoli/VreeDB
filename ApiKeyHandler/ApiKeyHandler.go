@@ -1,6 +1,7 @@
 package ApiKeyHandler
 
 import (
+	"VreeDB/ArgsParser"
 	"VreeDB/Logger"
 	"bytes"
 	"crypto/rand"
@@ -41,6 +42,16 @@ func init() {
 	}
 	ApiHandler.LoadApiKeys()
 	Logger.Log.Log("ApiKeyHandler initialized")
+
+	// Argument Createapikey is set - create a new ApiKey
+	if *ArgsParser.Ap.CreateApiKey {
+		apiKey, err := ApiHandler.CreateApiKey()
+		if err != nil {
+			Logger.Log.Log("Error creating ApiKey")
+			panic(err)
+		}
+		fmt.Println("New ApiKey created (PLEASE NOTE THIS ONE!): " + apiKey)
+	}
 }
 
 // CheckActive will check if an ApiKey was already created
