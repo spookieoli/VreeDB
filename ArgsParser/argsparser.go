@@ -13,6 +13,8 @@ type ArgsParser struct {
 	CertFile     *string
 	KeyFile      *string
 	CreateApiKey *bool
+	Loglocation  *string
+	FileStore    *string
 }
 
 // Ap is a global ArgsParser
@@ -24,6 +26,8 @@ func init() {
 
 	// Get the flags
 	Ap.Ip = flag.String("ip", "0.0.0.0", "The IP to bind the server to")
+	Ap.Loglocation = flag.String("loglocation", "log.txt", "The location of the log file")
+	Ap.FileStore = flag.String("filestore", "collections/", "The directory of the file store")
 	Ap.Port = flag.Int("port", 8080, "The port to bind the server to")
 	Ap.Secure = flag.Bool("secure", false, "Use HTTPS")
 	Ap.CertFile = flag.String("certfile", "", "The path to the certificate file")
@@ -32,6 +36,11 @@ func init() {
 
 	// Parse
 	flag.Parse()
+
+	// Check if Ap.FileStore ends with a slash
+	if (*Ap.FileStore)[len(*Ap.FileStore)-1] != '/' {
+		*Ap.FileStore += "/"
+	}
 
 	// if CreateApiKey is true, then the program will create a new API and show it in the console
 	if *Ap.CreateApiKey {
