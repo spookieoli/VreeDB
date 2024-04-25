@@ -5,7 +5,6 @@ import (
 	"VreeDB/Logger"
 	"VreeDB/Node"
 	"container/heap"
-	"context"
 	"sync"
 )
 
@@ -22,8 +21,6 @@ type HeapControl struct {
 	Heap       Heap
 	maxEntries int
 	In         chan HeapChannelStruct
-	ctx        context.Context
-	abort      context.CancelFunc
 	MaxDiff    float64
 	Wg         sync.WaitGroup
 }
@@ -69,38 +66,35 @@ func (h *Heap) Pop() interface{} {
 
 // NewHeapControl initializes the heap with a given size
 func NewHeapControl(n int) *HeapControl {
-	ctx, cancel := context.WithCancel(context.Background())
-	h := &HeapControl{maxEntries: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 100000), ctx: ctx, abort: cancel, MaxDiff: 0}
+	h := &HeapControl{maxEntries: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 100000), MaxDiff: 0}
 	heap.Init(&h.Heap)
 	return h
 }
 
 // StartThreads starts the threads for the heap
 func (hc *HeapControl) StartThreads() {
-	go func() {
-		for {
-			select {
-			case item := <-hc.In:
-				// Validate the filters
-				if ok, err := hc.ValidateFilters(&item); !ok {
-					// If the filters are not valid log the possible error
-					if err != nil {
-						Logger.Log.Log("Error validating filters: " + err.Error())
-					}
-				} else {
-					// Insert the item into the heap
-					hc.Insert(item.node, item.dist, item.diff)
-				}
-				hc.Wg.Done()
-			case <-hc.ctx.Done():
-				return
+	go hc.worker()
+}
+
+// Worker will work on the threads
+func (hc *HeapControl) worker() {
+	defer hc.Wg.Done()
+	for item := range hc.In {
+		// Validate the filters
+		if ok, err := hc.validateFilters(&item); !ok {
+			// If the filters are not valid log the possible error
+			if err != nil {
+				Logger.Log.Log("Error validating filters: " + err.Error())
 			}
+		} else {
+			// Insert the item into the heap
+			hc.Insert(item.node, item.dist, item.diff)
 		}
-	}()
+	}
 }
 
 // ValidateFilters will validate the filters on a given Node
-func (hc *HeapControl) ValidateFilters(hcs *HeapChannelStruct) (bool, error) {
+func (hc *HeapControl) validateFilters(hcs *HeapChannelStruct) (bool, error) {
 	// Dont do anything if there are no filters
 	if hcs.Filter == nil {
 		return true, nil
@@ -114,16 +108,6 @@ func (hc *HeapControl) ValidateFilters(hcs *HeapChannelStruct) (bool, error) {
 	return true, nil
 }
 
-// StopThreads stops the threads for the heap
-func (hc *HeapControl) StopThreads() {
-	// Wait for the WaitGroup to finish
-	hc.Wg.Wait()
-	// Send a signal to the context to stop the threads
-	hc.abort()
-	// Close the channel
-	close(hc.In)
-}
-
 // Insert inserts a node into the heap
 func (hc *HeapControl) Insert(node *Node.Node, distance, diff float64) {
 	heap.Push(&hc.Heap, &HeapItem{Node: node, Distance: distance, Diff: diff})
@@ -135,6 +119,11 @@ func (hc *HeapControl) Insert(node *Node.Node, distance, diff float64) {
 // AddToWaitGroup adds a new item to the waitgroup
 func (hc *HeapControl) AddToWaitGroup() {
 	hc.Wg.Add(1)
+}
+
+// CloseChannel closes the channel
+func (hc *HeapControl) CloseChannel() {
+	close(hc.In)
 }
 
 // GetNodes returns the nodes from the heap

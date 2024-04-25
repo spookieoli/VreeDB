@@ -90,16 +90,20 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	// Start the Queue Thread
 	queue.StartThreads()
 
+	// Add 1 to the queue waitgroup
+	queue.AddToWaitGroup()
+
 	// Get the starting time
 	t := time.Now()
 	Utils.NewSearchUnit(v.Collections[collectionName].Nodes, target, queue, filter, v.Collections[collectionName].DistanceFunc,
 		v.Collections[collectionName].DimensionDiff, 0.1)
 
+	// Close the channel and wait for the Queue to finish
+	queue.CloseChannel()
+	queue.Wg.Wait()
+
 	// Print the time it took
 	Logger.Log.Log("Search took: " + time.Since(t).String())
-
-	// Stop the Queue Thread
-	queue.StopThreads()
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
@@ -149,16 +153,20 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	// Start the Queue Thread
 	queue.StartThreads()
 
+	// Add 1 to the queue waitgroup
+	queue.AddToWaitGroup()
+
 	// Get the starting time
 	t := time.Now()
 	Utils.NewSearchUnit(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, filter, v.Collections[collectionName].DistanceFunc,
 		v.Collections[collectionName].DimensionDiff, 0.1)
 
+	// Close the channel and wait for the Queue to finish
+	queue.CloseChannel()
+	queue.Wg.Wait()
+
 	// Print the time it took
 	Logger.Log.Log("Search took: " + time.Since(t).String())
-
-	// Stop the Queue Thread
-	queue.StopThreads()
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
