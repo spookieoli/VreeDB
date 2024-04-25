@@ -1,6 +1,7 @@
 package FileMapper
 
 import (
+	"VreeDB/ArgsParser"
 	"VreeDB/Logger"
 	"bytes"
 	"encoding/binary"
@@ -47,17 +48,17 @@ func (f *FileMapper) Start(collections []string) {
 	// Loop over all Collections
 	for _, name := range collections {
 		// check if data.bin file exists
-		_, err := os.Stat("collections/" + name + ".bin")
+		_, err := os.Stat(*ArgsParser.Ap.FileStore + name + ".bin")
 		if err != nil {
 			// if not create it
-			file, err := os.Create("collections/" + name + ".bin")
+			file, err := os.Create(*ArgsParser.Ap.FileStore + name + ".bin")
 			if err != nil {
 				Logger.Log.Log("Error creating file: " + err.Error())
 				panic(err)
 			}
 			file.Close()
 		}
-		Mapper.FileName[name] = "collections/" + name + ".bin"
+		Mapper.FileName[name] = *ArgsParser.Ap.FileStore + name + ".bin"
 		Mapper.Mut[name] = &sync.RWMutex{}
 		Mapper.CollectionNames = append(Mapper.CollectionNames, name)
 		Mapper.MapFile(name)
@@ -276,16 +277,16 @@ func (f *FileMapper) Unmap(collection string) {
 // AddCollection adds a collection to the FileMapper
 func (f *FileMapper) AddCollection(collection string) {
 	// Check if data.cin file exists
-	_, err := os.Stat("collections/" + collection + ".bin")
+	_, err := os.Stat(*ArgsParser.Ap.FileStore + collection + ".bin")
 	if err != nil {
 		// if not create it
-		file, err := os.Create("collections/" + collection + ".bin")
+		file, err := os.Create(*ArgsParser.Ap.FileStore + collection + ".bin")
 		if err != nil {
 			panic(err)
 		}
 		file.Close()
 	}
-	f.FileName[collection] = "collections/" + collection + ".bin"
+	f.FileName[collection] = *ArgsParser.Ap.FileStore + collection + ".bin"
 	f.Mut[collection] = &sync.RWMutex{}
 	f.CollectionNames = append(f.CollectionNames, collection)
 	f.MapFile(collection)
@@ -302,17 +303,17 @@ func (f *FileMapper) DelCollection(collection string) {
 		panic(err)
 	}
 	// if meta file exists delete it
-	_, err = os.Stat("collections/" + collection + "_meta.bin")
+	_, err = os.Stat(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 	if err == nil {
-		err = os.Remove("collections/" + collection + "_meta.bin")
+		err = os.Remove(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 		if err != nil {
 			Logger.Log.Log("Error deleting meta file: " + err.Error())
 		}
 	}
 	// Remove the collection.json if exists
-	_, err = os.Stat("collections/" + collection + ".json")
+	_, err = os.Stat(*ArgsParser.Ap.FileStore + collection + ".json")
 	if err == nil {
-		err = os.Remove("collections/" + collection + ".json")
+		err = os.Remove(*ArgsParser.Ap.FileStore + collection + ".json")
 		if err != nil {
 			Logger.Log.Log("Error deleting collection config file: " + err.Error())
 		}
@@ -332,7 +333,7 @@ func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, 
 	defer w.Mut[collection].Unlock()
 
 	// Open the file "collection"_meta.bin
-	file, err := os.OpenFile("collections/"+collection+"_meta.bin", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		Logger.Log.Log("Error opening meta.json file: " + err.Error())
 		return err
@@ -361,9 +362,9 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 	// Create the map
 	vectors := make(map[string]SaveVector)
 	// Open the file "collection"_meta.bin if existing
-	_, err := os.Stat("collections/" + collection + "_meta.bin")
+	_, err := os.Stat(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 	if err == nil {
-		file, err := os.Open("collections/" + collection + "_meta.bin")
+		file, err := os.Open(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 		if err != nil {
 			Logger.Log.Log("Error opening meta.json file: " + err.Error())
 			return nil, err
@@ -393,7 +394,7 @@ func (w *FileMapper) SaveVectorDelete(id string, collection string) error {
 	defer w.Mut[collection].Unlock()
 
 	// Open the file "collection"_meta.bin
-	file, err := os.Open("collections/" + collection + "_meta.bin")
+	file, err := os.Open(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 	if err != nil {
 		Logger.Log.Log("Error opening meta.json file: " + err.Error())
 		return err
@@ -428,7 +429,7 @@ func (w *FileMapper) SaveVectorDelete(id string, collection string) error {
 	w.Mut[collection].Lock()
 
 	// Open the file in write mode, this will clear the file content
-	file, err = os.OpenFile("collections/"+collection+"_meta.bin", os.O_CREATE|os.O_WRONLY, 0644)
+	file, err = os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		Logger.Log.Log("Error opening meta.json file: " + err.Error())
 		return err
