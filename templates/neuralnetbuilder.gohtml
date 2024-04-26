@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Net Builler</title>
+    <link rel="stylesheet" type="text/css" href="/static/semantic.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/components/icon.min.css" integrity="sha512-rTyypI20S663Wq9zrzMSOP1MNPHaYX7+ug5OZ/DTqCDLwRdErCo2W30Hdme3aUzJSvAUap3SmBk0r5j0vRxyGw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+<div>
+    <div class="ui grid" id="neuralGrid">
+        <div class="ui row">
+            <div class="ui column two wide">
+                <div class="ui fluid image">
+                    <div class="ui blue ribbon label">
+                        <i class="bullseye icon"></i> Neural Net Creator
+                    </div>
+                </div>
+            </div>
+            <div class="ui column ten wide">
+            </div>
+            <div class="ui column four wide right aligned" style="padding-top:12px; padding-right:25px;">
+                <div class="ui grid">
+                    <div class="ui column twelve wide right aligned">
+                        <label>Loss Function:</label>
+                    </div>
+                    <div class="ui column four wide right aligned" style="padding-left:0px;">
+                        <div class="ui dropdown">
+                            <div class="text">MSE</div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="item">MSE</div>
+                                <div class="item">MAE</div>
+                                <!-- Add more options here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui row layerRow">
+            <div class="ui column nine wide center aligned">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column">
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input class="ui input" type="text" placeholder="LayerName:str">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input type="number" placeholder="NeuralsCount:int">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui selection dropdown">
+                                <input type="hidden" name="activationFunction">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">Activation Function</div>
+                                <div class="menu transition hidden">
+                                    <div class="item" data-value="relu">RELU</div>
+                                    <div class="item" data-value="sigmoid">Sigmoid</div>
+                                    <div class="item" data-value="softmax">SoftMax</div>
+                                    <div class="item" data-value="tanh">TanH</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui column seven wide center aligned">
+                <div class="ui buttons">
+                    <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
+                    <div class="or"></div>
+                    <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
+                </div>
+            </div>
+        </div>
+        <div class="ui row">
+            <div class="ui column four wide" style="padding-left:25px;">
+                <button class="ui primary inverted button" type="button" id="trainButton">Train</button>
+            </div>
+            <div class="ui column six wide">
+            </div>
+            <div class="ui column six wide right aligned">
+                <div class="ui grid">
+                    <div class="ui column six wide right aligned" style="padding-right:25px;">
+                        <label>Training Progress:</label>
+                    </div>
+                    <div class="ui column ten wide right aligned" style="padding-left:0px; padding-right:25px;">
+                        <div class="ui progress success" id="neural-progress">
+                            <div class="bar">
+                                <div class="progress"></div>
+                            </div>
+                            <div class="label">Everything worked and ready for review.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        // Initialize dropdowns
+        $('.ui.dropdown').dropdown();
+
+        var $progress = $('#neural-progress')
+
+        // Placeholder for training progress bar initialization
+        $progress.progress({
+            percent: 100  // Placeholder value
+        });
+
+        // Handle add row button click
+        $(document).on('click', '.addRowButton', function() {
+            var newRow = `  <div class="ui row layerRow">
+                                <div class="ui column nine wide center aligned">
+                                    <div class="ui grid">
+                                        <div class="ui row">
+                                            <div class="ui column">
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input class="ui input" type="text" placeholder="LayerName:str">
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input type="number" placeholder="NeuralsCount:int">
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui selection dropdown">
+                                                    <input type="hidden" name="activationFunction">
+                                                    <i class="dropdown icon"></i>
+                                                    <div class="default text">Activation Function</div>
+                                                    <div class="menu transition hidden">
+                                                        <div class="item" data-value="relu">RELU</div>
+                                                        <div class="item" data-value="sigmoid">Sigmoid</div>
+                                                        <div class="item" data-value="softmax">SoftMax</div>
+                                                        <div class="item" data-value="tanh">TanH</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ui column seven wide center aligned">
+                                    <div class="ui buttons">
+                                        <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
+                                        <div class="or"></div>
+                                        <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
+                                    </div>
+                                </div>
+                            </div>`;
+            $(this).closest('.row').after(newRow);
+            
+            // Initialize dropdowns
+            $('.ui.dropdown').dropdown();
+        });
+
+        // Handle remove row button click
+        $(document).on('click', '.removeRowButton', function() {
+            // Check if it's NOT the only layerRow in the grid
+            if ($('#neuralGrid .layerRow').length > 1) {
+                $(this).closest('.row').remove();
+            }
+        });
+
+        //Handle train button click
+        $(document).on('click', '#trainButton', function() {
+            var layers = [];
+
+            $('.layerRow').each(function() {
+                var layerName = $(this).find('input[type="text"]').val();
+                var neuralsCount = $(this).find('input[type="number"]').val();
+                var activationFunction = $(this).find('input[name="activationFunction"]').val();
+
+                var layer = `{
+                    "layerName": ${layerName},
+                    "neuralsCount": ${neuralsCount},
+                    "activationFunction": ${activationFunction}
+                }`;
+
+                layers.push(layer);
+            });
+
+            alert(layers);  // Popup with the list of layer dictionaries
+        });
+    });
+</script>
+</body>
+</html>
