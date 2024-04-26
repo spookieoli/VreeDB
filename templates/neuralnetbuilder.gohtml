@@ -62,10 +62,10 @@
                                 <i class="dropdown icon"></i>
                                 <div class="default text">Activation Function</div>
                                 <div class="menu transition hidden">
-                                    <div class="item" data-value="0">RELU</div>
-                                    <div class="item" data-value="1">Sigmoid</div>
-                                    <div class="item" data-value="2">SoftMax</div>
-                                    <div class="item" data-value="3">TanH</div>
+                                    <div class="item" data-value="relu">RELU</div>
+                                    <div class="item" data-value="sigmoid">Sigmoid</div>
+                                    <div class="item" data-value="softmax">SoftMax</div>
+                                    <div class="item" data-value="tanh">TanH</div>
                                 </div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@
         </div>
         <div class="ui row">
             <div class="ui column four wide" style="padding-left:25px;">
-                <button class="ui primary inverted button" type="submit">Train</button>
+                <button class="ui primary inverted button" type="button" id="trainButton">Train</button>
             </div>
             <div class="ui column six wide">
             </div>
@@ -141,10 +141,10 @@
                                                     <i class="dropdown icon"></i>
                                                     <div class="default text">Activation Function</div>
                                                     <div class="menu transition hidden">
-                                                        <div class="item" data-value="0">RELU</div>
-                                                        <div class="item" data-value="1">Sigmoid</div>
-                                                        <div class="item" data-value="2">SoftMax</div>
-                                                        <div class="item" data-value="3">TanH</div>
+                                                        <div class="item" data-value="relu">RELU</div>
+                                                        <div class="item" data-value="sigmoid">Sigmoid</div>
+                                                        <div class="item" data-value="softmax">SoftMax</div>
+                                                        <div class="item" data-value="tanh">TanH</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -160,6 +160,9 @@
                                 </div>
                             </div>`;
             $(this).closest('.row').after(newRow);
+            
+            // Initialize dropdowns
+            $('.ui.dropdown').dropdown();
         });
 
         // Handle remove row button click
@@ -168,6 +171,27 @@
             if ($('#neuralGrid .layerRow').length > 1) {
                 $(this).closest('.row').remove();
             }
+        });
+
+        //Handle train button click
+        $(document).on('click', '#trainButton', function() {
+            var layers = [];
+
+            $('.layerRow').each(function() {
+                var layerName = $(this).find('input[type="text"]').val();
+                var neuralsCount = $(this).find('input[type="number"]').val();
+                var activationFunction = $(this).find('input[name="activationFunction"]').val();
+
+                var layer = `{
+                    "layerName": ${layerName},
+                    "neuralsCount": ${neuralsCount},
+                    "activationFunction": ${activationFunction}
+                }`;
+
+                layers.push(layer);
+            });
+
+            alert(layers);  // Popup with the list of layer dictionaries
         });
     });
 </script>
