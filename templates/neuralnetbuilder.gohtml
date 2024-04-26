@@ -10,7 +10,7 @@
 </head>
 <body>
 <div>
-    <div class="ui grid">
+    <div class="ui grid" id="neuralGrid">
         <div class="ui row">
             <div class="ui column two wide">
                 <div class="ui fluid image">
@@ -40,47 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="ui row">
-            <div class="ui column nine wide center aligned">
-                <div class="ui grid">
-                    <div class="ui row">
-                        <div class="ui column">
-                        </div>
-                        <div class="ui column five wide">
-                            <div class="ui input focus">
-                                <input type="text" placeholder="LayerName1:str">
-                            </div>
-                        </div>
-                        <div class="ui column five wide">
-                            <div class="ui input">
-                                <input type="number" value="32">
-                            </div>
-                        </div>
-                        <div class="ui column five wide">
-                            <div class="ui selection dropdown">
-                                <input type="hidden" name="activationFunction">
-                                <i class="dropdown icon"></i>
-                                <div class="default text">Activation Function</div>
-                                <div class="menu transition hidden">
-                                    <div class="item" data-value="0">RELU</div>
-                                    <div class="item" data-value="1">Sigmoid</div>
-                                    <div class="item" data-value="2">SoftMax</div>
-                                    <div class="item" data-value="3">TanH</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="ui column seven wide center aligned">
-                <div class="ui buttons">
-                    <button class="ui negative button"><i class="minus circle icon"></i>Remove Layer</button>
-                    <div class="or"></div>
-                    <button class="ui positive button"><i class="plus circle icon"></i>Add Layer</button>
-                </div>
-            </div>
-        </div>
-        <div class="ui row">
+        <div class="ui row layerRow">
             <div class="ui column nine wide center aligned">
                 <div class="ui grid">
                     <div class="ui row">
@@ -88,7 +48,7 @@
                         </div>
                         <div class="ui column five wide">
                             <div class="ui input">
-                                <input class="ui input" type="text" placeholder="LayerName2:str">
+                                <input class="ui input" type="text" placeholder="LayerName:str">
                             </div>
                         </div>
                         <div class="ui column five wide">
@@ -114,9 +74,9 @@
             </div>
             <div class="ui column seven wide center aligned">
                 <div class="ui buttons">
-                    <button class="ui negative button"><i class="minus circle icon"></i>Remove Layer</button>
+                    <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
                     <div class="or"></div>
-                    <button class="ui positive button"><i class="plus circle icon"></i>Add Layer</button>
+                    <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
                 </div>
             </div>
         </div>
@@ -146,14 +106,69 @@
     </div>
 </div>
 <script>
-    // Initialize dropdowns
-    $('.ui.dropdown').dropdown();
+    $(document).ready(function() {
+        // Initialize dropdowns
+        $('.ui.dropdown').dropdown();
 
-    var $progress = $('#neural-progress')
+        var $progress = $('#neural-progress')
 
-    // Placeholder for training progress bar initialization
-    $progress.progress({
-        percent: 100  // Placeholder value
+        // Placeholder for training progress bar initialization
+        $progress.progress({
+            percent: 100  // Placeholder value
+        });
+
+        // Handle add row button click
+        $(document).on('click', '.addRowButton', function() {
+            var newRow = `  <div class="ui row layerRow">
+                                <div class="ui column nine wide center aligned">
+                                    <div class="ui grid">
+                                        <div class="ui row">
+                                            <div class="ui column">
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input class="ui input" type="text" placeholder="LayerName:str">
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input type="number" placeholder="NeuralsCount:int">
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui selection dropdown">
+                                                    <input type="hidden" name="activationFunction">
+                                                    <i class="dropdown icon"></i>
+                                                    <div class="default text">Activation Function</div>
+                                                    <div class="menu transition hidden">
+                                                        <div class="item" data-value="0">RELU</div>
+                                                        <div class="item" data-value="1">Sigmoid</div>
+                                                        <div class="item" data-value="2">SoftMax</div>
+                                                        <div class="item" data-value="3">TanH</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ui column seven wide center aligned">
+                                    <div class="ui buttons">
+                                        <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
+                                        <div class="or"></div>
+                                        <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
+                                    </div>
+                                </div>
+                            </div>`;
+            $(this).closest('.row').after(newRow);
+        });
+
+        // Handle remove row button click
+        $(document).on('click', '.removeRowButton', function() {
+            // Check if it's NOT the only layerRow in the grid
+            if ($('#neuralGrid .layerRow').length > 1) {
+                $(this).closest('.row').remove();
+            }
+        });
     });
 </script>
 </body>
