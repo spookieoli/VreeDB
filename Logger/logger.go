@@ -1,6 +1,7 @@
 package Logger
 
 import (
+	"VreeDB/ArgsParser"
 	"os"
 	"time"
 )
@@ -18,7 +19,7 @@ var Log *Logger
 // init initializes the Logger - Log is singleton
 func init() {
 	// open the Log file for write access
-	f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(*ArgsParser.Ap.Loglocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	// Panic if there is an error - logfile is critical
 	if err != nil {
 		panic(err)

@@ -1,6 +1,7 @@
 package Collection
 
 import (
+	"VreeDB/ArgsParser"
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
 	"VreeDB/NN"
@@ -141,7 +142,7 @@ func (c *Collection) WriteConfig() error {
 	defer c.Mut.RUnlock()
 
 	// We need to save the CollectionConfig, this will be done via a struct that saves the important configs of the Collection
-	file, err := os.Create("collections/" + c.Name + ".json")
+	file, err := os.Create(*ArgsParser.Ap.FileStore + c.Name + ".json")
 	if err != nil {
 		return err
 	}
@@ -280,7 +281,7 @@ func (c *Collection) SaveClassifier() error {
 	defer c.Mut.RUnlock()
 
 	// Open the file
-	file, err := os.Create("collections/" + c.Name + "_classifiers.gob")
+	file, err := os.Create(*ArgsParser.Ap.FileStore + c.Name + "_classifiers.gob")
 	if err != nil {
 		return err
 	}
@@ -306,11 +307,11 @@ func (c *Collection) ReadClassifiers() error {
 	defer c.Mut.Unlock()
 
 	// Open the file
-	if _, err := os.Stat("collections/" + c.Name + "_classifiers.gob"); os.IsNotExist(err) {
+	if _, err := os.Stat(*ArgsParser.Ap.FileStore + c.Name + "_classifiers.gob"); os.IsNotExist(err) {
 		return nil
 	}
 
-	file, err := os.Open("collections/" + c.Name + "_classifiers.gob")
+	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_classifiers.gob")
 	if err != nil {
 		return err
 	}
