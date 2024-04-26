@@ -183,9 +183,9 @@
                 var activationFunction = $(this).find('input[name="activationFunction"]').val();
 
                 var layer = `{
-                    "layerName": ${layerName},
+                    "layerName": "${layerName}",
                     "neuralsCount": ${neuralsCount},
-                    "activationFunction": ${activationFunction}
+                    "activationFunction": "${activationFunction}"
                 }`;
 
                 layers.push(layer);
