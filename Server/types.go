@@ -106,16 +106,16 @@ type RuntimeData struct {
 
 // Classifier is the struct that will be used to create a new classifier
 type Classifier struct {
-	ApiKey         string      `json:"api_key"`
-	CollectionName string      `json:"collection_name"`
-	ClassifierName string      `json:"classifier_name"`
-	Degree         int         `json:"degree"`
-	C              float64     `json:"c"`
-	Epochs         int         `json:"epochs"`
-	Type           string      `json:"type"`
-	Loss           string      `json:"loss"`
-	Batchsize      int         `json:"batchsize"`
-	Architecture   *[]NN.Layer `json:"architecture"`
+	ApiKey         string          `json:"api_key"`
+	CollectionName string          `json:"collection_name"`
+	ClassifierName string          `json:"classifier_name"`
+	Degree         int             `json:"degree"`
+	C              float64         `json:"c"`
+	Epochs         int             `json:"epochs"`
+	Type           string          `json:"type"`
+	Loss           string          `json:"loss"`
+	Batchsize      int             `json:"batchsize"`
+	Architecture   *[]NN.LayerJSON `json:"architecture"`
 }
 
 // DeleteClassifier is the struct that will be used to delete a classifier, when send by REST

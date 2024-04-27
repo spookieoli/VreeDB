@@ -32,15 +32,25 @@ type Layer struct {
 	Derivative     DerivativeFunc
 }
 
+type LayerJSON struct {
+	Neurons        int
+	ActivationName string
+	Activation     ActivationFunc
+	Derivative     DerivativeFunc
+}
+
 type ActivationFunc func(any) any
 type DerivativeFunc func(any) any
 
 // *****************************************
 
 // NewNetwork creates a new network with the given layers
-func NewNetwork(layers *[]Layer, lossfunction string) (*Network, error) {
+func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	// Create Network
 	n := &Network{}
+
+	// Create Architecture
+	layers := n.CreateArchitectureFromJSON(ljson)
 
 	// Check every layer - set the activation function
 	for i, layer := range *layers {
@@ -72,6 +82,15 @@ func NewNetwork(layers *[]Layer, lossfunction string) (*Network, error) {
 		n.LossDerivative = n.MAEDerivative
 	}
 	return n, nil
+}
+
+// CreateArchitectureFromJSON creates the layers for the neural network from the givem LayerJSON slice
+func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
+	var architecture []Layer
+	for _, l := range *layers {
+		architecture = append(architecture, Layer{Neurons: make([]Neuron, l.Neurons), ActivationName: l.ActivationName})
+	}
+	return &architecture
 }
 
 // MSE is the mean squared error loss function

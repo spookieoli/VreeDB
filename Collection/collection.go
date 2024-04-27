@@ -188,7 +188,7 @@ func (c *Collection) CheckID(id string) bool {
 }
 
 // AddClassifier adds a classifier to the Collection
-func (c *Collection) AddClassifier(name string, typ string, loss string, architecture *[]NN.Layer) error {
+func (c *Collection) AddClassifier(name string, typ string, loss string, architecture *[]NN.LayerJSON) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
@@ -201,15 +201,13 @@ func (c *Collection) AddClassifier(name string, typ string, loss string, archite
 		if architecture == nil {
 			return fmt.Errorf("no architecture given")
 		}
-
-		// create the network
+		// create the networ
 		n, err := NN.NewNetwork(architecture, loss)
 		if err != nil {
 			return err
 		}
 		c.Classifiers[name] = n
 	}
-
 	return nil
 }
 
