@@ -214,6 +214,20 @@
             $('.ui.dropdown').dropdown();
         });
 
+        var updateInterval;
+        function updateProgress() {
+            $.get("/gettrainupdate", function(data) {
+                // Aktualisieren Sie die Progressbar mit den neuen Daten
+                $progress.progress({
+                    percent: data.progress
+                });
+
+                if (data.progress >= 100) {
+                    clearInterval(updateInterval);
+                }
+            });
+        }
+
         // Handle remove row button click
         $(document).on('click', '.removeRowButton', function() {
             // Check if it's NOT the only layerRow in the grid
@@ -225,6 +239,10 @@
         //Handle train button click
         $(document).on('click', '#trainButton', function() {
             var noErrors = true;
+
+            // Start interval for progressbar update
+            updateInterval = setInterval(updateProgress, 1000);
+
             if ($('#collectionName').val() == "") {
                 $('#collectionNameError').show();
                 noErrors = false;
@@ -303,10 +321,6 @@
                         if (response === null) {
                             return;
                         }
-
-                        $progress.progress({
-                            percent: 100  // Placeholder value
-                        });
                         
                         $("#finalStatement").show();
                         
