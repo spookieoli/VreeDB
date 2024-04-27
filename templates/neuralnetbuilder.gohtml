@@ -272,23 +272,22 @@
                 }
 
                 var layer = {
-                    Neurons: neuralsCount,
-                    ActivationName: activationFunction
+                    "Neurons": Number(neuralsCount),
+                    "ActivationName": activationFunction
                 };
                 layers.push(layer);
             });
 
             var neuralData = {
-                api_key: null,
-                collection_name: $('#collectionName').val(),
-                classifier_name: $('#classifierNameX').val(),
-                degree: null,
-                c: null,
-                epochs: $('#epochs').val(),
-                type: 'nn',
-                loss: $('#lossFunction').val(),
-                batchsize: $('#batchSize').val(),
-                architecture: layers
+                "collection_name": $('#collectionName').val(),
+                "classifier_name": $('#classifierNameX').val(),
+                "degree": null,
+                "c": null,
+                "epochs": Number($('#epochs').val()),
+                "type": 'nn',
+                "loss": $('#lossFunction').val(),
+                "batchsize": Number($('#batchSize').val()),
+                "architecture": layers
             };
             
             
@@ -297,8 +296,8 @@
                 $.ajax({
                     type: "PUT",
                     url: "/trainclassifier",
-                    contentType: 'application/json',
-                    data: neuralData,
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(neuralData),
                     success: function (response) {
                         // If the response is null, do nothing and return
                         if (response === null) {
