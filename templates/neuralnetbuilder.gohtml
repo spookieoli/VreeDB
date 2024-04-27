@@ -139,7 +139,7 @@
                             <div class="bar">
                                 <div class="progress"></div>
                             </div>
-                            <div class="label">Everything worked and ready for review.</div>
+                            <div id="finalStatement" class="label hide" style="display: none;">Everything worked and ready for review.</div>
                             </div>
                         </div>
                     </div>
@@ -292,7 +292,7 @@
             
             
             if (noErrors == true) {
-                alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
+                // alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
                 $.ajax({
                     type: "PUT",
                     url: "/trainclassifier",
@@ -307,6 +307,8 @@
                         $progress.progress({
                             percent: 100  // Placeholder value
                         });
+                        
+                        $("#finalStatement").show();
                         
                         alert(JSON.stringify(response, null, 4));  // Popup with the Server Response 
                     },
