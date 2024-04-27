@@ -19,7 +19,31 @@
                     </div>
                 </div>
             </div>
-            <div class="ui column ten wide">
+            <div class="ui column" style="padding-top:12px;">
+            </div>
+            <div class="ui column three wide" style="padding-top:12px;">
+                <div class="ui input field required">
+                    <input class="ui input" type="text" id="classifierNameX" placeholder="ClassifierName:str">
+                </div>
+                <div id="classifierNameError" class="ui pointing label hide" style="display: none;">
+                    Please enter a Classifier Name!
+                </div>
+            </div>
+            <div class="ui column three wide" style="padding-top:12px;">
+                <div class="ui input field required">
+                    <input type="number" id="epochs" placeholder="Epochs:int">
+                </div>
+                <div id="epochsError" class="ui pointing label hide" style="display: none;">
+                    Please enter the number of epochs!
+                </div>
+            </div>
+            <div class="ui column three wide" style="padding-top:12px;">
+                <div class="ui input field required">
+                    <input type="number" id="batchSize" placeholder="BatchSize:int">
+                </div>
+                <div id="batchSizeError" class="ui pointing label hide" style="display: none;">
+                    Please enter the Batch Size!
+                </div>
             </div>
             <div class="ui column four wide right aligned" style="padding-top:12px; padding-right:25px;">
                 <div class="ui grid">
@@ -55,6 +79,9 @@
                             <div class="ui input">
                                 <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
                             </div>
+                            <div name="neuralsCountError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Number of Neurons for the Layer!
+                            </div>
                         </div>
                         <div class="ui column five wide">
                             <div class="ui selection dropdown">
@@ -67,6 +94,9 @@
                                     <div class="item" data-value="softmax">SoftMax</div>
                                     <div class="item" data-value="tanh">TanH</div>
                                 </div>
+                            </div>
+                            <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Activation Function for the Layer!
                             </div>
                         </div>
                     </div>
@@ -134,6 +164,9 @@
                                                 <div class="ui input">
                                                     <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
                                                 </div>
+                                                <div name="neuralsCountError" class="ui pointing label hide" style="display: none;">
+                                                    Please enter the Number of Neurons for the Layer!
+                                                </div>
                                             </div>
                                             <div class="ui column five wide">
                                                 <div class="ui selection dropdown">
@@ -146,6 +179,9 @@
                                                         <div class="item" data-value="softmax">SoftMax</div>
                                                         <div class="item" data-value="tanh">TanH</div>
                                                     </div>
+                                                </div>
+                                                <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
+                                                    Please enter the Activation Function for the Layer!
                                                 </div>
                                             </div>
                                         </div>
@@ -175,12 +211,46 @@
 
         //Handle train button click
         $(document).on('click', '#trainButton', function() {
+            var noErrors = true;
+            if ($('#classifierNameX').val() == "") {
+                $('#classifierNameError').show();
+                noErrors = false;
+            } else {
+                $('#classifierNameError').hide();
+            }
+            if ($('#epochs').val() == "") {
+                $('#epochsError').show();
+                noErrors = false;
+            } else {
+                $('#epochsError').hide();
+            }
+            if ($('#batchSize').val() == "") {
+                $('#batchSizeError').show();
+                noErrors = false;
+            } else {
+                $('#batchSizeError').hide();
+            }
+            
             var layers = [];
 
             $('#neuralGrid .layerRow').each(function() {
                 var layerName = $(this).find('input[name="layerName"]').val();
                 var neuralsCount = $(this).find('input[name="neuralsCount"]').val();
                 var activationFunction = $(this).find('input[name="activationFunction"]').val();
+
+                if (neuralsCount == "") {
+                    $(this).find('div[name="neuralsCountError"]').show();
+                    noErrors = false;
+                } else {
+                    $(this).find('div[name="neuralsCountError"]').hide();
+                }
+
+                if (activationFunction == "") {
+                    $(this).find('div[name="activationFunctionError"]').show();
+                    noErrors = false;
+                } else {
+                    $(this).find('div[name="activationFunctionError"]').hide();
+                }
 
                 var layer = {
                     "layerName": layerName,
@@ -190,7 +260,11 @@
                 layers.push(layer);
             });
 
-            alert(JSON.stringify(layers, null, 4));  // Popup with the array of layer objects
+            if (noErrors == true) {
+                alert(JSON.stringify(layers, null, 4));  // Popup with the array of layer objects            
+            } else {
+                alert("Please check Errors!");
+            }
         });
     });
 </script>
