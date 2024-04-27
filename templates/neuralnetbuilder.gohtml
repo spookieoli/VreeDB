@@ -48,12 +48,12 @@
                         </div>
                         <div class="ui column five wide">
                             <div class="ui input">
-                                <input class="ui input" type="text" placeholder="LayerName:str">
+                                <input class="ui input" type="text" name="layerName" placeholder="LayerName:str">
                             </div>
                         </div>
                         <div class="ui column five wide">
                             <div class="ui input">
-                                <input type="number" placeholder="NeuralsCount:int">
+                                <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
                             </div>
                         </div>
                         <div class="ui column five wide">
@@ -127,12 +127,12 @@
                                             </div>
                                             <div class="ui column five wide">
                                                 <div class="ui input">
-                                                    <input class="ui input" type="text" placeholder="LayerName:str">
+                                                    <input class="ui input" type="text" name="layerName" placeholder="LayerName:str">
                                                 </div>
                                             </div>
                                             <div class="ui column five wide">
                                                 <div class="ui input">
-                                                    <input type="number" placeholder="NeuralsCount:int">
+                                                    <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
                                                 </div>
                                             </div>
                                             <div class="ui column five wide">
@@ -178,8 +178,8 @@
             var layers = [];
 
             $('#neuralGrid .layerRow').each(function() {
-                var layerName = $(this).find('input[type="text"]').val();
-                var neuralsCount = $(this).find('input[type="number"]').val();
+                var layerName = $(this).find('input[name="layerName"]').val();
+                var neuralsCount = $(this).find('input[name="neuralsCount"]').val();
                 var activationFunction = $(this).find('input[name="activationFunction"]').val();
 
                 var layer = {
