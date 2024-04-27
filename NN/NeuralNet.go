@@ -13,7 +13,7 @@ import (
 // Types *************************************
 
 type Network struct {
-	Layers         []Layer
+	Layers         *[]Layer
 	Loss           func([]float64, []float64) float64
 	LossDerivative func([]float64, []float64) []float64
 }
@@ -38,23 +38,23 @@ type DerivativeFunc func(any) any
 // *****************************************
 
 // NewNetwork creates a new network with the given layers
-func NewNetwork(layers []Layer, lossfunction string) (*Network, error) {
+func NewNetwork(layers *[]Layer, lossfunction string) (*Network, error) {
 	// Create Network
 	n := &Network{}
 
 	// Check every layer - set the activation function
-	for i, layer := range layers {
+	for i, layer := range *layers {
 		if strings.ToLower(layer.ActivationName) == "sigmoid" {
-			layers[i].Activation = Sigmoid
-			layers[i].Derivative = SigmoidDerivative
+			(*layers)[i].Activation = Sigmoid
+			(*layers)[i].Derivative = SigmoidDerivative
 		} else if strings.ToLower(layer.ActivationName) == "tanh" {
-			layers[i].Activation = Tanh
-			layers[i].Derivative = TanhDerivative
+			(*layers)[i].Activation = Tanh
+			(*layers)[i].Derivative = TanhDerivative
 		} else if strings.ToLower(layer.ActivationName) == "relu" {
-			layers[i].Activation = ReLU
-			layers[i].Derivative = ReLUDerivative
+			(*layers)[i].Activation = ReLU
+			(*layers)[i].Derivative = ReLUDerivative
 		} else if strings.ToLower(layer.ActivationName) == "softmax" {
-			layers[i].Activation = Softmax
+			(*layers)[i].Activation = Softmax
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
@@ -118,18 +118,18 @@ func (n *Network) MAEDerivative(outputs, targets []float64) []float64 {
 func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs int, lr float64, batchSize int) {
 
 	// Initialize the weights and biases
-	for i := range n.Layers {
+	for i := range *n.Layers {
 		inputLength := len(trainingData[0])
 		if i > 0 {
-			inputLength = len(n.Layers[i-1].Neurons)
+			inputLength = len((*n.Layers)[i-1].Neurons)
 		}
 
-		for j := range n.Layers[i].Neurons {
-			n.Layers[i].Neurons[j].Weights = make([]float64, inputLength)
-			for k := range n.Layers[i].Neurons[j].Weights {
-				n.Layers[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
+		for j := range (*n.Layers)[i].Neurons {
+			(*n.Layers)[i].Neurons[j].Weights = make([]float64, inputLength)
+			for k := range (*n.Layers)[i].Neurons[j].Weights {
+				(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
 			}
-			n.Layers[i].Neurons[j].Bias = 0 // Initialize biases to zero
+			(*n.Layers)[i].Neurons[j].Bias = 0 // Initialize biases to zero
 		}
 	}
 
@@ -305,7 +305,7 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 
 // Forward feed forwards the inputs through the network
 func (n *Network) Forward(inputs []float64) []float64 {
-	for _, layer := range n.Layers {
+	for _, layer := range *n.Layers {
 		inputs = layer.Forward(inputs)
 	}
 	return inputs
@@ -317,21 +317,21 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 	deltas := n.LossDerivative(outputs, targets)
 
 	// Backwards pass
-	for i := len(n.Layers) - 1; i >= 0; i-- {
-		layer := &n.Layers[i]
+	for i := len(*n.Layers) - 1; i >= 0; i-- {
+		layer := (*n.Layers)[i]
 		// if it is not the output layer, we need to calculate the deltas for the next layer
 		var newDeltas []float64
 		if i > 0 {
-			newDeltas = make([]float64, len(n.Layers[i-1].Neurons))
+			newDeltas = make([]float64, len((*n.Layers)[i-1].Neurons))
 		} else {
 			newDeltas = make([]float64, len(inputs))
 		}
 
 		inputsForLayer := inputs // Inputs für die allererste Schicht
 		if i > 0 {
-			inputsForLayer = make([]float64, len(n.Layers[i-1].Neurons))
-			for j := range n.Layers[i-1].Neurons {
-				inputsForLayer[j] = n.Layers[i-1].Neurons[j].Output
+			inputsForLayer = make([]float64, len((*n.Layers)[i-1].Neurons))
+			for j := range (*n.Layers)[i-1].Neurons {
+				inputsForLayer[j] = (*n.Layers)[i-1].Neurons[j].Output
 			}
 		}
 

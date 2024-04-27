@@ -188,7 +188,7 @@ func (c *Collection) CheckID(id string) bool {
 }
 
 // AddClassifier adds a classifier to the Collection
-func (c *Collection) AddClassifier(name string, typ string, loss string) error {
+func (c *Collection) AddClassifier(name string, typ string, loss string, architecture *[]NN.Layer) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
@@ -197,14 +197,13 @@ func (c *Collection) AddClassifier(name string, typ string, loss string) error {
 	case "SVM":
 		c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
 	case "NN":
-		// First implementation of nn - under heavy construction
-		layer := []NN.Layer{
-			{Neurons: make([]NN.Neuron, 9), ActivationName: "relu"},
-			{Neurons: make([]NN.Neuron, 3), ActivationName: "relu"},
-			{Neurons: make([]NN.Neuron, 1), ActivationName: "sigmoid"},
+		// Check if architecture is nil
+		if architecture == nil {
+			return fmt.Errorf("no architecture given")
 		}
+
 		// create the network
-		n, err := NN.NewNetwork(layer, loss)
+		n, err := NN.NewNetwork(architecture, loss)
 		if err != nil {
 			return err
 		}
