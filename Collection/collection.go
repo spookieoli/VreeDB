@@ -19,20 +19,21 @@ import (
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
 type Collection struct {
-	Name             string
-	Nodes            *Node.Node
-	VectorDimension  int
-	DistanceFunc     func(*Vector.Vector, *Vector.Vector) (float64, error)
-	Mut              sync.RWMutex
-	Space            *map[string]*Vector.Vector
-	MaxVector        *Vector.Vector
-	MinVector        *Vector.Vector
-	DimensionDiff    *Vector.Vector
-	DiagonalLength   float64
-	DistanceFuncName string
-	Classifiers      map[string]Classifier
-	ClassifierReady  bool
-	Indexes          map[string]*Index
+	Name               string
+	Nodes              *Node.Node
+	VectorDimension    int
+	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
+	Mut                sync.RWMutex
+	Space              *map[string]*Vector.Vector
+	MaxVector          *Vector.Vector
+	MinVector          *Vector.Vector
+	DimensionDiff      *Vector.Vector
+	DiagonalLength     float64
+	DistanceFuncName   string
+	Classifiers        map[string]Classifier
+	ClassifierReady    bool
+	Indexes            map[string]*Index
+	ClassifierTraining map[string]Classifier
 }
 
 // Interface for the Classifier
@@ -260,7 +261,9 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		if err != nil {
 			return err
 		}
+		c.ClassifierTraining[name] = v
 		v.Train(x, y, epochs, lr, batchsize)
+		delete(c.ClassifierTraining, name)
 	}
 
 	// Save the classifier
@@ -405,4 +408,22 @@ func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) er
 		}
 	}
 	return nil
+}
+
+// GetClassifierTrainingPhase will return the training phase of a classifier
+func (c *Collection) GetClassifierTrainingPhase(name string) (*NN.TrainProgress, error) {
+
+	// Check if the classifier exists
+	if _, ok := c.ClassifierTraining[name]; !ok {
+		return nil, fmt.Errorf("Classifier with name %s does not train", name)
+	}
+
+	// We have Neural Network and SVM
+	switch v := c.ClassifierTraining[name].(type) {
+	case *NN.Network:
+		phase := v.GetTrainPhase()
+		return &phase[len(phase)-1], nil
+	default:
+		return nil, fmt.Errorf("Classifier with name %s has no progress yet", name) // TODO: add for SVM
+	}
 }

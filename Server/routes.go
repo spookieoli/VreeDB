@@ -738,6 +738,73 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+// GetTrainPhase will return the training phase of a classifier
+func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/gettrainphase" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+
+		// load the request into the TrainPhase via json decode
+		tp := &ShowTrainProgress{}
+		err = json.NewDecoder(req.Body).Decode(tp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(tp.ApiKey) || r.validateCookie(req) {
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[tp.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Check if Classifier exists
+			if _, ok := r.DB.Collections[tp.CollectionName].Classifiers[tp.ClassifierName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Classifier does not exist"))
+				return
+			}
+
+			// Get the training phase
+			phase, err := r.DB.Collections[tp.CollectionName].GetClassifierTrainingPhase(tp.ClassifierName)
+
+			// Check if there was an error
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Send the training phase to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(*phase)
+			return
+		}
+
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
 // Classify will classify a vector
 func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "CLASSIFY"
