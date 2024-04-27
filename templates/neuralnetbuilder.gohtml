@@ -19,30 +19,42 @@
                     </div>
                 </div>
             </div>
-            <div class="ui column" style="padding-top:12px;">
-            </div>
-            <div class="ui column three wide" style="padding-top:12px;">
-                <div class="ui input field required">
-                    <input class="ui input" type="text" id="classifierNameX" placeholder="ClassifierName:str">
-                </div>
-                <div id="classifierNameError" class="ui pointing label hide" style="display: none;">
-                    Please enter a Classifier Name!
-                </div>
-            </div>
-            <div class="ui column three wide" style="padding-top:12px;">
-                <div class="ui input field required">
-                    <input type="number" id="epochs" placeholder="Epochs:int">
-                </div>
-                <div id="epochsError" class="ui pointing label hide" style="display: none;">
-                    Please enter the number of epochs!
-                </div>
-            </div>
-            <div class="ui column three wide" style="padding-top:12px;">
-                <div class="ui input field required">
-                    <input type="number" id="batchSize" placeholder="BatchSize:int">
-                </div>
-                <div id="batchSizeError" class="ui pointing label hide" style="display: none;">
-                    Please enter the Batch Size!
+            <div class="ui column ten wide" style="padding-top:12px;">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input class="ui input" type="text" id="collectionName" placeholder="CollectionName:str">
+                            </div>
+                            <div id="collectionNameError" class="ui pointing label hide" style="display: none;">
+                                Please enter a Collection Name!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input class="ui input" type="text" id="classifierNameX" placeholder="ClassifierName:str">
+                            </div>
+                            <div id="classifierNameError" class="ui pointing label hide" style="display: none;">
+                                Please enter a Classifier Name!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input type="number" id="epochs" placeholder="Epochs:int">
+                            </div>
+                            <div id="epochsError" class="ui pointing label hide" style="display: none;">
+                                Please enter the number of epochs!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input type="number" id="batchSize" placeholder="BatchSize:int">
+                            </div>
+                            <div id="batchSizeError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Batch Size!
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="ui column four wide right aligned" style="padding-top:12px; padding-right:25px;">
@@ -52,11 +64,12 @@
                     </div>
                     <div class="ui column four wide right aligned" style="padding-left:0px;">
                         <div class="ui dropdown">
+                            <input type="hidden" id="lossFunction" value="mse"></input>
                             <div class="text">MSE</div>
                             <i class="dropdown icon"></i>
                             <div class="menu">
-                                <div class="item">MSE</div>
-                                <div class="item">MAE</div>
+                                <div class="item" data-value="mse">MSE</div>
+                                <div class="item" data-value="mae">MAE</div>
                                 <!-- Add more options here -->
                             </div>
                         </div>
@@ -144,7 +157,7 @@
 
         // Placeholder for training progress bar initialization
         $progress.progress({
-            percent: 100  // Placeholder value
+            percent: 0  // Placeholder value
         });
 
         // Handle add row button click
@@ -212,6 +225,12 @@
         //Handle train button click
         $(document).on('click', '#trainButton', function() {
             var noErrors = true;
+            if ($('#collectionName').val() == "") {
+                $('#collectionNameError').show();
+                noErrors = false;
+            } else {
+                $('#collectionNameError').hide();
+            }
             if ($('#classifierNameX').val() == "") {
                 $('#classifierNameError').show();
                 noErrors = false;
@@ -253,15 +272,50 @@
                 }
 
                 var layer = {
-                    "layerName": layerName,
-                    "neuralsCount": neuralsCount,
-                    "activationFunction": activationFunction
+                    Neurons: neuralsCount,
+                    ActivationName: activationFunction
                 };
                 layers.push(layer);
             });
 
+            var neuralData = {
+                api_key: null,
+                collection_name: $('#collectionName').val(),
+                classifier_name: $('#classifierNameX').val(),
+                degree: null,
+                c: null,
+                epochs: $('#epochs').val(),
+                type: 'nn',
+                loss: $('#lossFunction').val(),
+                batchsize: $('#batchSize').val(),
+                architecture: layers
+            };
+            
+            
             if (noErrors == true) {
-                alert(JSON.stringify(layers, null, 4));  // Popup with the array of layer objects            
+                alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
+                $.ajax({
+                    type: "PUT",
+                    url: "/trainclassifier",
+                    contentType: 'application/json',
+                    data: neuralData,
+                    success: function (response) {
+                        // If the response is null, do nothing and return
+                        if (response === null) {
+                            return;
+                        }
+
+                        $progress.progress({
+                            percent: 100  // Placeholder value
+                        });
+                        
+                        alert(JSON.stringify(response, null, 4));  // Popup with the Server Response 
+                    },
+                    error: function (error) {
+                        console.log(error);
+                        alert(JSON.stringify(error, null, 4));
+                    }
+                });           
             } else {
                 alert("Please check Errors!");
             }
