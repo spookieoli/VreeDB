@@ -159,7 +159,7 @@
                                     </div>
                                 </div>
                             </div>`;
-            $(this).closest('.row').after(newRow);
+            $(this).closest('.layerRow').after(newRow);
             
             // Initialize dropdowns
             $('.ui.dropdown').dropdown();
@@ -169,7 +169,7 @@
         $(document).on('click', '.removeRowButton', function() {
             // Check if it's NOT the only layerRow in the grid
             if ($('#neuralGrid .layerRow').length > 1) {
-                $(this).closest('.row').remove();
+                $(this).closest('.layerRow').remove();
             }
         });
 
@@ -177,21 +177,20 @@
         $(document).on('click', '#trainButton', function() {
             var layers = [];
 
-            $('.layerRow').each(function() {
+            $('#neuralGrid .layerRow').each(function() {
                 var layerName = $(this).find('input[type="text"]').val();
                 var neuralsCount = $(this).find('input[type="number"]').val();
                 var activationFunction = $(this).find('input[name="activationFunction"]').val();
 
-                var layer = `{
-                    "layerName": "${layerName}",
-                    "neuralsCount": ${neuralsCount},
-                    "activationFunction": "${activationFunction}"
-                }`;
-
+                var layer = {
+                    "layerName": layerName,
+                    "neuralsCount": neuralsCount,
+                    "activationFunction": activationFunction
+                };
                 layers.push(layer);
             });
 
-            alert(layers);  // Popup with the list of layer dictionaries
+            alert(JSON.stringify(layers));  // Popup with the list of layer dictionaries
         });
     });
 </script>
