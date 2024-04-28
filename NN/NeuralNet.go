@@ -78,6 +78,7 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Activation = Softmax
 		} else if strings.ToLower(layer.ActivationName) == "linear" {
 			(*layers)[i].Activation = Linear
+			(*layers)[i].Derivative = LinearDerivative
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
