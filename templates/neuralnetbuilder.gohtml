@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neural Net Builler</title>
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/components/icon.min.css" integrity="sha512-rTyypI20S663Wq9zrzMSOP1MNPHaYX7+ug5OZ/DTqCDLwRdErCo2W30Hdme3aUzJSvAUap3SmBk0r5j0vRxyGw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/icon.min.css" />
 </head>
 <body>
 <div>
@@ -209,7 +209,7 @@
                                 </div>
                             </div>`;
             $(this).closest('.layerRow').after(newRow);
-            
+
             // Initialize dropdowns
             $('.ui.dropdown').dropdown();
         });
@@ -291,7 +291,7 @@
             } else {
                 $('#batchSizeError').hide();
             }
-            
+
             var layers = [];
 
             $('#neuralGrid .layerRow').each(function() {
@@ -331,8 +331,8 @@
                 "batchsize": Number($('#batchSize').val()),
                 "architecture": layers
             };
-            
-            
+
+
             if (noErrors == true) {
                 // alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
                 $.ajax({
@@ -345,16 +345,16 @@
                         if (response === null) {
                             return;
                         }
-                        
+
                         $("#finalStatement").show();
-                        
+
                         //alert(JSON.stringify(response, null, 4));  // Popup with the Server Response
                     },
                     error: function (error) {
                         console.log(error);
                         alert(JSON.stringify(error, null, 4));
                     }
-                });           
+                });
             } else {
                 alert("Please check Errors!");
             }
