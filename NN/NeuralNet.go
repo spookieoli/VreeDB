@@ -76,6 +76,8 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Derivative = ReLUDerivative
 		} else if strings.ToLower(layer.ActivationName) == "softmax" {
 			(*layers)[i].Activation = Softmax
+		} else if strings.ToLower(layer.ActivationName) == "linear" {
+			(*layers)[i].Activation = Linear
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
@@ -91,6 +93,9 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	case "mae":
 		n.Loss = n.MAE
 		n.LossDerivative = n.MAEDerivative
+	case "bce":
+		n.Loss = n.BinaryCrossEntropy
+		n.LossDerivative = n.BinaryCrossEntropyDerivative
 	}
 	return n, nil
 }
@@ -109,6 +114,24 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 		architecture = append(architecture, Layer{Neurons: make([]Neuron, l.Neurons), ActivationName: l.ActivationName})
 	}
 	return &architecture
+}
+
+// BinaryCrossEntropy is the binary cross entropy loss function
+func (n *Network) BinaryCrossEntropy(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += -targets[i]*math.Log(output) - (1-targets[i])*math.Log(1-output)
+	}
+	return sum / float64(len(outputs))
+}
+
+// BinaryCrossEntropyDerivative is the derivative of the binary cross entropy loss function
+func (n *Network) BinaryCrossEntropyDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		deltas[i] = (output - targets[i]) / (output * (1 - output))
+	}
+	return deltas
 }
 
 // MSE is the mean squared error loss function
@@ -284,7 +307,7 @@ func TanhDerivative(x any) any {
 	return 1 - math.Pow(math.Tanh(x.(float64)), 2)
 }
 
-// RelU Activation is used for hidden layers
+// ReLU Activation is used for hidden layers
 func ReLU(x any) any {
 	if x.(float64) > 0 {
 		return x
