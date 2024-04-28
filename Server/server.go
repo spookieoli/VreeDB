@@ -29,10 +29,13 @@ func NewServer(ip string, port int, certfile, keyfile string, secure bool) *Serv
 	// Create the Server Object - booting up the DB
 	server := &Server{Ip: ip, Port: port, DB: Vdb.DB, CertFile: certfile, KeyFile: keyfile, Secure: secure}
 
+	// Define a new ServeMux
+	mux := http.NewServeMux()
+
 	// Start the Webserver
 	server.Server = &http.Server{
 		Addr:              server.Ip + ":" + strconv.Itoa(server.Port),
-		Handler:           nil,
+		Handler:           mux,
 		ReadHeaderTimeout: time.Second * 60,
 		WriteTimeout:      time.Second * 15,
 		IdleTimeout:       time.Second * 60,
@@ -42,12 +45,12 @@ func NewServer(ip string, port int, certfile, keyfile string, secure bool) *Serv
 	server.DB.Collections = Boot.NewBootUp().Boot()
 
 	// Add the routes
-	server.addRoutes()
+	server.addRoutes(mux)
 	return server
 }
 
 // addRoutes adds all routes to the server
-func (s *Server) addRoutes() {
+func (s *Server) addRoutes(mux *http.ServeMux) {
 	// Get all the Routes out of the Routeprovider
 	routes := NewRoutes(s.DB)
 	v := reflect.ValueOf(routes)
@@ -57,13 +60,13 @@ func (s *Server) addRoutes() {
 		// Get the Route
 		route := v.MethodByName(name).Interface().(func(http.ResponseWriter, *http.Request))
 		if name == "Index" {
-			http.HandleFunc("/", route)
+			mux.HandleFunc("/", route)
 			continue
 		}
-		http.HandleFunc("/"+strings.ToLower(name), route)
+		mux.HandleFunc("/"+strings.ToLower(name), route)
 	}
 	fileServer := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", static(fileServer)))
+	mux.Handle("/static/", http.StripPrefix("/static/", static(fileServer)))
 }
 
 // Start starts the server
