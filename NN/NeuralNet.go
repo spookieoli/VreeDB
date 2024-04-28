@@ -96,6 +96,15 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	case "bce":
 		n.Loss = n.BinaryCrossEntropy
 		n.LossDerivative = n.BinaryCrossEntropyDerivative
+	case "cce":
+		n.Loss = n.CategoricalCrossentropy
+		n.LossDerivative = n.CategoricalCrossentropyDerivative
+	case "sce":
+		n.Loss = n.SparseCategoricalCrossentropy
+		n.LossDerivative = n.SparseCategoricalCrossentropyDerivative
+	default:
+		Logger.Log.Log("Unknown loss function: " + lossfunction)
+		return nil, fmt.Errorf("Unknown loss function: %s", lossfunction)
 	}
 	return n, nil
 }
@@ -114,6 +123,42 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 		architecture = append(architecture, Layer{Neurons: make([]Neuron, l.Neurons), ActivationName: l.ActivationName})
 	}
 	return &architecture
+}
+
+// SparseCategoricalCrossentropy is the sparse categorical cross entropy loss function
+func (n *Network) SparseCategoricalCrossentropy(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += -math.Log(output) * targets[i]
+	}
+	return sum / float64(len(outputs))
+}
+
+// SparseCategoricalCrossentropyDerivative is the derivative of the sparse categorical cross entropy loss function
+func (n *Network) SparseCategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		deltas[i] = -targets[i] / output
+	}
+	return deltas
+}
+
+// CategoricalCrossentropy is the categorical cross entropy loss function
+func (n *Network) CategoricalCrossentropy(outputs, targets []float64) float64 {
+	sum := 0.0
+	for i, output := range outputs {
+		sum += -targets[i] * math.Log(output)
+	}
+	return sum / float64(len(outputs))
+}
+
+// CategoricalCrossentropyDerivative is the derivative of the categorical cross entropy loss function
+func (n *Network) CategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
+	deltas := make([]float64, len(outputs))
+	for i, output := range outputs {
+		deltas[i] = -targets[i] / output
+	}
+	return deltas
 }
 
 // BinaryCrossEntropy is the binary cross entropy loss function
