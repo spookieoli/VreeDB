@@ -650,6 +650,11 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
+			// if tc.c is not set - set it
+			if tc.C == 0 {
+				tc.C = 0.000001
+			}
+
 			// Train the classifier non blocking
 			go func() {
 				err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C,
