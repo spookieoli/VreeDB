@@ -191,7 +191,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
 			// This is done in a thread safe way
 			n.mut.Lock()
-			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
+			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
 			n.mut.Unlock()
 			// Log the progress
 			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))

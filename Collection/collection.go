@@ -264,7 +264,6 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		}
 		c.ClassifierTraining[name] = v
 		v.Train(x, y, epochs, lr, batchsize)
-		delete(c.ClassifierTraining, name)
 	}
 
 	// Save the classifier

@@ -216,17 +216,40 @@
 
         var updateInterval;
         function updateProgress() {
-            $.get("/gettrainupdate", function(data) {
-                // Aktualisieren Sie die Progressbar mit den neuen Daten
-                $progress.progress({
-                    percent: data.progress
-                });
+            var collectionName = $('#collectionName').val();
+            var classifierName = $('#classifierNameX').val();
+            var epoch = $('#epochs').val();
+            var data_send = {
+                "collection_name": collectionName,
+                "classifier_name": classifierName
+            };
 
-                if (data.progress >= 100) {
-                    clearInterval(updateInterval);
+            $.ajax({
+                url: "/gettrainphase",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(data_send),
+                success: function(data) {
+                    console.log("THE DATAGET IS:", data);
+                    // Update the progress bar with the new data
+                    $progress.progress({
+                        percent: data.progress * 100
+                    });
+
+                    if ((data.progress*100) >= 100) {
+                        console.log("STOP")
+                        clearInterval(updateInterval);
+                    }else{
+                        console.log(data.progress*100)
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // Log any errors to the console
+                    console.error("Request failed: " + textStatus + ", " + errorThrown);
                 }
             });
         }
+
 
         // Handle remove row button click
         $(document).on('click', '.removeRowButton', function() {
@@ -241,6 +264,7 @@
             var noErrors = true;
 
             // Start interval for progressbar update
+            console.log("STARTED!")
             updateInterval = setInterval(updateProgress, 1000);
 
             if ($('#collectionName').val() == "") {
@@ -324,7 +348,7 @@
                         
                         $("#finalStatement").show();
                         
-                        alert(JSON.stringify(response, null, 4));  // Popup with the Server Response 
+                        //alert(JSON.stringify(response, null, 4));  // Popup with the Server Response
                     },
                     error: function (error) {
                         console.log(error);

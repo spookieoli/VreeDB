@@ -529,7 +529,6 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 		err = json.NewDecoder(req.Body).Decode(p)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Println(err.Error())
 			w.Write([]byte("Error decoding json"))
 			return
 		}
@@ -594,7 +593,6 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Notice the user that the route is not found under given information
-	fmt.Println(req.Method, req.URL.String())
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
 	return
@@ -741,18 +739,10 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 // GetTrainPhase will return the training phase of a classifier
 func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/gettrainphase" {
-		// Parse the form
-		err := req.ParseForm()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error parsing form"))
-			return
-		}
-
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettrainphase" {
 		// load the request into the TrainPhase via json decode
 		tp := &ShowTrainProgress{}
-		err = json.NewDecoder(req.Body).Decode(tp)
+		err := json.NewDecoder(req.Body).Decode(tp)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error decoding json"))
@@ -760,7 +750,7 @@ func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Check if Auth is valid
-		if r.ApiKeyHandler.CheckApiKey(tp.ApiKey) || r.validateCookie(req) {
+		if r.validateCookie(req) {
 
 			// Check if Collection exists
 			if _, ok := r.DB.Collections[tp.CollectionName]; !ok {
@@ -785,7 +775,6 @@ func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
 				w.Write([]byte(err.Error()))
 				return
 			}
-
 			// Send the training phase to the client
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
