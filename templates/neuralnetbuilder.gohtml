@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neural Net Builler</title>
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
-    <link rel="stylesheet" href="/static/icon.min.css" />
+    <link rel="stylesheet" href="/static/stylesheets/icon.min.css" />
 </head>
 <body>
 <div>
@@ -124,10 +124,18 @@
             </div>
         </div>
         <div class="ui row">
-            <div class="ui column four wide" style="padding-left:25px;">
+            <div class="ui column two wide" style="padding-left:25px;">
                 <button class="ui primary inverted button" type="button" id="trainButton">Train</button>
             </div>
-            <div class="ui column six wide">
+            <div class="ui column six wide left aligned">
+                <div class="ui input field required">
+                    <input type="number" id="learningRate" placeholder="LearningRate:float" value="0.000001">
+                </div>
+                <div id="learningRateError" class="ui pointing label hide" style="display: none;">
+                    Please enter the learning rate!
+                </div>
+            </div>
+            <div class="ui column two wide">
             </div>
             <div class="ui column six wide right aligned">
                 <div class="ui grid">
@@ -291,6 +299,12 @@
             } else {
                 $('#batchSizeError').hide();
             }
+            if ($('#learningRate').val() == "") {
+                $('#learningRateError').show();
+                noErrors = false;
+            } else {
+                $('#learningRateError').hide();
+            }
 
             var layers = [];
 
@@ -324,7 +338,7 @@
                 "collection_name": $('#collectionName').val(),
                 "classifier_name": $('#classifierNameX').val(),
                 "degree": null,
-                "c": null,
+                "c": Number($('#learningRate').val()),
                 "epochs": Number($('#epochs').val()),
                 "type": 'nn',
                 "loss": $('#lossFunction').val(),
