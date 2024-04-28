@@ -253,6 +253,16 @@ func (n *Network) Predict(input []float64) any {
 	return n.Forward(input)
 }
 
+// Linear Activation is used for the output layer
+func Linear(x any) any {
+	return x
+}
+
+// LinearDerivative is the derivative of the linear activation function - it is always 1
+func LinearDerivative(x any) any {
+	return 1
+}
+
 // Sigmoid Activation is used for hidden layers
 func Sigmoid(x any) any {
 	return 1 / (1 + math.Exp(-x.(float64)))
