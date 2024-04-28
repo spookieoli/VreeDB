@@ -18,7 +18,7 @@ type Network struct {
 	Loss           func([]float64, []float64) float64
 	LossDerivative func([]float64, []float64) []float64
 	TrainPhase     []TrainProgress
-	Mut            *sync.RWMutex
+	mut            *sync.RWMutex
 }
 
 type Neuron struct {
@@ -58,7 +58,7 @@ type DerivativeFunc func(any) any
 // NewNetwork creates a new network with the given layers
 func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	// Create Network
-	n := &Network{TrainPhase: make([]TrainProgress, 0), Mut: &sync.RWMutex{}}
+	n := &Network{TrainPhase: make([]TrainProgress, 0), mut: &sync.RWMutex{}}
 
 	// Create Architecture
 	layers := n.CreateArchitectureFromJSON(ljson)
@@ -97,8 +97,8 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 
 // GetTrainPhase returns the training progress of the neural network
 func (n *Network) GetTrainPhase() []TrainProgress {
-	n.Mut.RLock()
-	defer n.Mut.RUnlock()
+	n.mut.RLock()
+	defer n.mut.RUnlock()
 	return n.TrainPhase // This is a copy of the slice - this is important
 }
 
@@ -190,9 +190,11 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 			}
 			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
 			// This is done in a thread safe way
-			n.Mut.Lock()
+			n.mut.Lock()
 			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
-			n.Mut.Unlock()
+			n.mut.Unlock()
+			// Log the progress
+			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 		}
 	}
 }

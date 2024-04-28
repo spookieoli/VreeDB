@@ -58,7 +58,8 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	}
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
-		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier), ClassifierReady: false}
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
+		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier)}
 }
 
 // Insert inserts a vector into the collection
@@ -194,15 +195,15 @@ func (c *Collection) AddClassifier(name string, typ string, loss string, archite
 	defer c.Mut.Unlock()
 
 	// Add the classifier to the Collection
-	switch typ {
-	case "SVM":
+	switch strings.ToLower(typ) {
+	case "svm":
 		c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
-	case "NN":
+	case "nn":
 		// Check if architecture is nil
 		if architecture == nil {
 			return fmt.Errorf("no architecture given")
 		}
-		// create the networ
+		// create the network
 		n, err := NN.NewNetwork(architecture, loss)
 		if err != nil {
 			return err
@@ -246,7 +247,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		return fmt.Errorf("Classifier with name %s does not exists", name)
 	}
 
-	// Create a slice with alle vectors in the collection
+	// Create a slice with all vectors in the collection
 	var data []*Vector.Vector
 	for _, v := range *c.Space {
 		data = append(data, v)
