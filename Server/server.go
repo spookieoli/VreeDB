@@ -25,7 +25,7 @@ type Server struct {
 }
 
 // NewServer returns a new Server
-func NewServer(ip string, port int, certfile, keyfile string, secure bool) *Server {
+func NewServer(ip string, port int, certfile string, keyfile string, secure bool) *Server {
 	// Create the Server Object - booting up the DB
 	server := &Server{Ip: ip, Port: port, DB: Vdb.DB, CertFile: certfile, KeyFile: keyfile, Secure: secure}
 
