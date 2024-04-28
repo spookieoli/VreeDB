@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"strings"
+	"sync"
 )
 
 // Types *************************************
@@ -16,6 +17,8 @@ type Network struct {
 	Layers         *[]Layer
 	Loss           func([]float64, []float64) float64
 	LossDerivative func([]float64, []float64) []float64
+	TrainPhase     []TrainProgress
+	mut            *sync.RWMutex
 }
 
 type Neuron struct {
@@ -23,6 +26,14 @@ type Neuron struct {
 	Bias    float64
 	Output  float64
 	Delta   float64
+}
+
+// TrainProgress will show the training progress of the neural network
+type TrainProgress struct {
+	ClassifierName string  `json:"classifyer_name"`
+	Progress       float64 `json:"progress"`
+	Epoch          int     `json:"epoch"`
+	Loss           float64 `json:"loss"`
 }
 
 type Layer struct {
@@ -47,7 +58,7 @@ type DerivativeFunc func(any) any
 // NewNetwork creates a new network with the given layers
 func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	// Create Network
-	n := &Network{}
+	n := &Network{TrainPhase: make([]TrainProgress, 0), mut: &sync.RWMutex{}}
 
 	// Create Architecture
 	layers := n.CreateArchitectureFromJSON(ljson)
@@ -82,6 +93,13 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 		n.LossDerivative = n.MAEDerivative
 	}
 	return n, nil
+}
+
+// GetTrainPhase returns the training progress of the neural network
+func (n *Network) GetTrainPhase() []TrainProgress {
+	n.mut.RLock()
+	defer n.mut.RUnlock()
+	return n.TrainPhase // This is a copy of the slice - this is important
 }
 
 // CreateArchitectureFromJSON creates the layers for the neural network from the givem LayerJSON slice
@@ -170,10 +188,13 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 				n.Backpropagate(input, batchTargets[i], lr)
 				totalLoss += n.Loss(output, batchTargets[i])
 			}
-			// Print loss every 10 epochs
-			if epoch%10 == 0 {
-				Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))) + ", totalLoss: " + fmt.Sprint(totalLoss))
-			}
+			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
+			// This is done in a thread safe way
+			n.mut.Lock()
+			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
+			n.mut.Unlock()
+			// Log the progress
+			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 		}
 	}
 }
@@ -220,7 +241,7 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 
 	// Check if the data is gt 0
 	if len(x) == 0 {
-		return nil, nil, fmt.Errorf("No NeuralNet Traindata created")
+		return nil, nil, fmt.Errorf("No NeuralNet Traindata created - check if Label exists and is an Array of float64")
 	} else {
 		Logger.Log.Log("NeuralNet Traindata created successfully, x: " + fmt.Sprint(len(x)) + ", y: " + fmt.Sprint(len(y)))
 	}

@@ -151,6 +151,12 @@ type ApiKeyCreator struct {
 	ApiKey string `json:"api_key"`
 }
 
+// ShowTrainProgress shows the progress of the training of the neural network
+type ShowTrainProgress struct {
+	CollectionName string `json:"collection_name"`
+	ClassifierName string `json:"classifier_name"`
+}
+
 type IndexCreator struct {
 	ApiKey         string `json:"api_key"`
 	CollectionName string `json:"collection_name"`

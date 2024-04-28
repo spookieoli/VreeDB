@@ -19,20 +19,21 @@ import (
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
 type Collection struct {
-	Name             string
-	Nodes            *Node.Node
-	VectorDimension  int
-	DistanceFunc     func(*Vector.Vector, *Vector.Vector) (float64, error)
-	Mut              sync.RWMutex
-	Space            *map[string]*Vector.Vector
-	MaxVector        *Vector.Vector
-	MinVector        *Vector.Vector
-	DimensionDiff    *Vector.Vector
-	DiagonalLength   float64
-	DistanceFuncName string
-	Classifiers      map[string]Classifier
-	ClassifierReady  bool
-	Indexes          map[string]*Index
+	Name               string
+	Nodes              *Node.Node
+	VectorDimension    int
+	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
+	Mut                sync.RWMutex
+	Space              *map[string]*Vector.Vector
+	MaxVector          *Vector.Vector
+	MinVector          *Vector.Vector
+	DimensionDiff      *Vector.Vector
+	DiagonalLength     float64
+	DistanceFuncName   string
+	Classifiers        map[string]Classifier
+	ClassifierReady    bool
+	Indexes            map[string]*Index
+	ClassifierTraining map[string]Classifier
 }
 
 // Interface for the Classifier
@@ -57,7 +58,8 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	}
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
-		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier), ClassifierReady: false}
+		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
+		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier)}
 }
 
 // Insert inserts a vector into the collection
@@ -193,15 +195,15 @@ func (c *Collection) AddClassifier(name string, typ string, loss string, archite
 	defer c.Mut.Unlock()
 
 	// Add the classifier to the Collection
-	switch typ {
-	case "SVM":
+	switch strings.ToLower(typ) {
+	case "svm":
 		c.Classifiers[name] = Svm.NewMultiClassSVM(name, c.Name)
-	case "NN":
+	case "nn":
 		// Check if architecture is nil
 		if architecture == nil {
 			return fmt.Errorf("no architecture given")
 		}
-		// create the networ
+		// create the network
 		n, err := NN.NewNetwork(architecture, loss)
 		if err != nil {
 			return err
@@ -245,7 +247,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		return fmt.Errorf("Classifier with name %s does not exists", name)
 	}
 
-	// Create a slice with alle vectors in the collection
+	// Create a slice with all vectors in the collection
 	var data []*Vector.Vector
 	for _, v := range *c.Space {
 		data = append(data, v)
@@ -260,6 +262,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 		if err != nil {
 			return err
 		}
+		c.ClassifierTraining[name] = v
 		v.Train(x, y, epochs, lr, batchsize)
 	}
 
@@ -405,4 +408,22 @@ func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) er
 		}
 	}
 	return nil
+}
+
+// GetClassifierTrainingPhase will return the training phase of a classifier
+func (c *Collection) GetClassifierTrainingPhase(name string) (*NN.TrainProgress, error) {
+
+	// Check if the classifier exists
+	if _, ok := c.ClassifierTraining[name]; !ok {
+		return nil, fmt.Errorf("Classifier with name %s does not train", name)
+	}
+
+	// We have Neural Network and SVM
+	switch v := c.ClassifierTraining[name].(type) {
+	case *NN.Network:
+		phase := v.GetTrainPhase()
+		return &phase[len(phase)-1], nil
+	default:
+		return nil, fmt.Errorf("Classifier with name %s has no progress yet", name) // TODO: add for SVM
+	}
 }

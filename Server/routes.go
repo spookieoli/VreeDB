@@ -529,7 +529,6 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 		err = json.NewDecoder(req.Body).Decode(p)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Println(err.Error())
 			w.Write([]byte("Error decoding json"))
 			return
 		}
@@ -594,7 +593,6 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Notice the user that the route is not found under given information
-	fmt.Println(req.Method, req.URL.String())
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
 	return
@@ -650,6 +648,11 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
 				return
+			}
+
+			// if tc.c is not set - set it
+			if tc.C == 0 {
+				tc.C = 0.000001
 			}
 
 			// Train the classifier non blocking
@@ -723,6 +726,64 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			// Send the success or error message to the client
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Classifier deleted"))
+			return
+		}
+
+		// Not authorized
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+// GetTrainPhase will return the training phase of a classifier
+func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettrainphase" {
+		// load the request into the TrainPhase via json decode
+		tp := &ShowTrainProgress{}
+		err := json.NewDecoder(req.Body).Decode(tp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+
+		// Check if Auth is valid
+		if r.validateCookie(req) {
+
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[tp.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			// Check if Classifier exists
+			if _, ok := r.DB.Collections[tp.CollectionName].Classifiers[tp.ClassifierName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Classifier does not exist"))
+				return
+			}
+
+			// Get the training phase
+			phase, err := r.DB.Collections[tp.CollectionName].GetClassifierTrainingPhase(tp.ClassifierName)
+
+			// Check if there was an error
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// Send the training phase to the client
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(*phase)
 			return
 		}
 
@@ -1040,5 +1101,29 @@ func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
 			http.Redirect(w, req, "/login", http.StatusSeeOther)
 			return
 		}
+	}
+}
+
+// NeuralNetBuilder will show the NeuralNetBuilder to enable the user to build a neural net
+func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/neuralnetbuilder" {
+		// Create the data for the template to show the apikey
+		neuralNetData := "Neural Net Builder"
+		data := struct {
+			Data string
+		}{
+			Data: neuralNetData,
+		}
+		//  Show the template
+		err := r.renderTemplate("neuralnetbuilder", w, data)
+		if err != nil {
+			Logger.Log.Log(err.Error())
+		}
+		return
+	} else {
+		// Redirect to login
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
+		return
 	}
 }

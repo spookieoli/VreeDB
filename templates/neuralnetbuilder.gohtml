@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Net Builler</title>
+    <link rel="stylesheet" type="text/css" href="/static/semantic.css">
+    <link rel="stylesheet" href="/static/stylesheets/icon.min.css" />
+</head>
+<body>
+<div>
+    <div class="ui grid" id="neuralGrid">
+        <div class="ui row">
+            <div class="ui column two wide">
+                <div class="ui fluid image">
+                    <div class="ui blue ribbon label">
+                        <i class="bullseye icon"></i> Neural Net Creator
+                    </div>
+                </div>
+            </div>
+            <div class="ui column ten wide" style="padding-top:12px;">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input class="ui input" type="text" id="collectionName" placeholder="CollectionName:str">
+                            </div>
+                            <div id="collectionNameError" class="ui pointing label hide" style="display: none;">
+                                Please enter a Collection Name!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input class="ui input" type="text" id="classifierNameX" placeholder="ClassifierName:str">
+                            </div>
+                            <div id="classifierNameError" class="ui pointing label hide" style="display: none;">
+                                Please enter a Classifier Name!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input type="number" id="epochs" placeholder="Epochs:int">
+                            </div>
+                            <div id="epochsError" class="ui pointing label hide" style="display: none;">
+                                Please enter the number of epochs!
+                            </div>
+                        </div>
+                        <div class="ui column four wide">
+                            <div class="ui input field required">
+                                <input type="number" id="batchSize" placeholder="BatchSize:int">
+                            </div>
+                            <div id="batchSizeError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Batch Size!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui column four wide right aligned" style="padding-top:12px; padding-right:25px;">
+                <div class="ui grid">
+                    <div class="ui column twelve wide right aligned">
+                        <label>Loss Function:</label>
+                    </div>
+                    <div class="ui column four wide right aligned" style="padding-left:0px;">
+                        <div class="ui dropdown">
+                            <input type="hidden" id="lossFunction" value="mse"></input>
+                            <div class="text">MSE</div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="item" data-value="mse">MSE</div>
+                                <div class="item" data-value="mae">MAE</div>
+                                <!-- Add more options here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui row layerRow">
+            <div class="ui column nine wide center aligned">
+                <div class="ui grid">
+                    <div class="ui row">
+                        <div class="ui column">
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input class="ui input" type="text" name="layerName" placeholder="LayerName:str">
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui input">
+                                <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
+                            </div>
+                            <div name="neuralsCountError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Number of Neurons for the Layer!
+                            </div>
+                        </div>
+                        <div class="ui column five wide">
+                            <div class="ui selection dropdown">
+                                <input type="hidden" name="activationFunction">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">Activation Function</div>
+                                <div class="menu transition hidden">
+                                    <div class="item" data-value="relu">RELU</div>
+                                    <div class="item" data-value="sigmoid">Sigmoid</div>
+                                    <div class="item" data-value="softmax">SoftMax</div>
+                                    <div class="item" data-value="tanh">TanH</div>
+                                </div>
+                            </div>
+                            <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
+                                Please enter the Activation Function for the Layer!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui column seven wide center aligned">
+                <div class="ui buttons">
+                    <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
+                    <div class="or"></div>
+                    <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
+                </div>
+            </div>
+        </div>
+        <div class="ui row">
+            <div class="ui column two wide" style="padding-left:25px;">
+                <button class="ui primary inverted button" type="button" id="trainButton">Train</button>
+            </div>
+            <div class="ui column six wide left aligned">
+                <div class="ui input field required">
+                    <input type="number" id="learningRate" placeholder="LearningRate:float" value="0.000001">
+                </div>
+                <div id="learningRateError" class="ui pointing label hide" style="display: none;">
+                    Please enter the learning rate!
+                </div>
+            </div>
+            <div class="ui column two wide">
+            </div>
+            <div class="ui column six wide right aligned">
+                <div class="ui grid">
+                    <div class="ui column six wide right aligned" style="padding-right:25px;">
+                        <label>Training Progress:</label>
+                    </div>
+                    <div class="ui column ten wide right aligned" style="padding-left:0px; padding-right:25px;">
+                        <div class="ui progress success" id="neural-progress">
+                            <div class="bar">
+                                <div class="progress"></div>
+                            </div>
+                            <div id="finalStatement" class="label hide" style="display: none;">Everything worked and ready for review.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        // Initialize dropdowns
+        $('.ui.dropdown').dropdown();
+
+        var $progress = $('#neural-progress')
+
+        // Placeholder for training progress bar initialization
+        $progress.progress({
+            percent: 0  // Placeholder value
+        });
+
+        // Handle add row button click
+        $(document).on('click', '.addRowButton', function() {
+            var newRow = `  <div class="ui row layerRow">
+                                <div class="ui column nine wide center aligned">
+                                    <div class="ui grid">
+                                        <div class="ui row">
+                                            <div class="ui column">
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input class="ui input" type="text" name="layerName" placeholder="LayerName:str">
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui input">
+                                                    <input type="number" name="neuralsCount" placeholder="NeuralsCount:int">
+                                                </div>
+                                                <div name="neuralsCountError" class="ui pointing label hide" style="display: none;">
+                                                    Please enter the Number of Neurons for the Layer!
+                                                </div>
+                                            </div>
+                                            <div class="ui column five wide">
+                                                <div class="ui selection dropdown">
+                                                    <input type="hidden" name="activationFunction">
+                                                    <i class="dropdown icon"></i>
+                                                    <div class="default text">Activation Function</div>
+                                                    <div class="menu transition hidden">
+                                                        <div class="item" data-value="relu">RELU</div>
+                                                        <div class="item" data-value="sigmoid">Sigmoid</div>
+                                                        <div class="item" data-value="softmax">SoftMax</div>
+                                                        <div class="item" data-value="tanh">TanH</div>
+                                                    </div>
+                                                </div>
+                                                <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
+                                                    Please enter the Activation Function for the Layer!
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ui column seven wide center aligned">
+                                    <div class="ui buttons">
+                                        <button class="ui negative button removeRowButton"><i class="minus circle icon"></i>Remove Layer</button>
+                                        <div class="or"></div>
+                                        <button class="ui positive button addRowButton"><i class="plus circle icon"></i>Add Layer</button>
+                                    </div>
+                                </div>
+                            </div>`;
+            $(this).closest('.layerRow').after(newRow);
+
+            // Initialize dropdowns
+            $('.ui.dropdown').dropdown();
+        });
+
+        var updateInterval;
+        function updateProgress() {
+            var collectionName = $('#collectionName').val();
+            var classifierName = $('#classifierNameX').val();
+            var epoch = $('#epochs').val();
+            var data_send = {
+                "collection_name": collectionName,
+                "classifier_name": classifierName
+            };
+
+            $.ajax({
+                url: "/gettrainphase",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(data_send),
+                success: function(data) {
+                    console.log("THE DATAGET IS:", data);
+                    // Update the progress bar with the new data
+                    $progress.progress({
+                        percent: data.progress * 100
+                    });
+
+                    if ((data.progress*100) >= 100) {
+                        console.log("STOP")
+                        clearInterval(updateInterval);
+                    }else{
+                        console.log(data.progress*100)
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // Log any errors to the console
+                    console.error("Request failed: " + textStatus + ", " + errorThrown);
+                }
+            });
+        }
+
+
+        // Handle remove row button click
+        $(document).on('click', '.removeRowButton', function() {
+            // Check if it's NOT the only layerRow in the grid
+            if ($('#neuralGrid .layerRow').length > 1) {
+                $(this).closest('.layerRow').remove();
+            }
+        });
+
+        //Handle train button click
+        $(document).on('click', '#trainButton', function() {
+            var noErrors = true;
+
+            // Start interval for progressbar update
+            console.log("STARTED!")
+            updateInterval = setInterval(updateProgress, 1000);
+
+            if ($('#collectionName').val() == "") {
+                $('#collectionNameError').show();
+                noErrors = false;
+            } else {
+                $('#collectionNameError').hide();
+            }
+            if ($('#classifierNameX').val() == "") {
+                $('#classifierNameError').show();
+                noErrors = false;
+            } else {
+                $('#classifierNameError').hide();
+            }
+            if ($('#epochs').val() == "") {
+                $('#epochsError').show();
+                noErrors = false;
+            } else {
+                $('#epochsError').hide();
+            }
+            if ($('#batchSize').val() == "") {
+                $('#batchSizeError').show();
+                noErrors = false;
+            } else {
+                $('#batchSizeError').hide();
+            }
+            if ($('#learningRate').val() == "") {
+                $('#learningRateError').show();
+                noErrors = false;
+            } else {
+                $('#learningRateError').hide();
+            }
+
+            var layers = [];
+
+            $('#neuralGrid .layerRow').each(function() {
+                var layerName = $(this).find('input[name="layerName"]').val();
+                var neuralsCount = $(this).find('input[name="neuralsCount"]').val();
+                var activationFunction = $(this).find('input[name="activationFunction"]').val();
+
+                if (neuralsCount == "") {
+                    $(this).find('div[name="neuralsCountError"]').show();
+                    noErrors = false;
+                } else {
+                    $(this).find('div[name="neuralsCountError"]').hide();
+                }
+
+                if (activationFunction == "") {
+                    $(this).find('div[name="activationFunctionError"]').show();
+                    noErrors = false;
+                } else {
+                    $(this).find('div[name="activationFunctionError"]').hide();
+                }
+
+                var layer = {
+                    "Neurons": Number(neuralsCount),
+                    "ActivationName": activationFunction
+                };
+                layers.push(layer);
+            });
+
+            var neuralData = {
+                "collection_name": $('#collectionName').val(),
+                "classifier_name": $('#classifierNameX').val(),
+                "degree": null,
+                "c": Number($('#learningRate').val()),
+                "epochs": Number($('#epochs').val()),
+                "type": 'nn',
+                "loss": $('#lossFunction').val(),
+                "batchsize": Number($('#batchSize').val()),
+                "architecture": layers
+            };
+
+
+            if (noErrors == true) {
+                // alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
+                $.ajax({
+                    type: "PUT",
+                    url: "/trainclassifier",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(neuralData),
+                    success: function (response) {
+                        // If the response is null, do nothing and return
+                        if (response === null) {
+                            return;
+                        }
+
+                        $("#finalStatement").show();
+
+                        //alert(JSON.stringify(response, null, 4));  // Popup with the Server Response
+                    },
+                    error: function (error) {
+                        console.log(error);
+                        alert(JSON.stringify(error, null, 4));
+                    }
+                });
+            } else {
+                alert("Please check Errors!");
+            }
+        });
+    });
+</script>
+</body>
+</html>
