@@ -288,9 +288,9 @@ func (c *Collection) SaveClassifier() error {
 	defer file.Close()
 
 	// Register the SVM structs
-	gob.Register(Svm.SVM{})
-	gob.Register(Svm.MultiClassSVM{})
-	gob.Register(NN.Network{})
+	gob.RegisterName("VreeDb/SVM.SVM", &Svm.SVM{})
+	gob.RegisterName("VreeDb/SVM.MultiClassSVM", &Svm.MultiClassSVM{})
+	gob.RegisterName("VreeDB/NN.Network", &NN.Network{})
 
 	// Save the classifiers
 	err = gob.NewEncoder(file).Encode(c.Classifiers)
@@ -310,6 +310,11 @@ func (c *Collection) ReadClassifiers() error {
 	if _, err := os.Stat(*ArgsParser.Ap.FileStore + c.Name + "_classifiers.gob"); os.IsNotExist(err) {
 		return nil
 	}
+
+	// Register the SVM structs
+	gob.RegisterName("VreeDb/SVM.SVM", &Svm.SVM{})
+	gob.RegisterName("VreeDb/SVM.MultiClassSVM", &Svm.MultiClassSVM{})
+	gob.RegisterName("VreeDB/NN.Network", &NN.Network{})
 
 	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_classifiers.gob")
 	if err != nil {

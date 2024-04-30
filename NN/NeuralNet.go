@@ -94,18 +94,6 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	case "mae":
 		n.Loss = n.MAE
 		n.LossDerivative = n.MAEDerivative
-	case "bce":
-		n.Loss = n.BinaryCrossEntropy
-		n.LossDerivative = n.BinaryCrossEntropyDerivative
-	case "cce":
-		n.Loss = n.CategoricalCrossentropy
-		n.LossDerivative = n.CategoricalCrossentropyDerivative
-	case "sce":
-		n.Loss = n.SparseCategoricalCrossentropy
-		n.LossDerivative = n.SparseCategoricalCrossentropyDerivative
-	default:
-		Logger.Log.Log("Unknown loss function: " + lossfunction)
-		return nil, fmt.Errorf("Unknown loss function: %s", lossfunction)
 	}
 	return n, nil
 }
@@ -124,60 +112,6 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 		architecture = append(architecture, Layer{Neurons: make([]Neuron, l.Neurons), ActivationName: l.ActivationName})
 	}
 	return &architecture
-}
-
-// SparseCategoricalCrossentropy is the sparse categorical cross entropy loss function
-func (n *Network) SparseCategoricalCrossentropy(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += -math.Log(output) * targets[i]
-	}
-	return sum / float64(len(outputs))
-}
-
-// SparseCategoricalCrossentropyDerivative is the derivative of the sparse categorical cross entropy loss function
-func (n *Network) SparseCategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = -targets[i] / output
-	}
-	return deltas
-}
-
-// CategoricalCrossentropy is the categorical cross entropy loss function
-func (n *Network) CategoricalCrossentropy(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += -targets[i] * math.Log(output)
-	}
-	return sum / float64(len(outputs))
-}
-
-// CategoricalCrossentropyDerivative is the derivative of the categorical cross entropy loss function
-func (n *Network) CategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = -targets[i] / output
-	}
-	return deltas
-}
-
-// BinaryCrossEntropy is the binary cross entropy loss function
-func (n *Network) BinaryCrossEntropy(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += -targets[i]*math.Log(output) - (1-targets[i])*math.Log(1-output)
-	}
-	return sum / float64(len(outputs))
-}
-
-// BinaryCrossEntropyDerivative is the derivative of the binary cross entropy loss function
-func (n *Network) BinaryCrossEntropyDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = (output - targets[i]) / (output * (1 - output))
-	}
-	return deltas
 }
 
 // MSE is the mean squared error loss function
@@ -242,29 +176,31 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 	// Trainloop
 	for epoch := 0; epoch < epochs; epoch++ {
 		// Split trainingData and targets into batches
+		totalLoss := 0.0
+		batchData := make([][]float64, 0)
 		for i := 0; i < len(trainingData); i += batchSize {
 			end := i + batchSize
 			if end > len(trainingData) {
 				end = len(trainingData)
 			}
-			batchData := trainingData[i:end]
+			batchData = trainingData[i:end]
 			batchTargets := targets[i:end]
 
 			// Train on batch
-			totalLoss := 0.0
+
 			for i, input := range batchData {
 				output := n.Forward(input)
 				n.Backpropagate(input, batchTargets[i], lr)
 				totalLoss += n.Loss(output, batchTargets[i])
 			}
-			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
-			// This is done in a thread safe way
-			n.mut.Lock()
-			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
-			n.mut.Unlock()
-			// Log the progress
-			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 		}
+		// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
+		// This is done in a thread safe way
+		n.mut.Lock()
+		n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
+		n.mut.Unlock()
+		// Log the progress
+		Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 	}
 }
 
@@ -322,16 +258,6 @@ func (n *Network) Predict(input []float64) any {
 	return n.Forward(input)
 }
 
-// Linear Activation is used for the output layer
-func Linear(x any) any {
-	return x
-}
-
-// LinearDerivative is the derivative of the linear activation function - it is always 1
-func LinearDerivative(x any) any {
-	return 1
-}
-
 // Sigmoid Activation is used for hidden layers
 func Sigmoid(x any) any {
 	return 1 / (1 + math.Exp(-x.(float64)))
@@ -353,7 +279,7 @@ func TanhDerivative(x any) any {
 	return 1 - math.Pow(math.Tanh(x.(float64)), 2)
 }
 
-// ReLU Activation is used for hidden layers
+// RelU Activation is used for hidden layers
 func ReLU(x any) any {
 	if x.(float64) > 0 {
 		return x
@@ -389,6 +315,16 @@ func Softmax(x any) any {
 		result[i] /= sum
 	}
 	return result
+}
+
+// Linear Activation is used for the output layer
+func Linear(x any) any {
+	return x
+}
+
+// LinearDerivative is the derivative of the linear activation function
+func LinearDerivative(x any) any {
+	return 1
 }
 
 // Forward pass through the layer
