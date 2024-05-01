@@ -317,33 +317,51 @@ func LinearDerivative(x any) any {
 
 // Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
-	outputs := make([]float64, len(l.Neurons))
+	// Create the chunks
+	chunks := make([][]float64, len(l.Neurons))
+	for c := range chunks {
+		chunks[c] = make([]float64, len(inputs)/len(chunks))
+	}
+
+	// Create a []float64 with the same length as the chunks
+	results := make([]float64, len(chunks))
+
+	// Now we will give every chunk to the activation function
 	if l.ActivationName == "softmax" {
-		outputs = l.Activation(inputs).([]float64)
-		for i, output := range outputs {
-			l.Neurons[i].Output = output
+		// Calculate the sum of the exponentials of the inputs
+		expSum := 0.0
+		for _, input := range inputs {
+			expSum += math.Exp(input)
 		}
-		return outputs
+
+		// Divide each individual exponential of the input by the sum
+		for i, c := range chunks {
+			var sum float64
+			for j := range c {
+				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
+			}
+			l.Neurons[i].Output = math.Exp(sum) / expSum
+			results[i] = l.Neurons[i].Output
+		}
 	} else {
-		for i, neuron := range l.Neurons {
-			sum := neuron.Bias
-			for j, weight := range neuron.Weights {
-				sum += inputs[j] * weight
+		for i, c := range chunks {
+			var sum float64
+			for j := range c {
+				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
 			}
 
-			var output float64
-
-			if v, ok := l.Activation(sum).(int); ok {
-				output = float64(v)
-			} else if v, ok := l.Activation(sum).(float64); ok {
-				output = v
+			// Can be both int / float64
+			switch l.Activation(sum).(type) {
+			case int:
+				l.Neurons[i].Output = float64(l.Activation(sum).(int))
+			case float64:
+				l.Neurons[i].Output = l.Activation(sum).(float64)
 			}
 
-			l.Neurons[i].Output = output
-			outputs[i] = output
+			results[i] = l.Neurons[i].Output
 		}
 	}
-	return outputs
+	return results
 }
 
 // Forward feed forwards the inputs through the network
@@ -351,7 +369,7 @@ func (n *Network) Forward(inputs []float64) []float64 {
 	for _, layer := range *n.Layers {
 		inputs = layer.Forward(inputs)
 	}
-	return inputs
+	return inputs // This is the output of the last layer
 }
 
 // Backpropagate - backpropagates the error through the network
