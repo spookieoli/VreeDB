@@ -76,6 +76,9 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Derivative = ReLUDerivative
 		} else if strings.ToLower(layer.ActivationName) == "softmax" {
 			(*layers)[i].Activation = Softmax
+		} else if strings.ToLower(layer.ActivationName) == "linear" {
+			(*layers)[i].Activation = Linear
+			(*layers)[i].Derivative = LinearDerivative
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
@@ -84,14 +87,8 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	n.Layers = layers
 
 	// Add Loss function
-	switch strings.ToLower(lossfunction) {
-	case "mse":
-		n.Loss = n.MSE
-		n.LossDerivative = n.MSEDerivative
-	case "mae":
-		n.Loss = n.MAE
-		n.LossDerivative = n.MAEDerivative
-	}
+	n.Loss = n.SparseCategoricalCrossentropy
+	n.LossDerivative = n.SparseCategoricalCrossentropyDerivative
 	return n, nil
 }
 
@@ -111,42 +108,20 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 	return &architecture
 }
 
-// MSE is the mean squared error loss function
-func (n *Network) MSE(outputs, targets []float64) float64 {
+// SparseCategoricalCrossentropy is the loss function for sparse categorical crossentropy
+func (n *Network) SparseCategoricalCrossentropy(outputs, targets []float64) float64 {
 	sum := 0.0
 	for i, output := range outputs {
-		sum += math.Pow(output-targets[i], 2)
+		sum += -math.Log(output) * targets[i]
 	}
 	return sum / float64(len(outputs))
 }
 
-// MSEDerivative is the derivative of the mean squared error loss function
-func (n *Network) MSEDerivative(outputs, targets []float64) []float64 {
+// SparseCategoricalCrossentropyDerivative is the derivative of the loss function for sparse categorical crossentropy
+func (n *Network) SparseCategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
 	deltas := make([]float64, len(outputs))
 	for i, output := range outputs {
-		deltas[i] = 2 * (output - targets[i])
-	}
-	return deltas
-}
-
-// MAE is the mean absolute error loss function
-func (n *Network) MAE(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += math.Abs(output - targets[i])
-	}
-	return sum / float64(len(outputs))
-}
-
-// MAEDerivative is the derivative of the mean absolute error loss function
-func (n *Network) MAEDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		if output > targets[i] {
-			deltas[i] = 1
-		} else {
-			deltas[i] = -1
-		}
+		deltas[i] = -1 / output * targets[i]
 	}
 	return deltas
 }
@@ -310,6 +285,14 @@ func Softmax(x any) any {
 		result[i] /= sum
 	}
 	return result
+}
+
+func Linear(x any) any {
+	return x
+}
+
+func LinearDerivative(x any) any {
+	return 1
 }
 
 // Forward pass through the layer
