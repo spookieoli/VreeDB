@@ -255,6 +255,7 @@
                 error: function(jqXHR, textStatus, errorThrown) {
                     // Log any errors to the console
                     console.error("Request failed: " + textStatus + ", " + errorThrown);
+                    clearInterval(updateInterval);
                 }
             });
         }
