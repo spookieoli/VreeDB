@@ -322,6 +322,21 @@ func Softmax(x any) any {
 	return result
 }
 
+// SoftmaxDerivative calculates the derivative of the softmax function
+func SoftmaxDerivative(x, y []float64) []float64 {
+	derivatives := make([]float64, len(x))
+	for i := 0; i < len(x); i++ {
+		for j := 0; j < len(x); j++ {
+			if i == j {
+				derivatives[i] += y[i] * (1 - y[j])
+			} else {
+				derivatives[i] -= y[i] * y[j]
+			}
+		}
+	}
+	return derivatives
+}
+
 // Linear Activation is used for the output layer
 func Linear(x any) any {
 	return x
@@ -387,7 +402,7 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 			newDeltas = make([]float64, len(inputs))
 		}
 
-		inputsForLayer := inputs // Inputs für die allererste Schicht
+		inputsForLayer := inputs // Inputs for the first layer
 		if i > 0 {
 			inputsForLayer = make([]float64, len((*n.Layers)[i-1].Neurons))
 			for j := range (*n.Layers)[i-1].Neurons {
@@ -397,14 +412,13 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 
 		for j, neuron := range layer.Neurons {
 			errorTerm := deltas[j]
-			if layer.ActivationName != "softmax" {
-				// Check if the derivative is int or float64
-				if v, ok := layer.Derivative(neuron.Output).(int); ok {
-					errorTerm *= float64(v)
-				} else if v, ok := layer.Derivative(neuron.Output).(float64); ok {
-					errorTerm *= v
-				}
+			if layer.ActivationName == "softmax" {
+				// Use the derivative of the softmax function
+				errorTerm = SoftmaxDerivative(outputs, targets)[j]
+			} else if v, ok := layer.Derivative(neuron.Output).(float64); ok {
+				errorTerm *= v
 			}
+
 			for k, input := range inputsForLayer {
 				grad := errorTerm * input
 				neuron.Weights[k] -= lr * grad
