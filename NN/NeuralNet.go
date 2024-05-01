@@ -167,7 +167,12 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 		for j := range (*n.Layers)[i].Neurons {
 			(*n.Layers)[i].Neurons[j].Weights = make([]float64, inputLength)
 			for k := range (*n.Layers)[i].Neurons[j].Weights {
-				(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
+				if (*n.Layers)[i].ActivationName == "relu" {
+					// Best for relu
+					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
+				} else {
+					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(1.0/float64(inputLength)) // Xavier initialization
+				}
 			}
 			(*n.Layers)[i].Neurons[j].Bias = 0 // Initialize biases to zero
 		}
