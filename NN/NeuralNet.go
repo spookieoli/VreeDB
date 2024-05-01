@@ -116,18 +116,23 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 
 // SparseCategoricalCrossentropy is the loss function for sparse categorical crossentropy
 func (n *Network) SparseCategoricalCrossentropy(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += -math.Log(output) * targets[i]
+	targetIndex := int(targets[0])
+	if targetIndex < 0 || targetIndex >= len(outputs) {
+		return math.Inf(1)
 	}
-	return sum / float64(len(outputs))
+	return -math.Log(outputs[targetIndex])
 }
 
 // SparseCategoricalCrossentropyDerivative is the derivative of the loss function for sparse categorical crossentropy
-func (n *Network) SparseCategoricalCrossentropyDerivative(outputs, targets []float64) []float64 {
+func (n *Network) SparseCategoricalCrossentropyDerivative(outputs []float64, target []float64) []float64 {
 	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = -1 / output * targets[i]
+	targetIndex := int(target[0])
+	for i := range outputs {
+		if i == targetIndex {
+			deltas[i] = -1 / outputs[i]
+		} else {
+			deltas[i] = 0
+		}
 	}
 	return deltas
 }
