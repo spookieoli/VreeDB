@@ -76,9 +76,6 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Derivative = ReLUDerivative
 		} else if strings.ToLower(layer.ActivationName) == "softmax" {
 			(*layers)[i].Activation = Softmax
-		} else if strings.ToLower(layer.ActivationName) == "linear" {
-			(*layers)[i].Activation = Linear
-			(*layers)[i].Derivative = LinearDerivative
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
@@ -167,12 +164,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 		for j := range (*n.Layers)[i].Neurons {
 			(*n.Layers)[i].Neurons[j].Weights = make([]float64, inputLength)
 			for k := range (*n.Layers)[i].Neurons[j].Weights {
-				if (*n.Layers)[i].ActivationName == "relu" {
-					// Best for relu
-					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
-				} else {
-					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(1.0/float64(inputLength)) // Xavier initialization
-				}
+				(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
 			}
 			(*n.Layers)[i].Neurons[j].Bias = 0 // Initialize biases to zero
 		}
@@ -181,31 +173,29 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 	// Trainloop
 	for epoch := 0; epoch < epochs; epoch++ {
 		// Split trainingData and targets into batches
-		totalLoss := 0.0
-		batchData := make([][]float64, 0)
 		for i := 0; i < len(trainingData); i += batchSize {
 			end := i + batchSize
 			if end > len(trainingData) {
 				end = len(trainingData)
 			}
-			batchData = trainingData[i:end]
+			batchData := trainingData[i:end]
 			batchTargets := targets[i:end]
 
 			// Train on batch
-
+			totalLoss := 0.0
 			for i, input := range batchData {
 				output := n.Forward(input)
 				n.Backpropagate(input, batchTargets[i], lr)
 				totalLoss += n.Loss(output, batchTargets[i])
 			}
+			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
+			// This is done in a thread safe way
+			n.mut.Lock()
+			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
+			n.mut.Unlock()
+			// Log the progress
+			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 		}
-		// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
-		// This is done in a thread safe way
-		n.mut.Lock()
-		n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
-		n.mut.Unlock()
-		// Log the progress
-		Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
 	}
 }
 
@@ -322,31 +312,6 @@ func Softmax(x any) any {
 	return result
 }
 
-// SoftmaxDerivative calculates the derivative of the softmax function
-func SoftmaxDerivative(x, y []float64) []float64 {
-	derivatives := make([]float64, len(x))
-	for i := 0; i < len(x); i++ {
-		for j := 0; j < len(x); j++ {
-			if i == j {
-				derivatives[i] += y[i] * (1 - y[j])
-			} else {
-				derivatives[i] -= y[i] * y[j]
-			}
-		}
-	}
-	return derivatives
-}
-
-// Linear Activation is used for the output layer
-func Linear(x any) any {
-	return x
-}
-
-// LinearDerivative is the derivative of the linear activation function
-func LinearDerivative(x any) any {
-	return 1
-}
-
 // Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
 	outputs := make([]float64, len(l.Neurons))
@@ -402,7 +367,7 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 			newDeltas = make([]float64, len(inputs))
 		}
 
-		inputsForLayer := inputs // Inputs for the first layer
+		inputsForLayer := inputs // Inputs für die allererste Schicht
 		if i > 0 {
 			inputsForLayer = make([]float64, len((*n.Layers)[i-1].Neurons))
 			for j := range (*n.Layers)[i-1].Neurons {
@@ -412,13 +377,14 @@ func (n *Network) Backpropagate(inputs, targets []float64, lr float64) {
 
 		for j, neuron := range layer.Neurons {
 			errorTerm := deltas[j]
-			if layer.ActivationName == "softmax" {
-				// Use the derivative of the softmax function
-				errorTerm = SoftmaxDerivative(outputs, targets)[j]
-			} else if v, ok := layer.Derivative(neuron.Output).(float64); ok {
-				errorTerm *= v
+			if layer.ActivationName != "softmax" {
+				// Check if the derivative is int or float64
+				if v, ok := layer.Derivative(neuron.Output).(int); ok {
+					errorTerm *= float64(v)
+				} else if v, ok := layer.Derivative(neuron.Output).(float64); ok {
+					errorTerm *= v
+				}
 			}
-
 			for k, input := range inputsForLayer {
 				grad := errorTerm * input
 				neuron.Weights[k] -= lr * grad
