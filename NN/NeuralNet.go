@@ -86,6 +86,12 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	}
 	n.Layers = layers
 
+	// The last layer must have the softmax activation function
+	if (*n.Layers)[len(*n.Layers)-1].ActivationName != "softmax" {
+		Logger.Log.Log("The last layer must have the softmax activation function")
+		return nil, fmt.Errorf("The last layer must have the softmax activation function")
+	}
+
 	// Add Loss function
 	n.Loss = n.SparseCategoricalCrossentropy
 	n.LossDerivative = n.SparseCategoricalCrossentropyDerivative
