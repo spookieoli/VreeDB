@@ -318,11 +318,12 @@ func LinearDerivative(x any) any {
 // Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
 	outputs := make([]float64, len(l.Neurons))
-	for _, neuron := range l.Neurons {
+	for i, neuron := range l.Neurons {
 		output := neuron.Bias
 		for j, input := range inputs {
 			output += input * neuron.Weights[j]
 		}
+		outputs[i] = output
 	}
 
 	if l.ActivationName == "softmax" {
