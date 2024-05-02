@@ -64,12 +64,11 @@
                     </div>
                     <div class="ui column four wide right aligned" style="padding-left:0px;">
                         <div class="ui dropdown">
-                            <input type="hidden" id="lossFunction" value="mse"></input>
-                            <div class="text">MSE</div>
+                            <input type="hidden" id="lossFunction" value="sce"></input>
+                            <div class="text">SCE</div>
                             <i class="dropdown icon"></i>
                             <div class="menu">
-                                <div class="item" data-value="mse">MSE</div>
-                                <div class="item" data-value="mae">MAE</div>
+                                <div class="item" data-value="sce">SCE</div>
                                 <!-- Add more options here -->
                             </div>
                         </div>
@@ -106,6 +105,7 @@
                                     <div class="item" data-value="sigmoid">Sigmoid</div>
                                     <div class="item" data-value="softmax">SoftMax</div>
                                     <div class="item" data-value="tanh">TanH</div>
+                                    <div class="item" data-value="linear">Linear</div>
                                 </div>
                             </div>
                             <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
@@ -199,6 +199,7 @@
                                                         <div class="item" data-value="sigmoid">Sigmoid</div>
                                                         <div class="item" data-value="softmax">SoftMax</div>
                                                         <div class="item" data-value="tanh">TanH</div>
+                                                        <div class="item" data-value="linear">Linear</div>
                                                     </div>
                                                 </div>
                                                 <div name="activationFunctionError" class="ui pointing label hide" style="display: none;">
@@ -254,6 +255,7 @@
                 error: function(jqXHR, textStatus, errorThrown) {
                     // Log any errors to the console
                     console.error("Request failed: " + textStatus + ", " + errorThrown);
+                    clearInterval(updateInterval);
                 }
             });
         }

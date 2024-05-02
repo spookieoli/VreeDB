@@ -71,6 +71,9 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Recreate the KD-Tree
 			collections[c.Name].Recreate()
 
+			// Set ClassifierReady
+			collections[c.Name].ClassifierReady = true
+
 			// recreate the SVMs (if present)
 			err = collections[c.Name].ReadClassifiers()
 			if err != nil {

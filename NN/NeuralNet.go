@@ -76,6 +76,9 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Derivative = ReLUDerivative
 		} else if strings.ToLower(layer.ActivationName) == "softmax" {
 			(*layers)[i].Activation = Softmax
+		} else if strings.ToLower(layer.ActivationName) == "linear" {
+			(*layers)[i].Activation = Linear
+			(*layers)[i].Derivative = LinearDerivative
 		} else {
 			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
@@ -83,15 +86,15 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 	}
 	n.Layers = layers
 
-	// Add Loss function
-	switch strings.ToLower(lossfunction) {
-	case "mse":
-		n.Loss = n.MSE
-		n.LossDerivative = n.MSEDerivative
-	case "mae":
-		n.Loss = n.MAE
-		n.LossDerivative = n.MAEDerivative
+	// The last layer must have the softmax activation function
+	if (*n.Layers)[len(*n.Layers)-1].ActivationName != "softmax" {
+		Logger.Log.Log("The last layer must have the softmax activation function")
+		return nil, fmt.Errorf("The last layer must have the softmax activation function")
 	}
+
+	// Add Loss function
+	n.Loss = n.SparseCategoricalCrossentropy
+	n.LossDerivative = n.SparseCategoricalCrossentropyDerivative
 	return n, nil
 }
 
@@ -111,41 +114,24 @@ func (n *Network) CreateArchitectureFromJSON(layers *[]LayerJSON) *[]Layer {
 	return &architecture
 }
 
-// MSE is the mean squared error loss function
-func (n *Network) MSE(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += math.Pow(output-targets[i], 2)
+// SparseCategoricalCrossentropy is the loss function for sparse categorical crossentropy
+func (n *Network) SparseCategoricalCrossentropy(outputs, targets []float64) float64 {
+	targetIndex := int(targets[0])
+	if targetIndex < 0 || targetIndex >= len(outputs) {
+		return math.Inf(1)
 	}
-	return sum / float64(len(outputs))
+	return -math.Log(outputs[targetIndex])
 }
 
-// MSEDerivative is the derivative of the mean squared error loss function
-func (n *Network) MSEDerivative(outputs, targets []float64) []float64 {
+// SparseCategoricalCrossentropyDerivative is the derivative of the loss function for sparse categorical crossentropy
+func (n *Network) SparseCategoricalCrossentropyDerivative(outputs []float64, target []float64) []float64 {
 	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		deltas[i] = 2 * (output - targets[i])
-	}
-	return deltas
-}
-
-// MAE is the mean absolute error loss function
-func (n *Network) MAE(outputs, targets []float64) float64 {
-	sum := 0.0
-	for i, output := range outputs {
-		sum += math.Abs(output - targets[i])
-	}
-	return sum / float64(len(outputs))
-}
-
-// MAEDerivative is the derivative of the mean absolute error loss function
-func (n *Network) MAEDerivative(outputs, targets []float64) []float64 {
-	deltas := make([]float64, len(outputs))
-	for i, output := range outputs {
-		if output > targets[i] {
-			deltas[i] = 1
+	targetIndex := int(target[0])
+	for i := range outputs {
+		if i == targetIndex {
+			deltas[i] = -1 / outputs[i]
 		} else {
-			deltas[i] = -1
+			deltas[i] = 0
 		}
 	}
 	return deltas
@@ -164,7 +150,11 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 		for j := range (*n.Layers)[i].Neurons {
 			(*n.Layers)[i].Neurons[j].Weights = make([]float64, inputLength)
 			for k := range (*n.Layers)[i].Neurons[j].Weights {
-				(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
+				if (*n.Layers)[i].ActivationName == "relu" {
+					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(2.0/float64(inputLength)) // He initialization
+				} else {
+					(*n.Layers)[i].Neurons[j].Weights[k] = rand.NormFloat64() * math.Sqrt(1.0/float64(inputLength)) // Xavier initialization
+				}
 			}
 			(*n.Layers)[i].Neurons[j].Bias = 0 // Initialize biases to zero
 		}
@@ -172,6 +162,9 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 
 	// Trainloop
 	for epoch := 0; epoch < epochs; epoch++ {
+		totalLoss := 0.0
+		totalBatches := 0
+
 		// Split trainingData and targets into batches
 		for i := 0; i < len(trainingData); i += batchSize {
 			end := i + batchSize
@@ -182,20 +175,22 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 			batchTargets := targets[i:end]
 
 			// Train on batch
-			totalLoss := 0.0
 			for i, input := range batchData {
 				output := n.Forward(input)
 				n.Backpropagate(input, batchTargets[i], lr)
 				totalLoss += n.Loss(output, batchTargets[i])
 			}
-			// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
-			// This is done in a thread safe way
-			n.mut.Lock()
-			n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(len(batchData))})
-			n.mut.Unlock()
-			// Log the progress
-			Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(len(batchData))))
+			totalBatches++
 		}
+
+		// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
+		// This is done in a thread safe way
+		n.mut.Lock()
+		n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(totalBatches)})
+		n.mut.Unlock()
+
+		// Log the progress
+		Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(totalBatches)))
 	}
 }
 
@@ -312,35 +307,61 @@ func Softmax(x any) any {
 	return result
 }
 
+func Linear(x any) any {
+	return x
+}
+
+func LinearDerivative(x any) any {
+	return 1
+}
+
 // Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
-	outputs := make([]float64, len(l.Neurons))
+	// Create the chunks
+	chunks := make([][]float64, len(l.Neurons))
+	for c := range chunks {
+		chunks[c] = make([]float64, len(inputs)/len(chunks))
+	}
+
+	// Create a []float64 with the same length as the chunks
+	results := make([]float64, len(chunks))
+
+	// Now we will give every chunk to the activation function
 	if l.ActivationName == "softmax" {
-		outputs = l.Activation(inputs).([]float64)
-		for i, output := range outputs {
-			l.Neurons[i].Output = output
+		// Calculate the sum of the exponentials of the inputs
+		expSum := 0.0
+		for _, input := range inputs {
+			expSum += math.Exp(input)
 		}
-		return outputs
+
+		// Divide each individual exponential of the input by the sum
+		for i, c := range chunks {
+			var sum float64
+			for j := range c {
+				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
+			}
+			l.Neurons[i].Output = math.Exp(sum) / expSum
+			results[i] = l.Neurons[i].Output
+		}
 	} else {
-		for i, neuron := range l.Neurons {
-			sum := neuron.Bias
-			for j, weight := range neuron.Weights {
-				sum += inputs[j] * weight
+		for i, c := range chunks {
+			var sum float64
+			for j := range c {
+				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
 			}
 
-			var output float64
-
-			if v, ok := l.Activation(sum).(int); ok {
-				output = float64(v)
-			} else if v, ok := l.Activation(sum).(float64); ok {
-				output = v
+			// Can be both int / float64
+			switch l.Activation(sum).(type) {
+			case int:
+				l.Neurons[i].Output = float64(l.Activation(sum).(int))
+			case float64:
+				l.Neurons[i].Output = l.Activation(sum).(float64)
 			}
 
-			l.Neurons[i].Output = output
-			outputs[i] = output
+			results[i] = l.Neurons[i].Output
 		}
 	}
-	return outputs
+	return results
 }
 
 // Forward feed forwards the inputs through the network
@@ -348,7 +369,7 @@ func (n *Network) Forward(inputs []float64) []float64 {
 	for _, layer := range *n.Layers {
 		inputs = layer.Forward(inputs)
 	}
-	return inputs
+	return inputs // This is the output of the last layer
 }
 
 // Backpropagate - backpropagates the error through the network
