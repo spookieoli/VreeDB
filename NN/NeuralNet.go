@@ -317,51 +317,31 @@ func LinearDerivative(x any) any {
 
 // Forward pass through the layer
 func (l *Layer) Forward(inputs []float64) []float64 {
-	// Create the chunks
-	chunks := make([][]float64, len(l.Neurons))
-	for c := range chunks {
-		chunks[c] = make([]float64, len(inputs)/len(chunks))
+	outputs := make([]float64, len(l.Neurons))
+	for _, neuron := range l.Neurons {
+		output := neuron.Bias
+		for j, input := range inputs {
+			output += input * neuron.Weights[j]
+		}
 	}
 
-	// Create a []float64 with the same length as the chunks
-	results := make([]float64, len(chunks))
-
-	// Now we will give every chunk to the activation function
 	if l.ActivationName == "softmax" {
-		// Calculate the sum of the exponentials of the inputs
-		expSum := 0.0
-		for _, input := range inputs {
-			expSum += math.Exp(input)
-		}
-
-		// Divide each individual exponential of the input by the sum
-		for i, c := range chunks {
-			var sum float64
-			for j := range c {
-				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
-			}
-			l.Neurons[i].Output = math.Exp(sum) / expSum
-			results[i] = l.Neurons[i].Output
+		outputs = l.Activation(outputs).([]float64)
+		// Set every output of the neurons
+		for i, output := range outputs {
+			l.Neurons[i].Output = output
 		}
 	} else {
-		for i, c := range chunks {
-			var sum float64
-			for j := range c {
-				sum += l.Neurons[i].Weights[j]*c[j] + l.Neurons[i].Bias
-			}
-
-			// Can be both int / float64
-			switch l.Activation(sum).(type) {
+		for i, output := range outputs {
+			switch l.Activation(output).(type) {
 			case int:
-				l.Neurons[i].Output = float64(l.Activation(sum).(int))
+				l.Neurons[i].Output = float64(l.Activation(output).(int))
 			case float64:
-				l.Neurons[i].Output = l.Activation(sum).(float64)
+				l.Neurons[i].Output = l.Activation(output).(float64)
 			}
-
-			results[i] = l.Neurons[i].Output
 		}
 	}
-	return results
+	return outputs
 }
 
 // Forward feed forwards the inputs through the network
