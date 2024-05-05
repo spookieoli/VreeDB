@@ -115,8 +115,14 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	return gradients, nil
 }
 
-// updateEmbeddings updates the embeddings in the TSNE struct based on the current state of the algorithm.
-// It does not return any values.
-func (t *TSNE) updateEmbeddings() {
-	return
+// updateEmbeddings updates the embedding vectors based on the calculated gradients.
+// It takes a slice of embedding vectors and a 2D slice of gradients as input.
+// For each embedding vector, it updates each dimension of the vector using the learning rate and corresponding gradient.
+// The updated embedding vectors are modified in-place.
+func (t *TSNE) updateEmbeddings(embeddings []*Vector.Vector, gradients [][]float64) {
+	for i := range embeddings {
+		for d := 0; d < t.dimensions; d++ {
+			embeddings[i].Data[d] += t.learningRate * gradients[i][d]
+		}
+	}
 }
