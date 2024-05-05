@@ -1,6 +1,11 @@
 package Tsne
 
-import "VreeDB/Vector"
+import (
+	"VreeDB/Utils"
+	"VreeDB/Vector"
+	"math"
+	"math/rand"
+)
 
 // TSNE is a struct that represents the t-Distributed Stochastic Neighbor Embedding algorithm.
 // It is used for dimensionality reduction and visualization of high-dimensional data.
@@ -14,6 +19,7 @@ type TSNE struct {
 	learningRate  float64
 	dimensions    int // represent the number of dimensions in the output space
 	maxIterations int
+	embeddings    []Vector.Vector
 }
 
 // NewTSNE is a function that creates a new instance of the TSNE struct with the provided parameters.
@@ -33,7 +39,8 @@ type TSNE struct {
 // Returns:
 // A pointer to a new TSNE instance.
 func NewTSNE(perplexity, learninrate float64, maxiterations, dimensions int) *TSNE {
-	return &TSNE{perplexity: perplexity, learningRate: learninrate, maxIterations: maxiterations, dimensions: dimensions}
+	return &TSNE{perplexity: perplexity, learningRate: learninrate, maxIterations: maxiterations,
+		dimensions: dimensions}
 }
 
 // PerformTSNE performs the t-SNE algorithm.
@@ -45,11 +52,67 @@ func (t *TSNE) PerformTSNE() *Vector.Vector {
 	return &Vector.Vector{}
 }
 
-// computeGradients calculates the gradients for the TSNE algorithm.
-// It updates the gradients of the TSNE struct based on the current state of the algorithm.
-// The method does not return any values.
-func (t *TSNE) computeGradients() {
-	return
+// computeGradients computes the gradients for the TSNE algorithm based on the input data.
+// It takes a slice of Vector data as input and returns a 2D slice of floats representing the gradients.
+// The returned gradients represent the update values for each dimension of each embedding vector.
+// The algorithm performs the following steps:
+//   - It initializes a slice of embeddings with random values.
+//   - It calculates the pairwise distances and affinities between the embeddings.
+//   - It computes the gradients based on the differences in affinities and updates the gradients slice.
+//
+// The function returns an error if there is any error in calculating distances or affinities.
+// Otherwise, it returns the calculated gradients slice.
+func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
+	n := len(data)
+	gradients := make([][]float64, n)
+	for i := range gradients {
+		gradients[i] = make([]float64, t.dimensions)
+	}
+
+	// Create random embeddings
+	embeddings := make([]Vector.Vector, len(data))
+	for i := range embeddings {
+		embeddings[i] = Vector.Vector{}
+		embeddings[i].Data = make([]float64, t.dimensions)
+		for k := 0; k < t.dimensions; k++ {
+			embeddings[i].Data[k] = rand.Float64()
+		}
+	}
+	t.embeddings = embeddings
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if i != j {
+				// Berechne Distanz und affin gewichtete Wahrscheinlichkeit
+				dist, err := Utils.Utils.EuclideanDistance(&t.embeddings[i], &t.embeddings[j])
+				if err != nil {
+					return nil, err
+				}
+
+				num := 1.0 / (1.0 + math.Pow(dist, 2))
+				pij := data[i].Data[j]
+
+				// Summe aller affin gewichteten Wahrscheinlichkeiten außer dem Wert für j
+				var sum float64
+				for k := 0; k < n; k++ {
+					if k != j {
+						distK, err := Utils.Utils.EuclideanDistance(&t.embeddings[i], &t.embeddings[k])
+						if err != nil {
+							return nil, err
+						}
+						sum += 1.0 / (1.0 + math.Pow(distK, 2))
+					}
+				}
+				qij := num / sum
+
+				// Gradienten berechnen und akkumulieren
+				for d := 0; d < t.dimensions; d++ {
+					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
+				}
+			}
+		}
+	}
+	return gradients, nil
 }
 
 // updateEmbeddings updates the embeddings in the TSNE struct based on the current state of the algorithm.
