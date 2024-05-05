@@ -83,7 +83,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
 			if i != j {
-				// Berechne Distanz und affin gewichtete Wahrscheinlichkeit
+				// Calculate Distanz and affin weighted porbability
 				dist, err := Utils.Utils.EuclideanDistance(&t.embeddings[i], &t.embeddings[j])
 				if err != nil {
 					return nil, err
@@ -92,7 +92,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				num := 1.0 / (1.0 + math.Pow(dist, 2))
 				pij := data[i].Data[j]
 
-				// Summe aller affin gewichteten Wahrscheinlichkeiten außer dem Wert für j
+				// Sum of all weighted probailities without j
 				var sum float64
 				for k := 0; k < n; k++ {
 					if k != j {
@@ -105,7 +105,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				}
 				qij := num / sum
 
-				// Gradienten berechnen und akkumulieren
+				// calculate gradients and re
 				for d := 0; d < t.dimensions; d++ {
 					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
 				}
