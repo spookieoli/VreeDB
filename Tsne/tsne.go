@@ -1,5 +1,7 @@
 package Tsne
 
+import "VreeDB/Vector"
+
 // TSNE is a struct that represents the t-Distributed Stochastic Neighbor Embedding algorithm.
 // It is used for dimensionality reduction and visualization of high-dimensional data.
 //
@@ -34,36 +36,24 @@ func NewTSNE(perplexity, learninrate float64, maxiterations, dimensions int) *TS
 	return &TSNE{perplexity: perplexity, learningRate: learninrate, maxIterations: maxiterations, dimensions: dimensions}
 }
 
-// PerformTSNE performs the t-Distributed Stochastic Neighbor Embedding algorithm
-// on the given data using the current configuration of the TSNE instance.
-//
-// This method reduces the dimensionality of high-dimensional data and produces
-// a lower-dimensional representation suitable for visualization.
-//
-// The method does not return any value and modifies the TSNE instance's internal state.
-// To access the result of the embedding, use the GetEmbedding method.
-//
-// Note that before calling PerformTSNE, you should set the desired configuration
-// parameters of the TSNE instance, such as perplexity, learning rate, and maximum iterations.
-// If these parameters are not set, default values will be used.
-//
-// Example usage:
-//    tsne := NewTSNE()
-//    tsne.PerformTSNE()
-//
-// After calling PerformTSNE, you can obtain the reduced-dimensional embedding
-// using the GetEmbedding method:
-//    embedding := tsne.GetEmbedding()
-//
-// The PerformTSNE method utilizes the current configuration parameters to run the algorithm,
-// and the resulting embedding is stored in the TSNE instance's internal state.
-//
-// Note that calling PerformTSNE will overwrite any previous embedding stored in the TSNE instance.
-//
-// For more information on the t-SNE algorithm, refer to the original paper by L.J.P. van der Maaten and G.E. Hinton:
-// "Visualizing Data Using t-SNE" (2008).
-// DOI: 10.1109/TVCG.2008.167
+// PerformTSNE performs the t-SNE algorithm.
+// It updates the state of the TSNE struct based on the input data.
+// It returns a Vector that represents the dimensionality-reduced data.
+// The returned Vector contains the data points in the output space.
+func (t *TSNE) PerformTSNE() *Vector.Vector {
+	// TODO: // Perform the t-SNE algorithm
+	return &Vector.Vector{}
+}
 
-func (t *TSNE) PerformTSNE() {
+// computeGradients calculates the gradients for the TSNE algorithm.
+// It updates the gradients of the TSNE struct based on the current state of the algorithm.
+// The method does not return any values.
+func (t *TSNE) computeGradients() {
+	return
+}
 
+// updateEmbeddings updates the embeddings in the TSNE struct based on the current state of the algorithm.
+// It does not return any values.
+func (t *TSNE) updateEmbeddings() {
+	return
 }
