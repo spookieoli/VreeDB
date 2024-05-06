@@ -19,7 +19,8 @@ type TSNE struct {
 	learningRate  float64
 	dimensions    int // represent the number of dimensions in the output space
 	maxIterations int
-	embeddings    []Vector.Vector
+	embeddings    []*Vector.Vector
+	Collection    string
 }
 
 // NewTSNE is a function that creates a new instance of the TSNE struct with the provided parameters.
@@ -38,18 +39,39 @@ type TSNE struct {
 //
 // Returns:
 // A pointer to a new TSNE instance.
-func NewTSNE(perplexity, learninrate float64, maxiterations, dimensions int) *TSNE {
-	return &TSNE{perplexity: perplexity, learningRate: learninrate, maxIterations: maxiterations,
-		dimensions: dimensions}
+func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
+	return &TSNE{learningRate: learninrate, maxIterations: maxiterations,
+		dimensions: dimensions, Collection: collection}
 }
 
 // PerformTSNE performs the t-SNE algorithm.
 // It updates the state of the TSNE struct based on the input data.
 // It returns a Vector that represents the dimensionality-reduced data.
 // The returned Vector contains the data points in the output space.
-func (t *TSNE) PerformTSNE() *Vector.Vector {
-	// TODO: // Perform the t-SNE algorithm
-	return &Vector.Vector{}
+func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
+	// Create random embeddings
+	embeddings := make([]*Vector.Vector, len(data))
+	for i := range embeddings {
+		embeddings[i] = &Vector.Vector{}
+		embeddings[i].Data = make([]float64, t.dimensions)
+		for k := 0; k < t.dimensions; k++ {
+			embeddings[i].Data[k] = rand.Float64()
+		}
+	}
+	t.embeddings = embeddings
+
+	// TSNE Iterations
+	for i := 0; i < t.maxIterations; i++ {
+		gradients, err := t.computeGradients(data)
+		if err != nil {
+			// handle error
+			return nil, err
+		}
+
+		// update Embeddings
+		t.updateEmbeddings(t.embeddings, gradients)
+	}
+	return t.embeddings, nil
 }
 
 // computeGradients computes the gradients for the TSNE algorithm based on the input data.
@@ -69,22 +91,11 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 		gradients[i] = make([]float64, t.dimensions)
 	}
 
-	// Create random embeddings
-	embeddings := make([]Vector.Vector, len(data))
-	for i := range embeddings {
-		embeddings[i] = Vector.Vector{}
-		embeddings[i].Data = make([]float64, t.dimensions)
-		for k := 0; k < t.dimensions; k++ {
-			embeddings[i].Data[k] = rand.Float64()
-		}
-	}
-	t.embeddings = embeddings
-
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
 			if i != j {
 				// Calculate Distanz and affin weighted porbability
-				dist, err := Utils.Utils.EuclideanDistance(&t.embeddings[i], &t.embeddings[j])
+				dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
 				if err != nil {
 					return nil, err
 				}
@@ -96,7 +107,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				var sum float64
 				for k := 0; k < n; k++ {
 					if k != j {
-						distK, err := Utils.Utils.EuclideanDistance(&t.embeddings[i], &t.embeddings[k])
+						distK, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[k])
 						if err != nil {
 							return nil, err
 						}
