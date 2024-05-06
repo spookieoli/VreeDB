@@ -171,6 +171,11 @@ type TSNE struct {
 	Iterations     int     `json:"iterations"`
 }
 
+type TSNEData struct {
+	CollectionName string      `json:"collection_name"`
+	Vector         [][]float64 `json:"vector"`
+}
+
 // ValidateFilter will validate the filters in Point
 func (p *Point) ValidateFilter() error {
 	if p.Filter != nil {

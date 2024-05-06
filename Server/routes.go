@@ -1163,7 +1163,75 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 		}
 		// Tell the user not authorized
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
-		w.Write([]byte("Unauthorized"))
 		return
 	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Create var
+		tsne := TSNE{}
+
+		// Decode the request body into tsne struct
+		decoder := json.NewDecoder(req.Body)
+		err = decoder.Decode(&tsne)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer req.Body.Close()
+
+		// Check if Cookie or Apikey are ok
+		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
+
+			// if there is no tsnedimension in collection than tell the user
+			if r.DB.Collections[tsne.CollectionName].TSNE_Dimensions == nil {
+				http.Error(w, "No t-SNE dimensions found in collection", http.StatusBadRequest)
+				return
+			}
+
+			// Get the collection from the Vdb
+			_, ok := r.DB.Collections[tsne.CollectionName]
+			if !ok {
+				http.Error(w, "Collection not found", http.StatusBadRequest)
+				return
+			}
+
+			// Get the vectors from the collection
+			vectors := r.DB.Collections[tsne.CollectionName].GetTSNEDimensions()
+
+			// Create TSNEDATA
+			data := &TSNEData{
+				CollectionName: tsne.CollectionName,
+				Vector:         make([][]float64, len(vectors)),
+			}
+			for i, vector := range vectors {
+				data.Vector[i] = vector.Data
+			}
+
+			// Send it to the user
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(data)
+			return
+		}
+		// Tell the user not authorized
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
 }
