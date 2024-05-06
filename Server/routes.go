@@ -1127,3 +1127,43 @@ func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
+func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "SYSTEMEVENT"
+	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createtsne" {
+
+		// Get the data
+		tsne := TSNE{}
+		decoder := json.NewDecoder(req.Body)
+		err := decoder.Decode(&tsne)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer req.Body.Close()
+
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
+			// Create the TSNE
+			collection, ok := r.DB.Collections[tsne.CollectionName]
+			if !ok {
+				http.Error(w, fmt.Sprintf("Collection %s does not exist", tsne.CollectionName), http.StatusBadRequest)
+				return
+			}
+
+			// make it nonblocking...
+			go func() {
+				err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
+				if err != nil {
+					Logger.Log.Log("Error creating TSNE: " + err.Error())
+					return
+				}
+			}()
+			w.WriteHeader(http.StatusOK)
+		}
+		// Tell the user not authorized
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+}
