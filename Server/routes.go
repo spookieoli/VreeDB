@@ -149,7 +149,7 @@ func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 // Delete deletes a Collection // TODO Rename to DeleteCollection
 func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "TRANSACTION"
-	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/delete" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 		// Parse the form
@@ -291,7 +291,7 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 // ListCollections lists all the Collections
 func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "TRANSACTION"
-	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/listcollections" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/listcollections" {
 		// Create CollectionList type
 		cl := &CollectionList{}
 
@@ -322,7 +322,7 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 // AddPoint adds a point to a Collection
 func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "ADD"
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpoint" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 10000000)
 		// Parse the form
@@ -388,7 +388,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 
 // AddPointBatch adds a batch of points to a Collection
 func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/addpointbatch" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/addpointbatch" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -458,7 +458,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 // DeletePoint deletes a point from a Collection
 func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
-	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deletepoint" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 		// Parse the form
@@ -516,7 +516,7 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 // Search searches for the nearest neighbours of the given target vector
 func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SEARCH"
-	if req.Method == http.MethodGet {
+	if req.Method == http.MethodPost {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -601,7 +601,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 // TrainClassifier trains a classifier
 func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/trainclassifier" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/trainclassifier" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -686,7 +686,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 // DeleteClassifier will delete a classifier
 func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "TRANSACTION"
-	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 
@@ -802,7 +802,7 @@ func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
 // Classify will classify a vector
 func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "CLASSIFY"
-	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/classify" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/classify" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -890,7 +890,7 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 // CreateApiKey creates a new ApiKey
 func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createapikey" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createapikey" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -942,7 +942,7 @@ func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
 // DeleteApiKey deletes an ApiKey
 func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodDelete && strings.ToLower(req.URL.String()) == "/deleteapikey" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deleteapikey" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 
@@ -992,7 +992,7 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 // CreateIndex will create an index
 func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createindex" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createindex" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -1130,7 +1130,7 @@ func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPut && strings.ToLower(req.URL.String()) == "/createtsne" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
 
 		// Get the data
 		tsne := TSNE{}

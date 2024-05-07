@@ -466,23 +466,17 @@
             switch (selectedAction) {
                 case 'createcollection':
                 case 'getaccessdata':
-                    method = 'POST';
-                    break;
                 case 'addpoint':
                 case 'addpointbatch':
                 case 'trainclassifier':
                 case 'createapikey':
-                    method = 'PUT';
-                    break;
                 case 'delete':
                 case 'deletepoint':
                 case 'deleteclassifier':
-                    method = 'DELETE';
-                    break;
                 case 'search':
                 case 'list':
                 case 'classify':
-                    method = 'GET';
+                    method = 'POST';
                     break;
                 default:
                     alert('Unknown action: ' + selectedAction);
