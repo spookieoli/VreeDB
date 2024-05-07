@@ -163,6 +163,19 @@ type IndexCreator struct {
 	IndexName      string `json:"index_name"`
 }
 
+type TSNE struct {
+	ApiKey         string  `json:"api_key"`
+	CollectionName string  `json:"collection_name"`
+	Dimensions     int     `json:"dimensions"`
+	Learningrate   float64 `json:"learning_rate"`
+	Iterations     int     `json:"iterations"`
+}
+
+type TSNEData struct {
+	CollectionName string      `json:"collection_name"`
+	Vector         [][]float64 `json:"vector"`
+}
+
 // ValidateFilter will validate the filters in Point
 func (p *Point) ValidateFilter() error {
 	if p.Filter != nil {
