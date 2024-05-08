@@ -7,6 +7,8 @@
     <link rel="stylesheet" type="text/css" href="/static/semantic.css">
     <link rel="stylesheet" href="/static/codemirror.min.css"/>
     <link rel="stylesheet" href="/static/stylesheets/icon.min.css"/>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/plotly-2.32.0.min.js"></script>
 </head>
 
 <style>
@@ -45,6 +47,7 @@
     <a class="item" data-tab="visualization">Visualization</a>
     <a class="item" data-tab="analytics">Analytics</a>
     <a class="item" data-tab="workbench">Workbench</a>
+    <a class="item" data-tab="3dgraph">3D Graph</a>
     <a class="item" data-tab="neuralnetbuilder">Neural Net Builder</a>
     <a class="item" id="logoutButton" style="margin-left: auto;">Logout</a>
 </div>
@@ -164,6 +167,11 @@
         <div id="editor2"></div>
     </div>
 </div>
+<div class="ui tab segment" data-tab="3dgraph">
+    <h2 class="ui header">3D Graph</h2>
+    <p>The 3D Scatter Plot.</p>
+    <div id="scatterPlot"></div>
+</div>
 <div class="ui tab segment" data-tab="neuralnetbuilder">
     <h2 class="ui header" >Neural Net Builder</h2>
     <p>Build your own Neural Net with zero code.</p>
@@ -176,12 +184,12 @@
 </div>
 
 <!-- Include jQuery and Semantic UI JavaScript -->
-<script src="/static/jquery.js"></script>
 <script src="/static/semantic.js"></script>
 <script src="/static/codemirror.min.js"></script>
 <script src="/static/js.js"></script>
 <script src="/static/chartjs.js"></script>
 <script src="/static/chartjs_adapter_date.js"></script>
+
 
 <script>
 
@@ -223,6 +231,28 @@
     }
 
     $(document).ready(function () {
+        // 3D Scatter Plot
+        function createScatterPlot(data) {
+            const trace = {
+                x: data.map(point => point.x),
+                y: data.map(point => point.y),
+                z: data.map(point => point.z),
+                mode: 'markers',
+                type: 'scatter3d'
+            };
+
+            Plotly.newPlot('scatterPlot', [trace]); 
+        }
+
+        // Sample Usage (assuming a <div id="myScatterPlot"></div> exists)
+        const data = [
+            { x: 1, y: 2, z: 3 },
+            { x: -2, y: 1, z: 0 },
+            // ... more data points
+        ];
+
+        createScatterPlot(data);
+
         // Neural Net Builder
         var neuralNetBuilder = document.getElementById('neuralNetBuilder');
 

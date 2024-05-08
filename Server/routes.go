@@ -206,7 +206,9 @@ func static(next http.Handler) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-
+		if strings.HasSuffix(r.URL.Path, ".js") {
+			w.Header().Set("Content-Type", "application/javascript")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
