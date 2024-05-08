@@ -4,11 +4,11 @@ import (
 	"VreeDB/ArgsParser"
 	"VreeDB/Logger"
 	"bytes"
-	"encoding/binary"
+	"compress/gzip"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"io"
-	"math"
 	"os"
 	"sync"
 	"syscall"
@@ -65,6 +65,26 @@ func (f *FileMapper) Start(collections []string) {
 	}
 }
 
+// GetCompressedBuffer encodes the given float64 array,
+// compresses it using GzipWriter, and returns the resulting compressed buffer.
+// It returns an error if there is an error encoding the array or closing GzipWriter.
+func (f *FileMapper) GetCompressedBuffer(arr []float64) (bytes.Buffer, error) {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	err := gob.NewEncoder(gz).Encode(arr)
+	if err != nil {
+		Logger.Log.Log("Error encoding array: " + err.Error())
+		// Here we panic because we can't continue without encoding the array
+		return buf, fmt.Errorf("cant encode data")
+	}
+	err = gz.Close()
+	if err != nil {
+		Logger.Log.Log("Error closing GzipWriter: " + err.Error())
+		return buf, fmt.Errorf("Error closing GzipWriter: " + err.Error())
+	}
+	return buf, nil
+}
+
 // WriteVector will write data to the file
 func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, error) {
 	// Lock the file for writing
@@ -90,12 +110,18 @@ func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, 
 		panic(err)
 	}
 
-	// Array in die Datei schreiben
-	for _, value := range arr {
-		err := binary.Write(f.File[collection], binary.LittleEndian, value)
-		if err != nil {
-			panic(err)
-		}
+	// Compress []float64
+	buf, err := f.GetCompressedBuffer(arr)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Write the data to the file
+	n, err := f.File[collection].Write(buf.Bytes())
+	if err != nil {
+		Logger.Log.Log("Error writing to file: " + err.Error())
+		// Here we panic because we can't continue without writing to the file
+		panic(err)
 	}
 
 	// Close the file and reopen it
@@ -105,7 +131,7 @@ func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, 
 	f.MapFile(collection)
 
 	// Return the start position and the length of the array
-	return start, len(arr), err
+	return start, n, err
 }
 
 // ReadVector will read data from the file
@@ -113,18 +139,26 @@ func (f *FileMapper) ReadVector(start int64, length int, collection string) *[]f
 	// Lock the file for reading
 	f.Mut[collection].RLock()
 	defer f.Mut[collection].RUnlock()
+
 	// if not mapped we map it
 	if !f.Mapped[collection] {
 		f.MapFile(collection)
 	}
+
 	// Create the array
 	arr := make([]float64, length)
+
 	// Check if the slice is not empty
 	if len(f.MappedData[collection]) > 0 {
-		// Read the data from the file
-		for i := 0; i < length; i++ {
-			arr[i] = math.Float64frombits(binary.LittleEndian.Uint64(f.MappedData[collection][start+int64(i)*8 : start+int64(i)*8+8]))
+		// Extract the gzip compressed data
+		compressedData := f.MappedData[collection][start:]
+		buf := bytes.NewBuffer(compressedData)
+		gz, err := gzip.NewReader(buf)
+		if err != nil {
+			panic("cannot create gzip reader")
 		}
+		dec := gob.NewDecoder(gz)
+		err = dec.Decode(&arr)
 	}
 	return &arr
 }
