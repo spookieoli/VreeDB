@@ -13,6 +13,7 @@ type Vector struct {
 	Collection   string
 	Data         []float64
 	Length       int
+	CLength      int
 	Payload      *map[string]interface{}
 	DataStart    int64
 	PayloadStart int64
@@ -34,7 +35,7 @@ func NewVector(id string, data []float64, payload *map[string]interface{}, colle
 
 	if collection != "" {
 		// This will write the vector to the memory mapped file
-		ds, _, err := FileMapper.Mapper.WriteVector(data, collection)
+		ds, clen, err := FileMapper.Mapper.WriteVector(data, collection)
 		if err != nil {
 			// if we cannot write to the file we panic
 			panic(err)
@@ -45,7 +46,7 @@ func NewVector(id string, data []float64, payload *map[string]interface{}, colle
 			// if we cannot write to the file we panic
 			panic(err)
 		}
-		return &Vector{Id: id, Data: data, Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps}
+		return &Vector{Id: id, Data: data, Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps, CLength: clen}
 	} else {
 		return &Vector{Id: id, Data: data, Length: len(data), Payload: payload, Indexed: false, mut: &sync.RWMutex{}, Collection: collection}
 	}
