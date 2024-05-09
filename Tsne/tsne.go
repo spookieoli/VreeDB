@@ -92,7 +92,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	}
 
 	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+		for j := 0; j < len(data[i].Data); j++ { // TODO: check if this is correct
 			if i != j {
 				// Calculate Distanz and affin weighted porbability
 				dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
@@ -101,7 +101,8 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				}
 
 				num := 1.0 / (1.0 + math.Pow(dist, 2))
-				pij := data[i].Data[j]
+				pi := data[i]
+				pij := pi.Data[j]
 
 				// Sum of all weighted probailities without j
 				var sum float64

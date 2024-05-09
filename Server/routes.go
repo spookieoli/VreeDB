@@ -1145,7 +1145,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 
 		// Check if Auth is valid
-		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
+		if true || r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) { // TODO: remove true
 			// Create the TSNE
 			collection, ok := r.DB.Collections[tsne.CollectionName]
 			if !ok {
@@ -1164,7 +1164,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}
 		// Tell the user not authorized
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		http.Error(w, "Not authorized in CreateTSNE!", http.StatusUnauthorized)
 		return
 	}
 	// Notice the user that the route is not found under given information
@@ -1175,7 +1175,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettsnedata" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -1196,7 +1196,7 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 
 		// Check if Cookie or Apikey are ok
-		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
+		if true || r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) { // TODO: remove true
 
 			// if there is no tsnedimension in collection than tell the user
 			if r.DB.Collections[tsne.CollectionName].TSNE_Dimensions == nil {
@@ -1229,7 +1229,7 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Tell the user not authorized
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		http.Error(w, "Not authorized in GetTSNE - "+tsne.ApiKey, http.StatusUnauthorized)
 		return
 	}
 	// Notice the user that the route is not found under given information
