@@ -442,9 +442,7 @@
             $btn.addClass('loading');
 
             var collectionId = $(this).data('collection-id');
-            // Logic for deleting the collection, e.g., AJAX request.
             console.log('Generating 3D Graph for the collection with ID: ' + collectionId);
-            // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
             $.ajax({
                 type: "POST",
                 url: "/createtsne",
