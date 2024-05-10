@@ -1164,7 +1164,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 				Logger.Log.Log("TSNE created")
 				fmt.Println("TSNE created")
 				w.WriteHeader(http.StatusOK)
-				// Send it to the user
+				// This is required for proper client-side parsing of json body
 				w.Header().Set("Content-Type", "application/json")
 				data := "{'responseText': 'TSNE created!'}"
 				json.NewEncoder(w).Encode(data)
