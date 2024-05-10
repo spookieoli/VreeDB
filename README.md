@@ -9,7 +9,7 @@ VreeDB is a database project written in Go. It uses a k-d tree data structure fo
 - Easy to use
 - Platform independent (when using Docker)
 - Includes Classifiers (SVM / Neural Nets) - you can use the Database as Classifier (Pictures, Text, Sound etc etc)
-- "Distanceaware" Filtering
+- `Distanceaware` Filtering
 - Supports multiple collections.
 - Backup and restore functionality for collections.
 - Thread-safe operations.
