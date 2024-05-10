@@ -1239,7 +1239,7 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Tell the user not authorized
-		http.Error(w, "Not authorized in GetTSNE - "+tsne.ApiKey, http.StatusUnauthorized)
+		http.Error(w, "Not authorized in GetTSNE!", http.StatusUnauthorized)
 		return
 	}
 	// Notice the user that the route is not found under given information
