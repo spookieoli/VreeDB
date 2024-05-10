@@ -418,7 +418,7 @@
             console.log('Deleting the collection with ID: ' + collectionId);
             // send the json {collection: collectionId} to the servers /delete endpoint to delete the collection
             $.ajax({
-                type: "DELETE",
+                type: "POST",
                 url: "/delete",
                 data: JSON.stringify({name: collectionId}),
                 contentType: "application/json; charset=utf-8",
