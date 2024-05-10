@@ -34,22 +34,8 @@ type ThreadpoolData struct {
 	wg                     *sync.WaitGroup
 }
 
-// NewTSNE is a function that creates a new instance of the TSNE struct with the provided parameters.
-// It takes the perplexity, learning rate, maximum iterations, and dimensions as inputs.
-// It returns a pointer to the newly created TSNE struct.
-//
-// Example usage:
-// tsne := NewTSNE(30.0, 0.1, 1000, 2)
-// tsne.PerformTSNE()
-//
-// Parameters:
-// - perplexity: The perplexity hyperparameter for the TSNE algorithm.
-// - learningRate: The learning rate or step size for the TSNE algorithm.
-// - maxIterations: The maximum number of iterations for the TSNE algorithm.
-// - dimensions: The number of dimensions in the output space.
-//
-// Returns:
-// A pointer to a new TSNE instance.
+// NewTSNE initializes a new TSNE object with the specified learning rate, max iterations,
+// dimensions, and collection name. It returns a pointer to the TSNE object.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
 	tsne := &TSNE{learningRate: learninrate, maxIterations: maxiterations,
 		dimensions: dimensions, Collection: collection, Chan: make(chan *ThreadpoolData, 100)}
@@ -89,16 +75,17 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 	return t.embeddings, nil
 }
 
-// computeGradients computes the gradients for the TSNE algorithm based on the input data.
-// It takes a slice of Vector data as input and returns a 2D slice of floats representing the gradients.
-// The returned gradients represent the update values for each dimension of each embedding vector.
-// The algorithm performs the following steps:
-//   - It initializes a slice of embeddings with random values.
-//   - It calculates the pairwise distances and affinities between the embeddings.
-//   - It computes the gradients based on the differences in affinities and updates the gradients slice.
+// computeGradients calculates the gradients for the t-SNE algorithm based on the input data.
+// It takes a slice of Vector pointers as input.
+// It returns a 2D slice of float64 that represents the gradients.
+// Each row in the 2D slice corresponds to a data point, and each column corresponds to a dimension in the output space.
+// If there is an error during the calculation, it returns an error.
+// Parameters:
+//   - data: A slice of Vector pointers representing the input data points.
 //
-// The function returns an error if there is any error in calculating distances or affinities.
-// Otherwise, it returns the calculated gradients slice.
+// Returns:
+//   - A 2D slice of float64 representing the gradients.
+//   - An error if there was an error in the calculation.
 func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	n := len(data)
 
@@ -144,7 +131,10 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	return gradients, nil
 }
 
-// Threadpool starts the Threadpool
+// Threadpool is a method of the TSNE struct that creates a pool of goroutines to process data concurrently.
+// It uses the channel t.Chan to receive data and calls the CalculateSums method for each data point.
+// Once the calculation is done, it uses the WaitGroup to notify that the operation is completed.
+// The number of goroutines created is equal to half the number of available CPUs divided by 2.
 func (t *TSNE) Threadpool() {
 	for i := 0; i < runtime.NumCPU()/2; i++ {
 		go func() {
@@ -156,7 +146,9 @@ func (t *TSNE) Threadpool() {
 	}
 }
 
-// CalculateSums calculates the sums for the CragdientUpdate
+// CalculateSums calculates the sum of distances between two embedding vectors.
+// It takes a ThreadpoolData pointer as input and updates the value of *data.dist and *data.sum accordingly.
+// If there is an error during the calculation, it logs the error message.
 func (t *TSNE) CalculateSums(data *ThreadpoolData) {
 	var err error
 	*data.dist, err = Utils.Utils.EuclideanDistance(data.embedding1, data.embedding2)
@@ -167,10 +159,14 @@ func (t *TSNE) CalculateSums(data *ThreadpoolData) {
 	*data.sum += 1.0 / (1.0 + math.Pow(*data.dist, 2))
 }
 
-// updateEmbeddings updates the embedding vectors based on the calculated gradients.
-// It takes a slice of embedding vectors and a 2D slice of gradients as input.
-// For each embedding vector, it updates each dimension of the vector using the learning rate and corresponding gradient.
-// The updated embedding vectors are modified in-place.
+// updateEmbeddings updates the embeddings based on the computed gradients.
+// It takes a slice of Vector pointers representing the embeddings and a 2D slice of float64 representing the gradients.
+// For each embedding vector, it updates each dimension by adding the learning rate multiplied by the corresponding gradient value.
+// Parameters:
+//   - embeddings: A slice of Vector pointers representing the embedding vectors.
+//   - gradients: A 2D slice of float64 representing the gradients.
+//
+// Returns: None. The embeddings slice is modified in-place.
 func (t *TSNE) updateEmbeddings(embeddings []*Vector.Vector, gradients [][]float64) {
 	for i := range embeddings {
 		// optimize Memory access by first get data to scope
