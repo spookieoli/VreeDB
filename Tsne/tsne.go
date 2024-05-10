@@ -93,7 +93,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			if i != j && i < n && j < n { // TODO: check if this is required
+			if i != j && i < n && j < n { // TODO: check if this check (i < n && j < n) is required
 				// Calculate Distanz and affin weighted porbability
 				dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
 				if err != nil {
