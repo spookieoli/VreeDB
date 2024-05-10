@@ -437,6 +437,10 @@
 
         // Event-Handler for the Generate 3D Graph Button
         $('.ui.accordion').on('click', '.ui.green.button', function () {
+            var $btn = $(this);
+            $btn.removeClass('transition visible');
+            $btn.addClass('loading');
+
             var collectionId = $(this).data('collection-id');
             // Logic for deleting the collection, e.g., AJAX request.
             console.log('Generating 3D Graph for the collection with ID: ' + collectionId);
@@ -444,14 +448,13 @@
             $.ajax({
                 type: "POST",
                 url: "/createtsne",
-                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.000001, iterations: 100}),
+                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.000001, iterations: 3}),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 xhrFields: {
                     withCredentials: true
                 },
                 success: function (data) {
-                    alert(data);
                     $.ajax({
                         type: "POST",
                         url: "/gettsnedata",
@@ -473,6 +476,7 @@
                                 };
 
                                 Plotly.newPlot('scatterPlot', [trace]); 
+                                $btn.removeClass('loading');
                             }
 
                             // Sample Usage (assuming a <div id="myScatterPlot"></div> exists)
@@ -482,15 +486,20 @@
                                 // ... more data points
                             ];
 
-                            createScatterPlot(data1);
+                            // Transform the vector to the desired format
+                            var transformed_data = $.map(inner_data.vector, function(item) {
+                                return { x: item[0], y: item[1], z: item[2] };
+                            });
+
+                            createScatterPlot(transformed_data);
                         },
                         error: function (inner_error_data) {
-                            alert(inner_error_data);
                             console.log(inner_error_data);
                         }
                     });
                 },
                 error: function (error_data) {
+                    alert(JSON.stringify(error_data, null, 4));
                     console.log(error_data);
                 }
             });

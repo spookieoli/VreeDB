@@ -1145,7 +1145,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 
 		// Check if Auth is valid
-		if true || r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) { // TODO: remove true
+		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
 			// Create the TSNE
 			collection, ok := r.DB.Collections[tsne.CollectionName]
 			if !ok {
@@ -1153,15 +1153,25 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			// make it nonblocking...
-			go func() {
-				err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
-				if err != nil {
-					Logger.Log.Log("Error creating TSNE: " + err.Error())
-					return
-				}
-			}()
-			w.WriteHeader(http.StatusOK)
+			// make it blocking...
+			// go func() {
+			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
+			if err != nil {
+				Logger.Log.Log("Error creating TSNE: " + err.Error())
+				fmt.Println("Error creating TSNE: " + err.Error())
+				return
+			} else {
+				Logger.Log.Log("TSNE created")
+				fmt.Println("TSNE created")
+				w.WriteHeader(http.StatusOK)
+				// Send it to the user
+				w.Header().Set("Content-Type", "application/json")
+				data := "{'responseText': 'TSNE created!'}"
+				json.NewEncoder(w).Encode(data)
+				return
+			}
+			// }()
+
 		}
 		// Tell the user not authorized
 		http.Error(w, "Not authorized in CreateTSNE!", http.StatusUnauthorized)
@@ -1196,7 +1206,7 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 
 		// Check if Cookie or Apikey are ok
-		if true || r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) { // TODO: remove true
+		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
 
 			// if there is no tsnedimension in collection than tell the user
 			if r.DB.Collections[tsne.CollectionName].TSNE_Dimensions == nil {

@@ -23,6 +23,8 @@ These instructions will get you a copy of the project up and running on your loc
 - git clone https://github.com/spookieoli/VreeDB
 - docker build -t vreedb .
 - docker run -p 8080:8080 vreedb
+or may be
+- docker run -v C:\collections:/collections -p 8080:8080 --name vreedb_test vreedb
 
 Once up - you can access the UI at http://127.0.0.1:8080/
 (WARNING! VREEDB IS IN EARLY ALPHA - DONT USE IT IN PRODUCTION!)

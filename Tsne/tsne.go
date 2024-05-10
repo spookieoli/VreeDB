@@ -92,8 +92,8 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	}
 
 	for i := 0; i < n; i++ {
-		for j := 0; j < len(data[i].Data); j++ { // TODO: check if this is correct
-			if i != j {
+		for j := 0; j < n; j++ {
+			if i != j && i < n && j < n { // TODO: check if this is required
 				// Calculate Distanz and affin weighted porbability
 				dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
 				if err != nil {
@@ -121,7 +121,10 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				for d := 0; d < t.dimensions; d++ {
 					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
 				}
-			}
+			} // else {
+			// 	Logger.Log.Log("Index out of range")
+			// 	fmt.Println("Index out of range")
+			// }
 		}
 	}
 	return gradients, nil
