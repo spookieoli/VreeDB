@@ -101,8 +101,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				}
 
 				num := 1.0 / (1.0 + math.Pow(dist, 2))
-				pi := data[i]
-				pij := pi.Data[j]
+				pij := data[i].Data[j]
 
 				// Sum of all weighted probailities without j
 				var sum float64
