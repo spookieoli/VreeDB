@@ -123,7 +123,7 @@
                 </div>
                 <button class="ui red button" data-collection-id="{{.Name}}">Delete</button>
                 <button class="ui green button" data-collection-id="{{.Name}}">Generate 3D Graph</button>
-                <div id="scatterPlot"></div>
+                <div id="scatterPlot-{{.Name}}"></div>
             </div>
         {{end}}
     </div>
@@ -473,7 +473,7 @@
                                     type: 'scatter3d'
                                 };
 
-                                Plotly.newPlot('scatterPlot', [trace]); 
+                                Plotly.newPlot('scatterPlot-' + collectionId, [trace]); 
                                 $btn.removeClass('loading');
                             }
 
