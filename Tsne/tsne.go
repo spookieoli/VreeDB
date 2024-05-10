@@ -1,10 +1,13 @@
 package Tsne
 
 import (
+	"VreeDB/Logger"
 	"VreeDB/Utils"
 	"VreeDB/Vector"
 	"math"
 	"math/rand"
+	"runtime"
+	"sync"
 )
 
 // TSNE is a struct that represents the t-Distributed Stochastic Neighbor Embedding algorithm.
@@ -21,6 +24,14 @@ type TSNE struct {
 	maxIterations int
 	embeddings    []*Vector.Vector
 	Collection    string
+	Chan          chan *ThreadpoolData
+}
+
+// ThreadpoolData carries the vars to calculate Gradients
+type ThreadpoolData struct {
+	embedding1, embedding2 *Vector.Vector
+	dist, sum              *float64
+	wg                     *sync.WaitGroup
 }
 
 // NewTSNE is a function that creates a new instance of the TSNE struct with the provided parameters.
@@ -41,7 +52,7 @@ type TSNE struct {
 // A pointer to a new TSNE instance.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
 	return &TSNE{learningRate: learninrate, maxIterations: maxiterations,
-		dimensions: dimensions, Collection: collection}
+		dimensions: dimensions, Collection: collection, Chan: make(chan *ThreadpoolData, 100)}
 }
 
 // PerformTSNE performs the t-SNE algorithm.
@@ -71,6 +82,8 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 		// update Embeddings
 		t.updateEmbeddings(t.embeddings, gradients)
 	}
+	// CLose the
+	close(t.Chan)
 	return t.embeddings, nil
 }
 
@@ -92,23 +105,24 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	dist := make([][]float64, n)
 	sum := make([]float64, n)
 
+	// Use only one loop for the creation of the slices
 	for i := range gradients {
 		gradients[i] = make([]float64, t.dimensions)
 		dist[i] = make([]float64, n)
 	}
 
+	wg := sync.WaitGroup{}
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
 			if i != j && j < len(data[i].Data) {
-				var err error
-				dist[i][j], err = Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
-				if err != nil {
-					return nil, err
-				}
-				sum[i] += 1.0 / (1.0 + math.Pow(dist[i][j], 2))
+				// Threaded calculation
+				wg.Add(1)
+				t.Chan <- &ThreadpoolData{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i]}
 			}
 		}
 	}
+	// Wait for calculations to be done
+	wg.Done()
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
@@ -126,6 +140,29 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 		}
 	}
 	return gradients, nil
+}
+
+// Threadpool starts the Threadpool
+func (t *TSNE) Threadpool() {
+	for i := 0; i < runtime.NumCPU()/2; i++ {
+		go func() {
+			for data := range t.Chan {
+				t.CalculateSums(data)
+				data.wg.Done()
+			}
+		}()
+	}
+}
+
+// CalculateSums calculates the sums for the CragdientUpdate
+func (t *TSNE) CalculateSums(data *ThreadpoolData) {
+	var err error
+	*data.dist, err = Utils.Utils.EuclideanDistance(data.embedding1, data.embedding2)
+	if err != nil {
+		Logger.Log.Log(err.Error())
+		return
+	}
+	*data.sum += 1.0 / (1.0 + math.Pow(*data.dist, 2))
 }
 
 // updateEmbeddings updates the embedding vectors based on the calculated gradients.
