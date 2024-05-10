@@ -121,10 +121,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				for d := 0; d < t.dimensions; d++ {
 					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
 				}
-			} // else {
-			// 	Logger.Log.Log("Index out of range")
-			// 	fmt.Println("Index out of range")
-			// }
+			}
 		}
 	}
 	return gradients, nil
