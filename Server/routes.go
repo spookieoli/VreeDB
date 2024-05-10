@@ -1156,11 +1156,9 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
 			if err != nil {
 				Logger.Log.Log("Error creating TSNE: " + err.Error())
-				fmt.Println("Error creating TSNE: " + err.Error())
 				return
 			} else {
 				Logger.Log.Log("TSNE created")
-				fmt.Println("TSNE created")
 				w.WriteHeader(http.StatusOK)
 				// This is required for proper client-side parsing of json body
 				w.Header().Set("Content-Type", "application/json")
