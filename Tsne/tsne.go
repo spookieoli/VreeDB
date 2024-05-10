@@ -51,8 +51,10 @@ type ThreadpoolData struct {
 // Returns:
 // A pointer to a new TSNE instance.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
-	return &TSNE{learningRate: learninrate, maxIterations: maxiterations,
+	tsne := &TSNE{learningRate: learninrate, maxIterations: maxiterations,
 		dimensions: dimensions, Collection: collection, Chan: make(chan *ThreadpoolData, 100)}
+	tsne.Threadpool() // Starts the Threadpool
+	return tsne
 }
 
 // PerformTSNE performs the t-SNE algorithm.
