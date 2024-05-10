@@ -45,7 +45,7 @@ If you need a simple and quick installation of the product, run the command give
 docker run -p 8080:8080 vreedb
 ```
 
-If you would like to persist the data in the database across sessions and you are having a windows laptop then simply use the below docker run command instead of the earlier one:
+If you would like to persist the data in the database across sessions and you are having a windows laptop then simply create a folder called `collections` in C drive and use the below docker run command instead of the earlier one:
 
 ```bash
 docker run -v C:\collections:/collections -p 8080:8080 --name vreedb_test vreedb
