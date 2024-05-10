@@ -93,33 +93,35 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
-			if i != j {
-				// Calculate Distanz and affin weighted porbability
-				dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
+			if i == j || j >= len(data[i].Data) {
+				continue
+			}
+			// Calculate Distanz and affin weighted porbability
+			dist, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[j])
+			if err != nil {
+				return nil, err
+			}
+
+			num := 1.0 / (1.0 + math.Pow(dist, 2))
+			pij := data[i].Data[j]
+
+			// Sum of all weighted probabilities
+			var sum float64
+			for k := 0; k < n; k++ {
+				if k == j || k >= len(data[i].Data) {
+					continue
+				}
+				distK, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[k])
 				if err != nil {
 					return nil, err
 				}
+				sum += 1.0 / (1.0 + math.Pow(distK, 2))
+			}
+			qij := num / sum
 
-				num := 1.0 / (1.0 + math.Pow(dist, 2))
-				pij := data[i].Data[j]
-
-				// Sum of all weighted probailities without j
-				var sum float64
-				for k := 0; k < n; k++ {
-					if k != j {
-						distK, err := Utils.Utils.EuclideanDistance(t.embeddings[i], t.embeddings[k])
-						if err != nil {
-							return nil, err
-						}
-						sum += 1.0 / (1.0 + math.Pow(distK, 2))
-					}
-				}
-				qij := num / sum
-
-				// calculate gradients and re
-				for d := 0; d < t.dimensions; d++ {
-					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
-				}
+			// calculate gradients
+			for d := 0; d < t.dimensions; d++ {
+				gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
 			}
 		}
 	}
