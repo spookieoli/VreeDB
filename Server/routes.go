@@ -206,7 +206,9 @@ func static(next http.Handler) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-
+		if strings.HasSuffix(r.URL.Path, ".js") {
+			w.Header().Set("Content-Type", "application/javascript")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -1151,18 +1153,22 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			// make it nonblocking...
-			go func() {
-				err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
-				if err != nil {
-					Logger.Log.Log("Error creating TSNE: " + err.Error())
-					return
-				}
-			}()
-			w.WriteHeader(http.StatusOK)
+			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
+			if err != nil {
+				Logger.Log.Log("Error creating TSNE: " + err.Error())
+				return
+			} else {
+				Logger.Log.Log("TSNE created")
+				w.WriteHeader(http.StatusOK)
+				// This is required for proper client-side parsing of json body
+				w.Header().Set("Content-Type", "application/json")
+				data := "{'responseText': 'TSNE created!'}"
+				json.NewEncoder(w).Encode(data)
+				return
+			}
 		}
 		// Tell the user not authorized
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		http.Error(w, "Not authorized in CreateTSNE!", http.StatusUnauthorized)
 		return
 	}
 	// Notice the user that the route is not found under given information
@@ -1173,7 +1179,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
-	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettsnedata" {
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -1227,7 +1233,7 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Tell the user not authorized
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		http.Error(w, "Not authorized in GetTSNE!", http.StatusUnauthorized)
 		return
 	}
 	// Notice the user that the route is not found under given information

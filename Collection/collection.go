@@ -467,7 +467,7 @@ func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64
 	if err != nil {
 		return err
 	}
-	c.Mut.Unlock()
+	c.Mut.RUnlock()
 
 	// Lock fpr writing
 	c.Mut.Lock()

@@ -122,6 +122,8 @@
                     </div>
                 </div>
                 <button class="ui red button" data-collection-id="{{.Name}}">Delete</button>
+                <button class="ui green button" data-collection-id="{{.Name}}">Generate 3D Graph</button>
+                <div id="scatterPlot-{{.Name}}"></div>
             </div>
         {{end}}
     </div>
@@ -182,6 +184,7 @@
 <script src="/static/js.js"></script>
 <script src="/static/chartjs.js"></script>
 <script src="/static/chartjs_adapter_date.js"></script>
+<script src="/static/plotly-2.32.0.min.js"></script>
 
 <script>
 
@@ -428,6 +431,67 @@
                 },
                 error: function (data) {
                     console.log(data);
+                }
+            });
+        });
+
+        // Event-Handler for the Generate 3D Graph Button
+        $('.ui.accordion').on('click', '.ui.green.button', function () {
+            var $btn = $(this);
+            $btn.removeClass('transition visible');
+            $btn.addClass('loading');
+
+            var collectionId = $(this).data('collection-id');
+            console.log('Generating 3D Graph for the collection with ID: ' + collectionId);
+            $.ajax({
+                type: "POST",
+                url: "/createtsne",
+                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.000001, iterations: 3}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function (data) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/gettsnedata",
+                        data: JSON.stringify({collection_name: collectionId}),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (inner_data) {
+                            // 3D Scatter Plot
+                            function createScatterPlot(data) {
+                                const trace = {
+                                    x: data.map(point => point.x),
+                                    y: data.map(point => point.y),
+                                    z: data.map(point => point.z),
+                                    mode: 'markers',
+                                    type: 'scatter3d'
+                                };
+
+                                Plotly.newPlot('scatterPlot-' + collectionId, [trace]); 
+                                $btn.removeClass('loading');
+                            }
+
+                            // Transform the vector to the desired format
+                            var transformed_data = $.map(inner_data.vector, function(item) {
+                                return { x: item[0], y: item[1], z: item[2] };
+                            });
+
+                            createScatterPlot(transformed_data);
+                        },
+                        error: function (inner_error_data) {
+                            console.log(inner_error_data);
+                        }
+                    });
+                },
+                error: function (error_data) {
+                    alert(JSON.stringify(error_data, null, 4));
+                    console.log(error_data);
                 }
             });
         });
