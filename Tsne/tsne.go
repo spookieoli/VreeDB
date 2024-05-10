@@ -134,8 +134,11 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 // The updated embedding vectors are modified in-place.
 func (t *TSNE) updateEmbeddings(embeddings []*Vector.Vector, gradients [][]float64) {
 	for i := range embeddings {
+		// optimize Memory access by first get data to scope
+		embedding := embeddings[i].Data
+		gradient := gradients[i]
 		for d := 0; d < t.dimensions; d++ {
-			embeddings[i].Data[d] += t.learningRate * gradients[i][d]
+			embedding[d] += t.learningRate * gradient[d]
 		}
 	}
 }
