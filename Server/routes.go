@@ -1153,8 +1153,6 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			// make it blocking...
-			// go func() {
 			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
 			if err != nil {
 				Logger.Log.Log("Error creating TSNE: " + err.Error())
@@ -1170,8 +1168,6 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 				json.NewEncoder(w).Encode(data)
 				return
 			}
-			// }()
-
 		}
 		// Tell the user not authorized
 		http.Error(w, "Not authorized in CreateTSNE!", http.StatusUnauthorized)
