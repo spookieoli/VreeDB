@@ -5,6 +5,7 @@ import (
 	"VreeDB/Vector"
 	"math"
 	"math/rand"
+	"sync"
 )
 
 // TSNE is a struct that represents the t-Distributed Stochastic Neighbor Embedding algorithm.
@@ -86,15 +87,28 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 // Otherwise, it returns the calculated gradients slice.
 func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 	n := len(data)
-	gradients := make([][]float64, n)
-	for i := range gradients {
-		gradients[i] = make([]float64, t.dimensions)
-	}
 
+	// parallel creation of the gradients and the dists
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+
+	gradients := make([][]float64, n)
 	dist := make([][]float64, n)
-	for i := range dist {
-		dist[i] = make([]float64, n)
-	}
+
+	go func() {
+		for i := range gradients {
+			gradients[i] = make([]float64, t.dimensions)
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		for i := range dist {
+			dist[i] = make([]float64, n)
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 
 	sum := make([]float64, n)
 
