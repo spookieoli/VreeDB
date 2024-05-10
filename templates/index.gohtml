@@ -479,13 +479,6 @@
                                 $btn.removeClass('loading');
                             }
 
-                            // Sample Usage (assuming a <div id="myScatterPlot"></div> exists)
-                            const data1 = [
-                                { x: 1, y: 2, z: 3 },
-                                { x: -2, y: 1, z: 0 },
-                                // ... more data points
-                            ];
-
                             // Transform the vector to the desired format
                             var transformed_data = $.map(inner_data.vector, function(item) {
                                 return { x: item[0], y: item[1], z: item[2] };
