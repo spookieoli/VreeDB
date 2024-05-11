@@ -40,6 +40,13 @@ type ThreadpoolDataSum struct {
 	wg                     *sync.WaitGroup
 }
 
+// ThreadpooDataGradient is a struct that represents the data required for gradient calculations in a threadpool.
+// It has the following fields:
+type ThreadpooDataGradient struct {
+	pij, qij, gradient, embedding1, embedding2 *float64
+	wg                                         *sync.WaitGroup
+}
+
 // NewTSNE initializes a new TSNE object with the specified learning rate, max iterations,
 // dimensions, and collection name. It returns a pointer to the TSNE object.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
@@ -115,9 +122,9 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i]}
 			}
 		}
+		// Wait for calculations to be done
+		wg.Done()
 	}
-	// Wait for calculations to be done
-	wg.Done()
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
@@ -129,7 +136,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 
 				// calculate gradients
 				for d := 0; d < t.dimensions; d++ {
-					gradients[i][d] += 4.0 * (pij - qij) * (t.embeddings[i].Data[d] - t.embeddings[j].Data[d])
+					t.Chan <- &ThreadpooDataGradient{gradient: &gradients[i][d], pij: &pij, qij: &qij, embedding1: &t.embeddings[i].Data[d], embedding2: &t.embeddings[j].Data[d]}
 				}
 			}
 		}
@@ -152,7 +159,19 @@ func (t *TSNE) Threadpool() {
 	}
 }
 
-// Calculate calculates the distance between two embeddings and updates the sum.
+// Calculate updates the gradient value based on the input data and embeddings.
+// It calculates the difference between pij and qij, multiplies it by the difference between embedding1 and embedding2,
+// and then multiplies the result by 4.0. The final result is added to the gradient value.
+func (t ThreadpooDataGradient) Calculate() {
+	*t.gradient += 4.0 * (*t.pij - *t.qij) * (*t.embedding1 - *t.embedding2)
+}
+
+// Done signals that the background task has completed.
+func (t *ThreadpooDataGradient) Done() {
+	t.wg.Done()
+}
+
+// Calculate (SUM) calculates the distance between two embeddings and updates the sum.
 // It uses the EuclideanDistance method from Utils.Utils package to calculate the distance.
 // The distance is stored in *t.dist and the sum is updated by adding 1 divided by
 // (1 + distance^2) to *t.sum.
