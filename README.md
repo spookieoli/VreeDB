@@ -21,7 +21,7 @@ VreeDB is a database project written in Go. It uses a k-d tree data structure fo
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-## Please use git clone to copy the code in the repository from GitHub:
+## Please use git clone to copy the code in the repository from GitHub
 
 Install git from [git's official website](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and follow the instructions given there.
 
@@ -31,7 +31,7 @@ Once this is done, create a folder called VreeDB in your local computer and navi
 git clone https://github.com/spookieoli/VreeDB
 ```
 
-## Please use Docker to compile / install VreeDB:
+## Please use Docker to compile / install VreeDB
 
 Install docker from [docker's official website](https://docs.docker.com/engine/install/) and follow the instructions given there.
 
