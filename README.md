@@ -3,7 +3,7 @@ A simple, fast, no dependency, Go powered Vector Database
 
 VreeDB is a database project written in Go. It uses a k-d tree data structure for efficient search of nearest neighbors in a multi-dimensional space.
 
-[![VreeDB Banner](vreedb.png)](http://127.0.0.1:8080/)
+[![VreeDB Banner](/wiki/images/vreedb.png)](http://127.0.0.1:8080/)
 
 ## Features
 
