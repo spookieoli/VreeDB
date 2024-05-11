@@ -24,11 +24,17 @@ type TSNE struct {
 	maxIterations int
 	embeddings    []*Vector.Vector
 	Collection    string
-	Chan          chan *ThreadpoolData
+	Chan          chan ThreadpoolData
 }
 
-// ThreadpoolData carries the vars to calculate Gradients
-type ThreadpoolData struct {
+// ThreadpoolData is an Interface for the ThreadPoolData structs
+type ThreadpoolData interface {
+	Calculate()
+	Done()
+}
+
+// ThreadpoolDataSum will calculate gradients sum
+type ThreadpoolDataSum struct {
 	embedding1, embedding2 *Vector.Vector
 	dist, sum              *float64
 	wg                     *sync.WaitGroup
@@ -38,7 +44,7 @@ type ThreadpoolData struct {
 // dimensions, and collection name. It returns a pointer to the TSNE object.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
 	tsne := &TSNE{learningRate: learninrate, maxIterations: maxiterations,
-		dimensions: dimensions, Collection: collection, Chan: make(chan *ThreadpoolData, 100)}
+		dimensions: dimensions, Collection: collection, Chan: make(chan ThreadpoolData, 100)}
 	tsne.Threadpool() // Starts the Threadpool
 	return tsne
 }
@@ -106,7 +112,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 			if i != j && j < len(data[i].Data) {
 				// Threaded calculation
 				wg.Add(1)
-				t.Chan <- &ThreadpoolData{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i]}
+				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i]}
 			}
 		}
 	}
@@ -139,24 +145,33 @@ func (t *TSNE) Threadpool() {
 	for i := 0; i < runtime.NumCPU()/2; i++ {
 		go func() {
 			for data := range t.Chan {
-				t.CalculateSums(data)
-				data.wg.Done()
+				data.Calculate()
+				data.Done()
 			}
 		}()
 	}
 }
 
-// CalculateSums calculates the sum of distances between two embedding vectors.
-// It takes a ThreadpoolData pointer as input and updates the value of *data.dist and *data.sum accordingly.
-// If there is an error during the calculation, it logs the error message.
-func (t *TSNE) CalculateSums(data *ThreadpoolData) {
+// Calculate calculates the distance between two embeddings and updates the sum.
+// It uses the EuclideanDistance method from Utils.Utils package to calculate the distance.
+// The distance is stored in *t.dist and the sum is updated by adding 1 divided by
+// (1 + distance^2) to *t.sum.
+// If an error occurs while calculating the distance, it is logged and the method returns.
+// No error is returned from this method.
+func (t *ThreadpoolDataSum) Calculate() {
 	var err error
-	*data.dist, err = Utils.Utils.EuclideanDistance(data.embedding1, data.embedding2)
+	*t.dist, err = Utils.Utils.EuclideanDistance(t.embedding1, t.embedding2)
 	if err != nil {
 		Logger.Log.Log(err.Error())
 		return
 	}
-	*data.sum += 1.0 / (1.0 + math.Pow(*data.dist, 2))
+	*t.sum += 1.0 / (1.0 + math.Pow(*t.dist, 2))
+}
+
+// Done signals that a goroutine has completed its execution in the ThreadpoolDataSum.
+// It calls the Done method of the WaitGroup t.Wg to indicate the completion of a goroutine.
+func (t *ThreadpoolDataSum) Done() {
+	t.wg.Done()
 }
 
 // updateEmbeddings updates the embeddings based on the computed gradients.
