@@ -119,7 +119,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 			if i != j && j < len(data[i].Data) {
 				// Threaded calculation
 				wg.Add(1)
-				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i]}
+				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i], wg: &wg}
 			}
 		}
 		// Wait for calculations to be done
@@ -136,8 +136,9 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 
 				// calculate gradients
 				for d := 0; d < t.dimensions; d++ {
-					t.Chan <- &ThreadpooDataGradient{gradient: &gradients[i][d], pij: &pij, qij: &qij, embedding1: &t.embeddings[i].Data[d], embedding2: &t.embeddings[j].Data[d]}
+					t.Chan <- &ThreadpooDataGradient{gradient: &gradients[i][d], pij: &pij, qij: &qij, embedding1: &t.embeddings[i].Data[d], embedding2: &t.embeddings[j].Data[d], wg: &wg}
 				}
+				wg.Wait()
 			}
 		}
 	}
