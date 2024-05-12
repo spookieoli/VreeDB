@@ -121,9 +121,9 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				wg.Add(1)
 				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i], wg: &wg}
 			}
+			// Wait for calculations to be done
+			wg.Done()
 		}
-		// Wait for calculations to be done
-		wg.Done()
 	}
 
 	for i := 0; i < n; i++ {
