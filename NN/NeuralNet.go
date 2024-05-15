@@ -235,7 +235,7 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 	}
 
 	// Check if the data is gt 0
-	if len(x) == 0 {
+	if len(x) == 0 || len(y) == 0 {
 		return nil, nil, fmt.Errorf("No NeuralNet Traindata created - check if Label exists and is an Array of float64")
 	} else {
 		Logger.Log.Log("NeuralNet Traindata created successfully, x: " + fmt.Sprint(len(x)) + ", y: " + fmt.Sprint(len(y)))
