@@ -37,7 +37,7 @@ func NewServer(ip string, port int, certfile string, keyfile string, secure bool
 		Addr:              server.Ip + ":" + strconv.Itoa(server.Port),
 		Handler:           mux,
 		ReadHeaderTimeout: time.Second * 600,
-		WriteTimeout:      time.Second * 150,
+		WriteTimeout:      time.Second * 200,
 		IdleTimeout:       time.Second * 600,
 	}
 
