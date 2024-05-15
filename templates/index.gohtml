@@ -391,7 +391,7 @@
 
             // Send JSON object to the server
             $.ajax({
-                type: "PUT",
+                type: "POST",
                 url: "/trainclassifier",
                 data: JSON.stringify(data),
                 contentType: "application/json; charset=utf-8",
@@ -446,7 +446,7 @@
             $.ajax({
                 type: "POST",
                 url: "/createtsne",
-                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.000001, iterations: 10}),
+                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.0001, iterations: 30}),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 xhrFields: {

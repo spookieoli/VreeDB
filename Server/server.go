@@ -36,9 +36,9 @@ func NewServer(ip string, port int, certfile string, keyfile string, secure bool
 	server.Server = &http.Server{
 		Addr:              server.Ip + ":" + strconv.Itoa(server.Port),
 		Handler:           mux,
-		ReadHeaderTimeout: time.Second * 60,
-		WriteTimeout:      time.Second * 15,
-		IdleTimeout:       time.Second * 60,
+		ReadHeaderTimeout: time.Second * 600,
+		WriteTimeout:      time.Second * 150,
+		IdleTimeout:       time.Second * 600,
 	}
 
 	// Start  the bootup
