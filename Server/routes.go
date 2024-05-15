@@ -1132,6 +1132,7 @@ func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
+	fmt.Println("CREATETSNE CALLED")
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
 
 		// Get the data
@@ -1180,6 +1181,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 
 func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
+	fmt.Println("GETTSNE CALLED")
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettsnedata" {
 		// Parse the form
 		err := req.ParseForm()

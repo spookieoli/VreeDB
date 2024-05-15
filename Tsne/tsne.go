@@ -85,7 +85,7 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 
 		// update Embeddings
 		t.updateEmbeddings(t.embeddings, gradients)
-		Logger.Log.Log("TSNE Iteration took: " + strconv.FormatInt(int64(time.Since(start)), 10))
+		Logger.Log.Log("TSNE Iteration took: " + strconv.FormatInt(int64(time.Since(start).Seconds()), 10))
 	}
 	// CLose the
 	close(t.Chan)
@@ -169,8 +169,17 @@ func (t *TSNE) Threadpool() {
 // Calculate updates the gradient value based on the input data and embeddings.
 // It calculates the difference between pij and qij, multiplies it by the difference between embedding1 and embedding2,
 // and then multiplies the result by 4.0. The final result is added to the gradient value.
-func (t ThreadpooDataGradient) Calculate() {
-	*t.gradient += 4.0 * (*t.pij - *t.qij) * (*t.embedding1 - *t.embedding2)
+func (t *ThreadpooDataGradient) Calculate() {
+	pij := *t.pij
+	qij := *t.qij
+	embedding1 := *t.embedding1
+	embedding2 := *t.embedding2
+
+	diffEmbedding := embedding1 - embedding2
+	diffProb := pij - qij
+	gradientUpdate := 4.0 * diffProb * diffEmbedding
+
+	*t.gradient += gradientUpdate
 }
 
 // Done signals that the background task has completed.
@@ -191,7 +200,10 @@ func (t *ThreadpoolDataSum) Calculate() {
 		Logger.Log.Log(err.Error())
 		return
 	}
-	*t.sum += 1.0 / (1.0 + math.Pow(*t.dist, 2))
+
+	// Optimierte Berechnung der Summe
+	distSquared := *t.dist * *t.dist
+	*t.sum += 1.0 / (1.0 + distSquared)
 }
 
 // Done signals that a goroutine has completed its execution in the ThreadpoolDataSum.
