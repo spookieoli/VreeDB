@@ -136,6 +136,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 
 				// calculate gradients
 				for d := 0; d < t.dimensions; d++ {
+					wg.Add(1)
 					t.Chan <- &ThreadpooDataGradient{gradient: &gradients[i][d], pij: &pij, qij: &qij, embedding1: &t.embeddings[i].Data[d], embedding2: &t.embeddings[j].Data[d], wg: &wg}
 				}
 				wg.Wait()
