@@ -393,7 +393,7 @@
 
             // Send JSON object to the server
             $.ajax({
-                type: "PUT",
+                type: "POST",
                 url: "/trainclassifier",
                 data: JSON.stringify(data),
                 contentType: "application/json; charset=utf-8",
@@ -438,17 +438,17 @@
         });
 
         // Event-Handler for the Generate 3D Graph Button
-        $('.ui.accordion').on('click', '.ui.green.button', function () {
+        $('.ui.accordion').off('click', '.ui.green.button').on('click', '.ui.green.button', function () {
             var $btn = $(this);
             $btn.removeClass('transition visible');
-            $btn.addClass('loading');
+            $btn.prop('disabled', true);  // Deaktiviert den Button
 
-            var collectionId = $(this).data('collection-id');
+            var collectionId = $btn.data('collection-id');
             console.log('Generating 3D Graph for the collection with ID: ' + collectionId);
             $.ajax({
                 type: "POST",
                 url: "/createtsne",
-                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.000001, iterations: 3}),
+                data: JSON.stringify({collection_name: collectionId, dimensions: 3, learning_rate: 0.0001, iterations: 30}),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 xhrFields: {
@@ -475,8 +475,9 @@
                                     type: 'scatter3d'
                                 };
 
-                                Plotly.newPlot('scatterPlot-' + collectionId, [trace]); 
+                                Plotly.newPlot('scatterPlot-' + collectionId, [trace]);
                                 $btn.removeClass('loading');
+                                $btn.prop('disabled', false);  // Reaktiviert den Button
                             }
 
                             // Transform the vector to the desired format
@@ -488,12 +489,16 @@
                         },
                         error: function (inner_error_data) {
                             console.log(inner_error_data);
+                            $btn.removeClass('loading');
+                            $btn.prop('disabled', false);  // Reaktiviert den Button
                         }
                     });
                 },
                 error: function (error_data) {
                     alert(JSON.stringify(error_data, null, 4));
                     console.log(error_data);
+                    $btn.removeClass('loading');
+                    $btn.prop('disabled', false);  // Reaktiviert den Button
                 }
             });
         });

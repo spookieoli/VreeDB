@@ -449,6 +449,11 @@ func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64
 		c.Mut.RUnlock()
 		return fmt.Errorf("training already in progress")
 	}
+
+	if c.TSNE_Dimensions != nil {
+		fmt.Errorf("TSNE already created")
+	}
+
 	// Set Train to true
 	c.TSNE_Train = true
 
@@ -465,7 +470,7 @@ func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64
 	// perform the training
 	dim, err := tsne.PerformTSNE(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error creating TSNE: %v", err)
 	}
 	c.Mut.RUnlock()
 
@@ -474,6 +479,7 @@ func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64
 	c.TSNE_Dimensions = dim
 	c.TSNE_Train = false
 	c.Mut.Unlock()
+
 	return nil
 }
 

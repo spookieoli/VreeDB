@@ -352,7 +352,7 @@
             if (noErrors == true) {
                 // alert(JSON.stringify(neuralData, null, 4));  // Popup with Neural Data
                 $.ajax({
-                    type: "PUT",
+                    type: "POST",
                     url: "/trainclassifier",
                     contentType: "application/json; charset=utf-8",
                     data: JSON.stringify(neuralData),

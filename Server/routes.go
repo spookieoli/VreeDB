@@ -1156,6 +1156,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
 			if err != nil {
 				Logger.Log.Log("Error creating TSNE: " + err.Error())
+				fmt.Println(err.Error())
 				return
 			} else {
 				Logger.Log.Log("TSNE created")
