@@ -7,7 +7,9 @@ import (
 	"math"
 	"math/rand"
 	"runtime"
+	"strconv"
 	"sync"
+	"time"
 )
 
 // TSNE is a struct that represents the t-Distributed Stochastic Neighbor Embedding algorithm.
@@ -51,7 +53,7 @@ type ThreadpooDataGradient struct {
 // dimensions, and collection name. It returns a pointer to the TSNE object.
 func NewTSNE(learninrate float64, maxiterations, dimensions int, collection string) *TSNE {
 	tsne := &TSNE{learningRate: learninrate, maxIterations: maxiterations,
-		dimensions: dimensions, Collection: collection, Chan: make(chan ThreadpoolData, 100)}
+		dimensions: dimensions, Collection: collection, Chan: make(chan ThreadpoolData, 1000)}
 	tsne.Threadpool() // Starts the Threadpool
 	return tsne
 }
@@ -74,6 +76,7 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 
 	// TSNE Iterations
 	for i := 0; i < t.maxIterations; i++ {
+		start := time.Now()
 		gradients, err := t.computeGradients(data)
 		if err != nil {
 			// handle error
@@ -82,6 +85,7 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 
 		// update Embeddings
 		t.updateEmbeddings(t.embeddings, gradients)
+		Logger.Log.Log("TSNE Iteration took: " + strconv.FormatInt(int64(time.Since(start)), 10))
 	}
 	// CLose the
 	close(t.Chan)
@@ -121,10 +125,10 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 				wg.Add(1)
 				t.Chan <- &ThreadpoolDataSum{dist: &dist[i][j], embedding1: t.embeddings[i], embedding2: t.embeddings[j], sum: &sum[i], wg: &wg}
 			}
-			// Wait for calculations to be done
-			wg.Done()
 		}
 	}
+
+	wg.Wait()
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
@@ -139,10 +143,11 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 					wg.Add(1)
 					t.Chan <- &ThreadpooDataGradient{gradient: &gradients[i][d], pij: &pij, qij: &qij, embedding1: &t.embeddings[i].Data[d], embedding2: &t.embeddings[j].Data[d], wg: &wg}
 				}
-				wg.Wait()
 			}
 		}
 	}
+	// Wait for calculations to be done
+	wg.Wait()
 	return gradients, nil
 }
 
@@ -151,7 +156,7 @@ func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
 // Once the calculation is done, it uses the WaitGroup to notify that the operation is completed.
 // The number of goroutines created is equal to half the number of available CPUs divided by 2.
 func (t *TSNE) Threadpool() {
-	for i := 0; i < runtime.NumCPU()/2; i++ {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for data := range t.Chan {
 				data.Calculate()
