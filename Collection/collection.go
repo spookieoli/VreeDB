@@ -399,6 +399,25 @@ func (c *Collection) CheckIndex(vector *Vector.Vector) error {
 	return nil
 }
 
+// SaveIndexes saves the indexes of the collection to a file in the file store directory.
+func (c *Collection) SaveIndexes() error {
+	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_indexes.gob")
+	if err != nil {
+		return err
+	}
+	// register index struct
+	gob.Register(map[string]*Index{})
+
+	// Create Encoder
+	enc := gob.NewEncoder(file)
+	err = enc.Encode(c.Indexes)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 // addVectorToIndexes to Add a vector to the Index(es)
 func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) error {
 	c.Mut.RLock()
