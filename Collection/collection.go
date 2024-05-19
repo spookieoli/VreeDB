@@ -405,12 +405,20 @@ func (c *Collection) SaveIndexes() error {
 	if err != nil {
 		return err
 	}
-	// register index struct
-	gob.Register(map[string]*Index{})
+
+	// make empty string slice
+	indexes := make([]string, 0)
+
+	// Get all the indexnames from  then c.Indexes map
+	for indexName := range c.Indexes {
+		indexes = append(indexes, indexName)
+	}
 
 	// Create Encoder
 	enc := gob.NewEncoder(file)
-	err = enc.Encode(c.Indexes)
+
+	// The indexname is the index Field in the payload
+	err = enc.Encode(indexes)
 	if err != nil {
 		return err
 	}
