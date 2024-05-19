@@ -14,13 +14,13 @@ type Index struct {
 	Entries        map[any]*Node.Node
 	CollectionName string
 	Key            string
-	Mut            *sync.RWMutex
+	mut            *sync.RWMutex
 }
 
 // NewIndex returns a new Index
 func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
-	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey, Mut: &sync.RWMutex{}}
+	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey, mut: &sync.RWMutex{}}
 
 	// Create a vectorMap as starting point to create the subtrees
 	vectorMap, err := index.getVectorFromPayloadIndex(payloadkey, space)
@@ -60,14 +60,14 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 	// Loop over all the entries
 	for _, vector := range *space {
 
-		// Check if key is in the Payload
-		if _, ok := (*vector.Payload)[payloadkey]; ok {
+		// Load the payload from the hdd
+		payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, i.CollectionName)
+		if err != nil {
+			return nil, err
+		}
 
-			// Load the payload from the hdd
-			payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, i.CollectionName)
-			if err != nil {
-				return nil, err
-			}
+		// Check if key is in the Payload
+		if _, ok := (*payload)[payloadkey]; ok {
 
 			// only string, int and float64 are allowed
 			switch v := (*payload)[payloadkey].(type) {

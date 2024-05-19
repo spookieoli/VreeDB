@@ -1015,7 +1015,7 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 		// Close the body - this is important for the next request
 		defer req.Body.Close()
 		// Check if all field of the IndexCreator are set
-		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" {
+		if ic.CollectionName == "" || ic.IndexName == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return

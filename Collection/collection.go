@@ -62,7 +62,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 
 	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
-		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier)}
+		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index)}
 }
 
 // Insert inserts a vector into the collection
@@ -178,7 +178,7 @@ func (c *Collection) Recreate() {
 
 // Rebuild is like Recreate but it does not use the Mut and will not use the RecreateMut function
 func (c *Collection) Rebuild() {
-	// Mut already blocked in Delete
+	// mut already blocked in Delete
 	c.Nodes = &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
 		c.Nodes.Insert(v)
@@ -382,11 +382,11 @@ func (c *Collection) CheckIndex(vector *Vector.Vector) error {
 
 	// check if an Index Key is in the Payload
 	for k := range c.Indexes {
-		c.Indexes[k].Mut.RLock()
+		c.Indexes[k].mut.RLock()
 		if _, ok := (*payload)[c.Indexes[k].Key]; ok {
 			result = append(result, k)
 		}
-		c.Indexes[k].Mut.RUnlock()
+		c.Indexes[k].mut.RUnlock()
 	}
 
 	// If there is a result, add the vector to the Index
@@ -401,7 +401,7 @@ func (c *Collection) CheckIndex(vector *Vector.Vector) error {
 
 // SaveIndexes saves the indexes of the collection to a file in the file store directory.
 func (c *Collection) SaveIndexes() error {
-	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_indexes.gob")
+	file, err := os.Create(*ArgsParser.Ap.FileStore + c.Name + "_indexes.gob")
 	if err != nil {
 		return err
 	}
@@ -426,9 +426,9 @@ func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) er
 	// Add the vector to the Indexes
 	for _, k := range keys {
 		if index, ok := c.Indexes[k]; ok {
-			c.Indexes[k].Mut.Lock()
+			c.Indexes[k].mut.Lock()
 			err := index.AddToIndex(vector)
-			c.Indexes[k].Mut.Unlock()
+			c.Indexes[k].mut.Unlock()
 			if err != nil {
 				return err
 			}
