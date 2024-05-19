@@ -74,6 +74,9 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Set ClassifierReady
 			collections[c.Name].ClassifierReady = true
 
+			// Restore Indexes
+			err = collections[c.Name].RebuildIndex()
+
 			// recreate the SVMs (if present)
 			err = collections[c.Name].ReadClassifiers()
 			if err != nil {

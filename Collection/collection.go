@@ -405,6 +405,7 @@ func (c *Collection) SaveIndexes() error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	// make empty string slice
 	indexes := make([]string, 0)
@@ -423,7 +424,36 @@ func (c *Collection) SaveIndexes() error {
 		return err
 	}
 	return nil
+}
 
+// Rebuild index will rebuild the indexes
+func (c *Collection) RebuildIndex() error {
+	// Open the file
+	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_indexes.gob")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Make empty string slice
+	var indexes []string
+
+	// Create Decoder
+	dec := gob.NewDecoder(file)
+	dec.Decode(&indexes)
+
+	// Create c.Indexes map
+	c.Indexes = make(map[string]*Index)
+
+	// Now loop over the indexes and recreate them
+	for _, indexName := range indexes {
+		index, err := NewIndex(indexName, c.Space, c.Name)
+		if err != nil {
+			return err
+		}
+		c.Indexes[indexName] = index
+	}
+	return nil
 }
 
 // addVectorToIndexes to Add a vector to the Index(es)
