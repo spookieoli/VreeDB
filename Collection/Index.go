@@ -39,11 +39,15 @@ func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection st
 			n.Insert(vector)
 		}
 
+		// Get the payload from the hdd
+		payload, err := FileMapper.Mapper.ReadPayload(vectors[0].PayloadStart, collection)
+		if err != nil {
+			return nil, err
+		}
+
 		// Insert the Node into the Index
-		switch v := (*vectors[0].Payload)[payloadkey].(type) {
-		case int:
-		case float64:
-		case string:
+		switch v := (*payload)[payloadkey].(type) {
+		case int, float64, string:
 			index.Entries[v] = n
 		default:
 			return nil, fmt.Errorf("only string, float64 and int are allowed")
@@ -68,17 +72,15 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 
 		// Check if key is in the Payload
 		if _, ok := (*payload)[payloadkey]; ok {
-
 			// only string, int and float64 are allowed
 			switch v := (*payload)[payloadkey].(type) {
-			case int:
-			case float64:
-			case string:
+			case int, float64, string:
 				if _, ok := vectorMap[v]; !ok {
 					vectorMap[v] = []*Vector.Vector{}
 				}
 				// Add to the vectorMap
 				vectorMap[v] = append(vectorMap[v], vector)
+				fmt.Println("len vectorMap: ", len(vectorMap))
 			default:
 				return nil, fmt.Errorf("only string, float64 and int are allowed")
 			}

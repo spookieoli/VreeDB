@@ -342,6 +342,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+		defer req.Body.Close()
 
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
