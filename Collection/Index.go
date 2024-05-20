@@ -80,7 +80,6 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 				}
 				// Add to the vectorMap
 				vectorMap[v] = append(vectorMap[v], vector)
-				fmt.Println("len vectorMap: ", len(vectorMap))
 			default:
 				return nil, fmt.Errorf("only string, float64 and int are allowed")
 			}
