@@ -342,6 +342,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error decoding json"))
 			return
 		}
+		defer req.Body.Close()
 
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(p.ApiKey) || r.validateCookie(req) {
@@ -1012,8 +1013,10 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+		// Close the body - this is important for the next request
+		defer req.Body.Close()
 		// Check if all field of the IndexCreator are set
-		if ic.ApiKey == "" || ic.CollectionName == "" || ic.IndexName == "" {
+		if ic.CollectionName == "" || ic.IndexName == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Missing required fields"))
 			return
@@ -1023,6 +1026,13 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 		if r.ApiKeyHandler.CheckApiKey(ic.ApiKey) || r.validateCookie(req) {
 			// Create the Index
 			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// save the index
+			err = r.DB.Collections[ic.CollectionName].SaveIndexes()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
