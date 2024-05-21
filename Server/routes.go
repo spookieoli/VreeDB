@@ -102,6 +102,8 @@ func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("Error parsing form"))
 			return
 		}
+		// Close the body
+		defer req.Body.Close()
 		// Check if the ApiKey is valid
 		if r.ApiKeyHandler.CheckApiKey(req.FormValue("password")) {
 			r.createCookie(w)
@@ -123,6 +125,7 @@ func (r *Routes) Login(w http.ResponseWriter, req *http.Request) {
 // Logout is the route to delete the cookie and so logout the user
 func (r *Routes) Logout(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" && req.URL.Path == "/logout" {
+		defer req.Body.Close()
 		r.deleteCookie(w, req)
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
 		return
@@ -152,6 +155,7 @@ func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+		defer req.Body.Close()
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -219,6 +223,7 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createcollection" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+		defer req.Body.Close()
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -296,6 +301,7 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/listcollections" {
 		// Create CollectionList type
 		cl := &CollectionList{}
+		defer req.Body.Close()
 
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(cl.ApiKey) || r.validateCookie(req) {
@@ -327,6 +333,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 10000000)
+		defer req.Body.Close()
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -394,6 +401,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/addpointbatch" {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
@@ -464,6 +472,7 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+		defer req.Body.Close()
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -522,6 +531,7 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
@@ -607,6 +617,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/trainclassifier" {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
@@ -692,6 +703,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deleteclassifier" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
+		defer req.Body.Close()
 
 		// Parse the form
 		err := req.ParseForm()
@@ -751,6 +763,7 @@ func (r *Routes) GetTrainPhase(w http.ResponseWriter, req *http.Request) {
 		// load the request into the TrainPhase via json decode
 		tp := &ShowTrainProgress{}
 		err := json.NewDecoder(req.Body).Decode(tp)
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error decoding json"))
@@ -808,6 +821,7 @@ func (r *Routes) Classify(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/classify" {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
@@ -896,6 +910,7 @@ func (r *Routes) CreateApiKey(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createapikey" {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
@@ -948,7 +963,7 @@ func (r *Routes) DeleteApiKey(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deleteapikey" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
-
+		defer req.Body.Close()
 		// Parse the form
 		err := req.ParseForm()
 		if err != nil {
@@ -998,6 +1013,7 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createindex" {
 		// Parse the form
 		err := req.ParseForm()
+		defer req.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error parsing form"))
