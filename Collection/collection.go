@@ -102,19 +102,20 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 // Delete deletes a vector from the collection
 // CAUTION - Delete will not remove the vectors Data from the DB Files .bin! - it will only flag the vector as deleted
 // The vector will be removed from the KD-Tree and the Space and will not be loaded into the KD-Tree again
-func (c *Collection) Delete(id string) error {
+func (c *Collection) Delete(ids []string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 
 	// Check if the vector exists
-	if _, ok := (*c.Space)[id]; !ok {
-		return fmt.Errorf("Vector with ID %s does not exist", id)
+	for _, id := range ids {
+		if _, ok := (*c.Space)[id]; !ok {
+			return fmt.Errorf("Vector with ID %s does not exist", id)
+		}
+		// Set the datastart to -1
+		(*c.Space)[id].DataStart = -1
+		// Delete the vector from the Space
+		delete(*c.Space, id)
 	}
-	// Set the datastart to -1
-	(*c.Space)[id].DataStart = -1
-
-	// Delete the vector from the Space
-	delete(*c.Space, id)
 	// Rebuild the KD-Tree
 	c.Rebuild()
 	return nil
