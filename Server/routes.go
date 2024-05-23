@@ -467,7 +467,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 }
 
 // DeletePoint deletes a point from a Collection
-func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
+func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
 		// Limit the size of the request
