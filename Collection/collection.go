@@ -179,7 +179,6 @@ func (c *Collection) Recreate() {
 
 // Rebuild is like Recreate but it does not use the Mut and will not use the RecreateMut function
 func (c *Collection) Rebuild() {
-	// mut already blocked in Delete
 	c.Nodes = &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
 		c.Nodes.Insert(v)

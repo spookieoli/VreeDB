@@ -469,7 +469,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 // DeletePoint deletes a point from a Collection
 func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
-	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepointbyid" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 5000)
 		defer req.Body.Close()
@@ -506,12 +506,12 @@ func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 				w.Write([]byte(err.Error()))
 				return
 			}
+		} else {
+			// not authorized
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
 		}
-
-		// not authorized
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Unauthorized"))
-		return
 
 		// Send the success or error message to the client
 		w.WriteHeader(http.StatusOK)
