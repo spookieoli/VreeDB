@@ -102,7 +102,7 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 // Delete deletes a vector from the collection
 // CAUTION - Delete will not remove the vectors Data from the DB Files .bin! - it will only flag the vector as deleted
 // The vector will be removed from the KD-Tree and the Space and will not be loaded into the KD-Tree again
-func (c *Collection) Delete(ids []string) error {
+func (c *Collection) DeleteVectorByID(ids []string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 

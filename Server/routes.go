@@ -500,7 +500,7 @@ func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 			}
 
 			// Delete the point from the Collection
-			err = r.DB.Collections[dp.CollectionName].Delete(dp.Id)
+			err = r.DB.Collections[dp.CollectionName].DeleteVectorByID(dp.Id)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
