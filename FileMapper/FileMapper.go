@@ -15,9 +15,10 @@ import (
 )
 
 type SaveVector struct {
-	VectorID     string
-	DataStart    int64
-	PayloadStart int64
+	VectorID           string
+	DataStart          int64
+	PayloadStart       int64
+	SaveVectorPosition int64
 }
 
 type FileMapper struct {
@@ -361,7 +362,7 @@ func (f *FileMapper) DelCollection(collection string) {
 }
 
 // SaveVectorWriter will write the vector.ID, vector.DataStart, vector.PayloadStart to the file system
-func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, collection string) error {
+func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, collection string) (int64, error) {
 	// Lock the Wal
 	w.Mut[collection].Lock()
 	defer w.Mut[collection].Unlock()
@@ -370,21 +371,28 @@ func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, 
 	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		Logger.Log.Log("Error opening meta.json file: " + err.Error())
-		return err
+		return 0, err
 	}
 	defer file.Close()
 
+	// Get the position of the Filepointer
+	pos, err := file.Seek(0, io.SeekEnd)
+	if err != nil {
+		Logger.Log.Log("Error seeking to end of file: " + err.Error())
+		return 0, err
+	}
+
 	// Create the SaveVector
-	sv := SaveVector{VectorID: id, DataStart: datastart, PayloadStart: payloadstart}
+	sv := SaveVector{VectorID: id, DataStart: datastart, PayloadStart: payloadstart, SaveVectorPosition: pos}
 
 	// use json to encode the SaveVector
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(sv)
 	if err != nil {
 		Logger.Log.Log("Error encoding SaveVector: " + err.Error())
-		return err
+		return 0, err
 	}
-	return nil
+	return pos, nil
 }
 
 // SaveVectorRead will read the vector.ID, vector.DataStart, vector.PayloadStart from the file system and returns a map of vectors
@@ -409,6 +417,12 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 		decoder := json.NewDecoder(file)
 		for {
 			var sv SaveVector
+			// where are we in the file - save the position
+			sv.SaveVectorPosition, err = file.Seek(0, io.SeekCurrent)
+			if err != nil {
+				Logger.Log.Log("Error getting position: " + err.Error())
+				return nil, err
+			}
 			if err := decoder.Decode(&sv); err == io.EOF {
 				break
 			} else if err != nil {
@@ -421,64 +435,76 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 	return &vectors, nil
 }
 
-// SaveVectorDelete will delete the vector.ID, vector.DataStart, vector.PayloadStart from the file system // TODO: This is shit
-func (w *FileMapper) SaveVectorDelete(id string, collection string) error {
-	// Lock the mutex for reading
+// SaveVectorWriteAt will write the vector.ID, vector.DataStart, vector.PayloadStart to the file system at a specific position
+func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64, collection string, pos int64) error {
+	// Lock the Wal
 	w.Mut[collection].Lock()
 	defer w.Mut[collection].Unlock()
-
-	// Open the file "collection"_meta.bin
-	file, err := os.Open(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
-	if err != nil {
-		Logger.Log.Log("Error opening meta.json file: " + err.Error())
-		return err
-	}
-
-	// Decode all JSON objects into a slice of SaveVector
-	var vectors []SaveVector
-	decoder := json.NewDecoder(file)
-	for {
-		var sv SaveVector
-		if err := decoder.Decode(&sv); err == io.EOF {
-			break
-		} else if err != nil {
-			Logger.Log.Log("Error decoding SaveVector: " + err.Error())
-			return err
-		}
-		vectors = append(vectors, sv)
-	}
-
-	file.Close()
-	w.Mut[collection].Unlock()
-
-	// Iterate over the slice and if the VectorID matches the given ID, remove that element from the slice
-	for i, vector := range vectors {
-		if vector.VectorID == id {
-			vectors = append(vectors[:i], vectors[i+1:]...)
-			break
-		}
-	}
-
-	// Lock the mutex for writing
-	w.Mut[collection].Lock()
-
-	// Open the file in write mode, this will clear the file content
-	file, err = os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_RDWR, 0644)
 	if err != nil {
 		Logger.Log.Log("Error opening meta.json file: " + err.Error())
 		return err
 	}
 	defer file.Close()
 
-	// Encode the modified slice of SaveVector back into the file
-	encoder := json.NewEncoder(file)
-	for _, vector := range vectors {
-		err = encoder.Encode(vector)
-		if err != nil {
-			Logger.Log.Log("Error encoding SaveVector: " + err.Error())
-			return err
-		}
+	// Set the file pointer to the position
+	_, err = file.Seek(pos, io.SeekStart)
+	if err != nil {
+		Logger.Log.Log("Error seeking to position in file: " + err.Error())
+		return err
 	}
 
-	return nil
+	// Interpret the previous data as a SaveVector
+	var prevSaveVector SaveVector
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&prevSaveVector)
+	if err != nil {
+		Logger.Log.Log("Error decoding previous data: " + err.Error())
+		return err
+	}
+
+	// Overwrite the previous element with spaces
+	_, err = file.Seek(pos, io.SeekStart)
+	if err != nil {
+		Logger.Log.Log("Error seeking to position in file: " + err.Error())
+		return err
+	}
+	prevData, err := json.Marshal(prevSaveVector)
+	if err != nil {
+		Logger.Log.Log("Error marshalling previous data: " + err.Error())
+		return err
+	}
+	spaces := make([]byte, len(prevData))
+	for i := range spaces {
+		spaces[i] = ' '
+	}
+	_, err = file.Write(spaces)
+	if err != nil {
+		Logger.Log.Log("Error writing to file: " + err.Error())
+		return err
+	}
+
+	// Create the savevector
+	sv := SaveVector{VectorID: id, DataStart: datastart, PayloadStart: payloadstart, SaveVectorPosition: pos}
+
+	// Use json to encode the SaveVector
+	data, err := json.Marshal(sv)
+	if err != nil {
+		Logger.Log.Log("Error encoding SaveVector: " + err.Error())
+		return err
+	}
+
+	// write only if the data is the same length or smaller than the previous data
+	if len(data) > len(prevData) {
+		// Write the data at the specified position
+		_, err = file.WriteAt(data, pos)
+		if err != nil {
+			Logger.Log.Log("Error writing to file: " + err.Error())
+			return err
+		}
+		return nil
+	} else {
+		Logger.Log.Log("Data is larger than previous data")
+		return fmt.Errorf("Data is larger than previous data - FORBIDDEN")
+	}
 }
