@@ -421,64 +421,7 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 	return &vectors, nil
 }
 
-// SaveVectorDelete will delete the vector.ID, vector.DataStart, vector.PayloadStart from the file system // TODO: This is shit
-func (w *FileMapper) SaveVectorDelete(id string, collection string) error {
-	// Lock the mutex for reading
-	w.Mut[collection].Lock()
-	defer w.Mut[collection].Unlock()
-
-	// Open the file "collection"_meta.bin
-	file, err := os.Open(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
-	if err != nil {
-		Logger.Log.Log("Error opening meta.json file: " + err.Error())
-		return err
-	}
-
-	// Decode all JSON objects into a slice of SaveVector
-	var vectors []SaveVector
-	decoder := json.NewDecoder(file)
-	for {
-		var sv SaveVector
-		if err := decoder.Decode(&sv); err == io.EOF {
-			break
-		} else if err != nil {
-			Logger.Log.Log("Error decoding SaveVector: " + err.Error())
-			return err
-		}
-		vectors = append(vectors, sv)
-	}
-
-	file.Close()
-	w.Mut[collection].Unlock()
-
-	// Iterate over the slice and if the VectorID matches the given ID, remove that element from the slice
-	for i, vector := range vectors {
-		if vector.VectorID == id {
-			vectors = append(vectors[:i], vectors[i+1:]...)
-			break
-		}
-	}
-
-	// Lock the mutex for writing
-	w.Mut[collection].Lock()
-
-	// Open the file in write mode, this will clear the file content
-	file, err = os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		Logger.Log.Log("Error opening meta.json file: " + err.Error())
-		return err
-	}
-	defer file.Close()
-
-	// Encode the modified slice of SaveVector back into the file
-	encoder := json.NewEncoder(file)
-	for _, vector := range vectors {
-		err = encoder.Encode(vector)
-		if err != nil {
-			Logger.Log.Log("Error encoding SaveVector: " + err.Error())
-			return err
-		}
-	}
-
+// SaveVectorWriteAt will write the vector.ID, vector.DataStart, vector.PayloadStart to the file system at a given position
+func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64, collection string, pos int64) error {
 	return nil
 }
