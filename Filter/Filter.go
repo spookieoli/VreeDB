@@ -41,7 +41,14 @@ func (o Operator) IsValid() error {
 	return fmt.Errorf("Invalid operator: %s", o)
 }
 
-// ValidateFilter will validate the filters on a given Vector
+// ValidateFilter validates the filter against the given vector's payload.
+// It performs the following steps:
+// - Loads the payload from the hdd
+// - Checks if the field exists in the payload
+// - Checks if the field value and the filter value have the same type
+// - Compares the field value with the filter value using the operator
+// - Returns true if the filter condition is met, otherwise returns false
+// - Returns an error if an error occurs during file reading or type comparison, otherwise returns nil
 func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 	// Load the Payload from the hdd
 	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, vector.Collection)
