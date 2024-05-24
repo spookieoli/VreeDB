@@ -85,11 +85,13 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 	(*c.Space)[vector.Id] = vector
 
 	// Save the Collection to the FS
-	err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
+	pos, err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
 	if err != nil {
 		Logger.Log.Log("Error saving vector to file: " + err.Error())
 		return err
 	}
+	// Save the position of the vector in the SaveVectorWriter
+	vector.SaveVectorPosition = pos
 
 	// Set classifier ready to true
 	c.ClassifierReady = true
@@ -113,6 +115,11 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		}
 		// Set the datastart to -1
 		(*c.Space)[id].DataStart = -1
+		// set the datasatrt in SaveVector to -1
+		err := FileMapper.Mapper.SaveVectorWriteAt((*c.Space)[id].Id, -1, -1, c.Name, (*c.Space)[id].SaveVectorPosition)
+		if err != nil {
+			return err
+		}
 		// Delete the vector from the Space
 		delete(*c.Space, id)
 	}
@@ -426,7 +433,7 @@ func (c *Collection) SaveIndexes() error {
 	return nil
 }
 
-// Rebuild index will rebuild the indexes
+// RebuildIndex index will rebuild the indexes
 func (c *Collection) RebuildIndex() error {
 	// Open the file
 	file, err := os.Open(*ArgsParser.Ap.FileStore + c.Name + "_indexes.gob")

@@ -9,16 +9,17 @@ import (
 
 // Vector is a struct that holds a slice of float64
 type Vector struct {
-	Id           string
-	Collection   string
-	Data         []float64
-	Length       int
-	CLength      int
-	Payload      *map[string]interface{}
-	DataStart    int64
-	PayloadStart int64
-	Indexed      bool
-	mut          *sync.RWMutex
+	Id                 string
+	Collection         string
+	Data               []float64
+	Length             int
+	CLength            int
+	Payload            *map[string]interface{}
+	DataStart          int64
+	PayloadStart       int64
+	Indexed            bool
+	SaveVectorPosition int64
+	mut                *sync.RWMutex
 }
 
 // NewVector returns a new Vector

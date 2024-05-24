@@ -93,7 +93,14 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 	return collections
 }
 
-// Restore Vectors will restore the vectors
+// RestoreVectors restores the vectors of a given collection.
+// It reads the saved vectors from a file, skips deleted vectors,
+// and creates new Vector instances for each vector.
+// The restored vectors are then returned as a map where the key is
+// the vector ID and the value is the corresponding Vector instance.
+// The restored vectors are also unindexed and their properties,
+// such as Collection, DataStart, PayloadStart, Length, and SaveVectorPosition,
+// are set based on the read data.
 func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*Vector.Vector, error) {
 	vectors := make(map[string]*Vector.Vector)
 	m, err := FileMapper.Mapper.SaveVectorRead(collection)
@@ -112,6 +119,7 @@ func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*
 		vectors[v.VectorID].DataStart = v.DataStart
 		vectors[v.VectorID].PayloadStart = v.PayloadStart
 		vectors[v.VectorID].Length = dimension
+		vectors[v.VectorID].SaveVectorPosition = v.SaveVectorPosition
 		vectors[v.VectorID].Unindex()
 	}
 	return &vectors, nil
