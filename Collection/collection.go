@@ -113,13 +113,13 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		if _, ok := (*c.Space)[id]; !ok {
 			return fmt.Errorf("Vector with ID %s does not exist", id)
 		}
-		// Set the datastart to -1
-		(*c.Space)[id].DataStart = -1
 		// set the datasatrt in SaveVector to -1
 		err := FileMapper.Mapper.SaveVectorWriteAt((*c.Space)[id].Id, -1, -1, c.Name, (*c.Space)[id].SaveVectorPosition)
 		if err != nil {
 			return err
 		}
+		// Set the datastart to -1
+		(*c.Space)[id].DataStart = -1
 		// Delete the vector from the Space
 		delete(*c.Space, id)
 	}
