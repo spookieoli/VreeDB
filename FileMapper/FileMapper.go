@@ -494,11 +494,17 @@ func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64,
 		return err
 	}
 
-	// Write the data at the specified position
-	_, err = file.WriteAt(data, pos)
-	if err != nil {
-		Logger.Log.Log("Error writing to file: " + err.Error())
-		return err
+	// write only if the data is the same length or smaller than the previous data
+	if len(data) > len(prevData) {
+		// Write the data at the specified position
+		_, err = file.WriteAt(data, pos)
+		if err != nil {
+			Logger.Log.Log("Error writing to file: " + err.Error())
+			return err
+		}
+		return nil
+	} else {
+		Logger.Log.Log("Data is larger than previous data")
+		return fmt.Errorf("Data is larger than previous data - FORBIDDEN")
 	}
-	return nil
 }
