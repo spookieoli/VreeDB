@@ -76,17 +76,14 @@ func (v *Vdb) ListCollections() []string {
 	return collections
 }
 
-// Deletepoint will delete a point from a collection
-func (v *Vdb) Deletepoint(collectionName string, id string) error {
-	v.Collections[collectionName].Mut.Lock()
-	defer v.Collections[collectionName].Mut.Unlock()
-
+// DeletePoint will delete a point from a collection
+func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 	// serach the point in the collection
 	novector := false
 	getid := true
-	result := v.Search(collectionName, &Vector.Vector{Id: id}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
+	result := v.Search(collectionName, &Vector.Vector{Data: vector}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
 	if len(result) == 0 {
-		return fmt.Errorf("Point with id %s not found in collection %s", id, collectionName)
+		return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
 	}
 	// Delete the Point when the distance is 0
 	if result[0].Distance == 0 {
@@ -95,10 +92,10 @@ func (v *Vdb) Deletepoint(collectionName string, id string) error {
 		if err != nil {
 			return err
 		}
-		Logger.Log.Log("Point with id " + id + " deleted from collection " + collectionName)
+		Logger.Log.Log("Point deleted from collection ")
 		return nil
 	}
-	return fmt.Errorf("Point with id %s not found in collection %s", id, collectionName)
+	return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
 }
 
 // Search searches for the nearest neighbours of the given target vector
