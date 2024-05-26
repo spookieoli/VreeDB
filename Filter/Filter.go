@@ -182,40 +182,66 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		default:
 			return false, nil
 		}
-		// in is special - it takes a slice of values and checks if the field value is in the slice of values
+		// in is special - it takes a slice of values and checks if the field value (which is also a slice) contains any of the values
+		// it returns true if alle values in the slice are in the field slice
 	case In:
 		switch v := f.Value.(type) {
 		case []int:
-			for _, val := range v {
-				if (*payload)[f.Field].(int) == val {
-					return true, nil
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]int) {
+					if value == fieldValue {
+						continue
+					}
 				}
+				return false, nil
 			}
+			return true, nil
 		case []int64:
-			for _, val := range v {
-				if (*payload)[f.Field].(int64) == val {
-					return true, nil
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]int64) {
+					if value == fieldValue {
+						continue
+					}
 				}
+				return false, nil
 			}
+			return true, nil
 		case []float32:
-			for _, val := range v {
-				if (*payload)[f.Field].(float32) == val {
-					return true, nil
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]float32) {
+					if value == fieldValue {
+						continue
+					}
 				}
+				return false, nil
 			}
+			return true, nil
 		case []float64:
-			for _, val := range v {
-				if (*payload)[f.Field].(float64) == val {
-					return true, nil
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]float64) {
+					if value == fieldValue {
+						continue
+					}
 				}
+				return false, nil
 			}
+			return true, nil
 		case []string:
-			for _, val := range v {
-				if (*payload)[f.Field].(string) == val {
-					return true, nil
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]string) {
+					if value == fieldValue {
+						continue
+					}
 				}
+				return false, nil
 			}
 		}
+
 	default:
 		// May never happen
 		Logger.Log.Log("invalid operator in filter - this is a bug - please report")
