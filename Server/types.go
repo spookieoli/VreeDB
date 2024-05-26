@@ -49,6 +49,8 @@ type Point struct {
 	MaxDistancePercent float64                `json:"max_distance_percent"` // Must not be present in the request default 0.0 (no limit)
 	Index              *IndexName             `json:"index"`                // Must not be present in the request default ""
 	Filter             *[]Filter.Filter       `json:"filter"`               // Must not be present in the request default nil
+	GetVectors         bool                   `json:"get_vectors"`          // Must not be present in the request default false
+	GetId              bool                   `json:"get_id"`               // Must not be present in the request default false
 }
 
 type PointItem struct {

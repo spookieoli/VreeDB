@@ -24,6 +24,8 @@ type CollectionConfig struct {
 type ResultSet struct {
 	Payload  *map[string]interface{}
 	Distance float64
+	Vector   *[]float64
+	Id       string
 }
 
 // Utils is the main struct of the Utils

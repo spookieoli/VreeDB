@@ -436,7 +436,7 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 }
 
 // SaveVectorWriteAt will write the vector.ID, vector.DataStart, vector.PayloadStart to the file system at a specific position
-func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64, collection string, pos int64) error {
+func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection string, pos int64) error {
 	// Lock the Wal
 	w.Mut[collection].Lock()
 	defer w.Mut[collection].Unlock()
@@ -474,18 +474,9 @@ func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64,
 		Logger.Log.Log("Error marshalling previous data: " + err.Error())
 		return err
 	}
-	spaces := make([]byte, len(prevData))
-	for i := range spaces {
-		spaces[i] = ' '
-	}
-	_, err = file.Write(spaces)
-	if err != nil {
-		Logger.Log.Log("Error writing to file: " + err.Error())
-		return err
-	}
 
 	// Create the savevector
-	sv := SaveVector{VectorID: id, DataStart: datastart, PayloadStart: payloadstart, SaveVectorPosition: pos}
+	sv := SaveVector{VectorID: "", DataStart: datastart, PayloadStart: payloadstart, SaveVectorPosition: pos}
 
 	// Use json to encode the SaveVector
 	data, err := json.Marshal(sv)
@@ -495,7 +486,17 @@ func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64,
 	}
 
 	// write only if the data is the same length or smaller than the previous data
-	if len(data) > len(prevData) {
+	if len(data) <= len(prevData) {
+		// space out the data
+		spaces := make([]byte, len(prevData))
+		for i := range spaces {
+			spaces[i] = ' '
+		}
+		_, err = file.Write(spaces)
+		if err != nil {
+			Logger.Log.Log("Error writing to file: " + err.Error())
+			return err
+		}
 		// Write the data at the specified position
 		_, err = file.WriteAt(data, pos)
 		if err != nil {
@@ -505,6 +506,6 @@ func (w *FileMapper) SaveVectorWriteAt(id string, datastart, payloadstart int64,
 		return nil
 	} else {
 		Logger.Log.Log("Data is larger than previous data")
-		return fmt.Errorf("Data is larger than previous data - FORBIDDEN")
+		return fmt.Errorf("Data is larger than previous data - FORBIDDEN - this is a BUG - please report!")
 	}
 }

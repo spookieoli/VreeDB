@@ -76,9 +76,31 @@ func (v *Vdb) ListCollections() []string {
 	return collections
 }
 
+// DeletePoint will delete a point from a collection
+func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
+	// serach the point in the collection
+	novector := false
+	getid := true
+	result := v.Search(collectionName, &Vector.Vector{Data: vector}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
+	if len(result) == 0 {
+		return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
+	}
+	// Delete the Point when the distance is 0
+	if result[0].Distance == 0 {
+		// Delete the node
+		err := v.Collections[collectionName].DeleteVectorByID([]string{result[0].Id})
+		if err != nil {
+			return err
+		}
+		Logger.Log.Log("Point deleted from collection ")
+		return nil
+	}
+	return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
+}
+
 // Search searches for the nearest neighbours of the given target vector
 func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
-	filter *[]Filter.Filter) []*Utils.ResultSet {
+	filter *[]Filter.Filter, getvector, getid *bool) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
 
@@ -129,19 +151,28 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 			Logger.Log.Log("Error reading payload: " + err.Error())
 			continue
 		}
-		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance}
+		// if getvector is true we also return the vector
+		var vd *[]float64
+		if *getvector {
+			vd = &data[i].Node.Vector.Data
+		}
+		// if getid is true we also return the id
+		var id string
+		if *getid {
+			id = data[i].Node.Vector.Id
+		}
+		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
 	}
 
 	// Sort the results by distance, smallest first
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Distance < results[j].Distance
 	})
-
 	return results
 }
 
 func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64, filter *[]Filter.Filter,
-	indexName string, indexValue any) []*Utils.ResultSet {
+	indexName string, indexValue any, getvector, getid *bool) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
 
@@ -192,13 +223,22 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 			Logger.Log.Log("Error reading payload: " + err.Error())
 			continue
 		}
-		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance}
+		// if getvector is true we also return the vector
+		var vd *[]float64
+		if *getvector {
+			vd = &data[i].Node.Vector.Data
+		}
+		// if getid is true we also return the id
+		var id string
+		if *getid {
+			id = data[i].Node.Vector.Id
+		}
+		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
 	}
 
 	// Sort the results by distance, smallest first
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Distance < results[j].Distance
 	})
-
 	return results
 }

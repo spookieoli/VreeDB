@@ -114,7 +114,7 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 			return fmt.Errorf("Vector with ID %s does not exist", id)
 		}
 		// set the datasatrt in SaveVector to -1
-		err := FileMapper.Mapper.SaveVectorWriteAt((*c.Space)[id].Id, -1, -1, c.Name, (*c.Space)[id].SaveVectorPosition)
+		err := FileMapper.Mapper.SaveVectorWriteAt(-1, -1, c.Name, (*c.Space)[id].SaveVectorPosition)
 		if err != nil {
 			return err
 		}

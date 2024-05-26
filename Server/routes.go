@@ -466,7 +466,34 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// DeletePoint deletes a point from a Collection
+// DeletePointById deletes a point from a collection by ID. It expects a POST request
+// with the endpoint "/deletepointbyid". The request body should contain a JSON
+// object representing the point to be deleted in the following format:
+//
+//	{
+//	  "ApiKey": "valid-api-key",
+//	  "CollectionName": "name-of-collection",
+//	  "Id": "id-of-point-to-be-deleted"
+//	}
+//
+// If the API key provided in the request is valid (checked using r.ApiKeyHandler.CheckApiKey())
+// or the request contains a valid session cookie (checked using r.validateCookie()), and the
+// requested collection exists (checked using r.DB.Collections[dp.CollectionName]), the point
+// specified by dp.Id will be deleted from the collection. The response will be 200 OK with
+// the message "Point deleted".
+//
+// If the API key or session cookie is not valid, the response status will be 401 Unauthorized
+// with the message "Unauthorized".
+//
+// If the requested collection does not exist, the response status will be 400 Bad Request
+// with the message "Collection does not exist".
+//
+// If there is any error parsing the request form or decoding the JSON, the response status
+// will be 500 Internal Server Error with the message "Error parsing form" or "Error decoding json",
+// respectively.
+//
+// If none of the above conditions are met, the response status will be 404 Not Found with
+// the message "Not Found".
 func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepointbyid" {
@@ -520,6 +547,56 @@ func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Notice the user that the route is not found under given information
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
+func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "DELETE"
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		defer req.Body.Close()
+		// load the request into the Point via json decode
+		dp := &Point{}
+		err = json.NewDecoder(req.Body).Decode(dp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(dp.ApiKey) || r.validateCookie(req) {
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[dp.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+			// Delete the point from the Collection
+			err = r.DB.DeletePoint(dp.CollectionName, dp.Vector)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Point deleted"))
+			return
+		}
+		// send not authorized to the user
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+	// Send notfound to the user
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Not Found"))
 	return
@@ -585,10 +662,10 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			switch p.Index {
 			case nil:
 				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
-					p.MaxDistancePercent, p.Filter)
+					p.MaxDistancePercent, p.Filter, &p.GetVectors, &p.GetId)
 			default:
 				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""),
-					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue)
+					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue, &p.GetVectors, &p.GetId)
 			}
 
 			// Send the results to the client
