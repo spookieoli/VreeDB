@@ -32,6 +32,8 @@ const (
 	LessThanOrEqual Operator = "le"
 	// In operator
 	In Operator = "in"
+	// inor operator
+	InOr Operator = "inor"
 )
 
 // IsValid checks if the operator is valid
@@ -183,7 +185,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			return false, nil
 		}
 		// in is special - it takes a slice of values and checks if the field value (which is also a slice) contains any of the values
-		// it returns true if alle values in the slice are in the field slice
+		// it returns true if all values in the slice are in the field slice
 	case In:
 		switch v := f.Value.(type) {
 		case []int:
@@ -240,6 +242,60 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 				}
 				return false, nil
 			}
+		}
+	case InOr:
+		// inor is special too, there must be only one value in the slice that is in the field slice
+		switch v := f.Value.(type) {
+		case []int:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]int) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		case []int64:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]int64) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		case []float32:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]float32) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		case []float64:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]float64) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		case []string:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]string) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
 		}
 
 	default:
