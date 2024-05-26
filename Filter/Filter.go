@@ -31,9 +31,9 @@ const (
 	// LessThanOrEqual operator
 	LessThanOrEqual Operator = "le"
 	// In operator
-	In Operator = "in"
+	InAnd Operator = "in"
 	// inor operator
-	InOr Operator = "inor"
+	In Operator = "inor"
 )
 
 // IsValid checks if the operator is valid
@@ -186,7 +186,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		}
 		// in is special - it takes a slice of values and checks if the field value (which is also a slice) contains any of the values
 		// it returns true if all values in the slice are in the field slice
-	case In:
+	case InAnd:
 		switch v := f.Value.(type) {
 		case []int:
 			for _, value := range v {
@@ -243,7 +243,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 				return false, nil
 			}
 		}
-	case InOr:
+	case In:
 		// inor is special too, there must be only one value in the slice that is in the field slice
 		switch v := f.Value.(type) {
 		case []int:
