@@ -30,6 +30,8 @@ const (
 	LessThan Operator = "lt"
 	// LessThanOrEqual operator
 	LessThanOrEqual Operator = "le"
+	// In operator
+	In Operator = "in"
 )
 
 // IsValid checks if the operator is valid
@@ -179,6 +181,40 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			}
 		default:
 			return false, nil
+		}
+		// in is special - it takes a slice of values and checks if the field value is in the slice of values
+	case In:
+		switch v := f.Value.(type) {
+		case []int:
+			for _, val := range v {
+				if (*payload)[f.Field].(int) == val {
+					return true, nil
+				}
+			}
+		case []int64:
+			for _, val := range v {
+				if (*payload)[f.Field].(int64) == val {
+					return true, nil
+				}
+			}
+		case []float32:
+			for _, val := range v {
+				if (*payload)[f.Field].(float32) == val {
+					return true, nil
+				}
+			}
+		case []float64:
+			for _, val := range v {
+				if (*payload)[f.Field].(float64) == val {
+					return true, nil
+				}
+			}
+		case []string:
+			for _, val := range v {
+				if (*payload)[f.Field].(string) == val {
+					return true, nil
+				}
+			}
 		}
 	default:
 		// May never happen
