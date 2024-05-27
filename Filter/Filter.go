@@ -246,58 +246,19 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 	case In:
 		// inor is special too, there must be only one value in the slice that is in the field slice
 		switch v := f.Value.(type) {
-		case []int:
+		case []interface{}:
 			for _, value := range v {
 				// if the value is in the slice, return true
-				for _, fieldValue := range (*payload)[f.Field].([]int) {
+				for _, fieldValue := range (*payload)[f.Field].([]interface{}) {
 					if value == fieldValue {
 						return true, nil
 					}
 				}
 			}
 			return false, nil
-		case []int64:
-			for _, value := range v {
-				// if the value is in the slice, return true
-				for _, fieldValue := range (*payload)[f.Field].([]int64) {
-					if value == fieldValue {
-						return true, nil
-					}
-				}
-			}
-			return false, nil
-		case []float32:
-			for _, value := range v {
-				// if the value is in the slice, return true
-				for _, fieldValue := range (*payload)[f.Field].([]float32) {
-					if value == fieldValue {
-						return true, nil
-					}
-				}
-			}
-			return false, nil
-		case []float64:
-			for _, value := range v {
-				// if the value is in the slice, return true
-				for _, fieldValue := range (*payload)[f.Field].([]float64) {
-					if value == fieldValue {
-						return true, nil
-					}
-				}
-			}
-			return false, nil
-		case []string:
-			for _, value := range v {
-				// if the value is in the slice, return true
-				for _, fieldValue := range (*payload)[f.Field].([]string) {
-					if value == fieldValue {
-						return true, nil
-					}
-				}
-			}
+		default:
 			return false, nil
 		}
-
 	default:
 		// May never happen
 		Logger.Log.Log("invalid operator in filter - this is a bug - please report")
