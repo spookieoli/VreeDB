@@ -30,12 +30,16 @@ const (
 	LessThan Operator = "lt"
 	// LessThanOrEqual operator
 	LessThanOrEqual Operator = "le"
+	// In operator
+	InAnd Operator = "inand"
+	// inor operator
+	In Operator = "in"
 )
 
 // IsValid checks if the operator is valid
 func (o Operator) IsValid() error {
 	switch o {
-	case Equal, NotEqual, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
+	case Equal, NotEqual, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, InAnd, In:
 		return nil
 	}
 	return fmt.Errorf("Invalid operator: %s", o)
@@ -178,6 +182,42 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 				return true, nil
 			}
 		default:
+			return false, nil
+		}
+		// in is special - it takes a slice of values and checks if the field value (which is also a slice) contains any of the values
+		// it returns true if all values in the slice are in the field slice
+	case InAnd:
+		switch v := f.Value.(type) {
+		case []interface{}:
+		OUTER:
+			for _, value := range v {
+				// if the value is not in the slice, return false
+				for _, fieldValue := range (*payload)[f.Field].([]interface{}) {
+					if value == fieldValue {
+						continue OUTER
+					}
+				}
+				// if we came here it means that the value is not in the slice
+				return false, nil
+			}
+			// if we came here it means that all values are in the slice
+			return true, nil
+		}
+	case In:
+		// in is special too, there must be only one value in the slice that is in the field slice
+		switch v := f.Value.(type) {
+		case []interface{}:
+			for _, value := range v {
+				// if the value is in the slice, return true
+				for _, fieldValue := range (*payload)[f.Field].([]interface{}) {
+					if value == fieldValue {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		default:
+			Logger.Log.Log("invalid value in filter - in can only be used for slices of values")
 			return false, nil
 		}
 	default:
