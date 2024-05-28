@@ -202,6 +202,9 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			}
 			// if we came here it means that all values are in the slice
 			return true, nil
+		default:
+			Logger.Log.Log("invalid value in filter - in can only be used for slices of values")
+			return false, nil
 		}
 	case In:
 		// in is special too, there must be only one value in the slice that is in the field slice
