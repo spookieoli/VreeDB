@@ -188,60 +188,20 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 		// it returns true if all values in the slice are in the field slice
 	case InAnd:
 		switch v := f.Value.(type) {
-		case []int:
+		case []interface{}:
+		OUTER:
 			for _, value := range v {
 				// if the value is not in the slice, return false
-				for _, fieldValue := range (*payload)[f.Field].([]int) {
+				for _, fieldValue := range (*payload)[f.Field].([]interface{}) {
 					if value == fieldValue {
-						continue
+						continue OUTER
 					}
 				}
+				// if we came here it means that the value is not in the slice
 				return false, nil
 			}
+			// if we came here it means that all values are in the slice
 			return true, nil
-		case []int64:
-			for _, value := range v {
-				// if the value is not in the slice, return false
-				for _, fieldValue := range (*payload)[f.Field].([]int64) {
-					if value == fieldValue {
-						continue
-					}
-				}
-				return false, nil
-			}
-			return true, nil
-		case []float32:
-			for _, value := range v {
-				// if the value is not in the slice, return false
-				for _, fieldValue := range (*payload)[f.Field].([]float32) {
-					if value == fieldValue {
-						continue
-					}
-				}
-				return false, nil
-			}
-			return true, nil
-		case []float64:
-			for _, value := range v {
-				// if the value is not in the slice, return false
-				for _, fieldValue := range (*payload)[f.Field].([]float64) {
-					if value == fieldValue {
-						continue
-					}
-				}
-				return false, nil
-			}
-			return true, nil
-		case []string:
-			for _, value := range v {
-				// if the value is not in the slice, return false
-				for _, fieldValue := range (*payload)[f.Field].([]string) {
-					if value == fieldValue {
-						continue
-					}
-				}
-				return false, nil
-			}
 		}
 	case In:
 		// in is special too, there must be only one value in the slice that is in the field slice
