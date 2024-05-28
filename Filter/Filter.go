@@ -31,15 +31,15 @@ const (
 	// LessThanOrEqual operator
 	LessThanOrEqual Operator = "le"
 	// In operator
-	InAnd Operator = "in"
+	InAnd Operator = "inand"
 	// inor operator
-	In Operator = "inor"
+	In Operator = "in"
 )
 
 // IsValid checks if the operator is valid
 func (o Operator) IsValid() error {
 	switch o {
-	case Equal, NotEqual, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
+	case Equal, NotEqual, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, InAnd, In:
 		return nil
 	}
 	return fmt.Errorf("Invalid operator: %s", o)
@@ -244,7 +244,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			}
 		}
 	case In:
-		// inor is special too, there must be only one value in the slice that is in the field slice
+		// in is special too, there must be only one value in the slice that is in the field slice
 		switch v := f.Value.(type) {
 		case []interface{}:
 			for _, value := range v {
@@ -257,6 +257,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			}
 			return false, nil
 		default:
+			Logger.Log.Log("invalid value in filter - in can only be used for slices of values")
 			return false, nil
 		}
 	default:
