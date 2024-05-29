@@ -1118,23 +1118,23 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(ic.ApiKey) || r.validateCookie(req) {
 			// Create the Index
-			err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-				return
-			}
-			// save the index
-			err = r.DB.Collections[ic.CollectionName].SaveIndexes()
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-				return
-			}
+			go func() {
+				err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
+				if err != nil {
+					Logger.Log.Log("Error creating index: " + err.Error())
+					return
+				}
+				// save the index
+				err = r.DB.Collections[ic.CollectionName].SaveIndexes()
+				if err != nil {
+					Logger.Log.Log("Error saving indexes: " + err.Error())
+					return
+				}
+			}()
 
 			// Send the success or error message to the client
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Index created"))
+			w.Write([]byte("index in creation"))
 			return
 		}
 
