@@ -29,6 +29,7 @@ type SearchData struct {
 func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
 	if node == nil || node.Vector == nil {
+		s.ReleaseWaitGroup()
 		return
 	}
 	axis := node.Depth % node.Vector.Length
