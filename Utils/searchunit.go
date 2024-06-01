@@ -7,9 +7,19 @@ import (
 	"math"
 )
 
+// SearchUnit represents a unit used for searching.
 type SearchUnit struct {
 	dimensionMultiplier float64
 	Filter              *[]Filter.Filter
+	Chan                chan *SearchData
+}
+
+type SearchData struct {
+	Node          *Node.Node
+	Target        *Vector.Vector
+	Queue         *HeapControl
+	DistanceFunc  func(*Vector.Vector, *Vector.Vector) (float64, error)
+	DimensionDiff *Vector.Vector
 }
 
 // NearestNeighbors returns the results nearest neighbours to the given target vector
@@ -41,6 +51,10 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	if axisDiff < dimensionDiff.Data[axis]*s.dimensionMultiplier {
 		s.NearestNeighbors(secondary, target, queue, distanceFunc, dimensionDiff)
 	}
+}
+
+// Start starts the SearchThreadpool
+func (s *SearchUnit) Start() {
 }
 
 // NewSearchUnit returns a new SearchUnit
