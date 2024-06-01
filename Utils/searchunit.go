@@ -68,9 +68,24 @@ func (s *SearchUnit) Start() {
 }
 
 // NewSearchUnit returns a new SearchUnit
-func NewSearchUnit(node *Node.Node, target *Vector.Vector, queue *HeapControl, filter *[]Filter.Filter,
-	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error),
-	dimensionDiff *Vector.Vector, dimensionMultiplier float64) {
-	su := SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: make(chan *SearchData, 1000), wg: &sync.WaitGroup{}}
-	su.NearestNeighbors(node, target, queue, distanceFunc, dimensionDiff)
+func NewSearchUnit(filter *[]Filter.Filter, dimensionMultiplier float64) *SearchUnit {
+	return &SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: make(chan *SearchData, 1000), wg: &sync.WaitGroup{}}
+}
+
+// InitWaitGroup blocks until the SearchUnit is finished
+func (s *SearchUnit) InitWaitGroup() {
+	s.wg.Add(1)
+}
+
+// ReleaseWaitGroup releases the WaitGroup
+func (s *SearchUnit) ReleaseWaitGroup() {
+	s.wg.Done()
+}
+
+// Search starts the search
+func (s *SearchUnit) Search(node *Node.Node, target *Vector.Vector, queue *HeapControl,
+	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
+	s.Chan <- &SearchData{Node: node, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
+	s.wg.Wait()
+	close(s.Chan)
 }
