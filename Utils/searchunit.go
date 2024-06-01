@@ -34,7 +34,7 @@ type SearchData struct {
 func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
 	if node == nil || node.Vector == nil {
-		s.ReleaseWaitGroup()
+		s.releaseWaitGroup()
 		return
 	}
 	axis := node.Depth % node.Vector.Length
@@ -84,7 +84,7 @@ func (s *SearchUnit) InitWaitGroup() {
 }
 
 // ReleaseWaitGroup releases the WaitGroup
-func (s *SearchUnit) ReleaseWaitGroup() {
+func (s *SearchUnit) releaseWaitGroup() {
 	s.wg.Done()
 }
 
