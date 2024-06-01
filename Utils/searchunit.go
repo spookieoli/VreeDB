@@ -49,11 +49,11 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 		primary = node.Right
 		secondary = node.Left
 	}
-	s.NearestNeighbors(primary, target, queue, distanceFunc, dimensionDiff)
+	s.Chan <- &SearchData{Node: primary, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
 
 	// If the distance is smaller than the dimensionDiff we need to search the other side
 	if axisDiff < dimensionDiff.Data[axis]*s.dimensionMultiplier {
-		s.NearestNeighbors(secondary, target, queue, distanceFunc, dimensionDiff)
+		s.Chan <- &SearchData{secondary, target, queue, distanceFunc, dimensionDiff}
 	}
 }
 
