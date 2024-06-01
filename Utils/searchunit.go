@@ -71,6 +71,6 @@ func (s *SearchUnit) Start() {
 func NewSearchUnit(node *Node.Node, target *Vector.Vector, queue *HeapControl, filter *[]Filter.Filter,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error),
 	dimensionDiff *Vector.Vector, dimensionMultiplier float64) {
-	su := SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter}
+	su := SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: make(chan *SearchData, 1000), wg: &sync.WaitGroup{}}
 	su.NearestNeighbors(node, target, queue, distanceFunc, dimensionDiff)
 }
