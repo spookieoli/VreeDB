@@ -1,10 +1,12 @@
 package Utils
 
 import (
+	"VreeDB/ArgsParser"
 	"VreeDB/Filter"
 	"VreeDB/Node"
 	"VreeDB/Vector"
 	"math"
+	"sync"
 )
 
 // SearchUnit represents a unit used for searching.
@@ -12,6 +14,7 @@ type SearchUnit struct {
 	dimensionMultiplier float64
 	Filter              *[]Filter.Filter
 	Chan                chan *SearchData
+	wg                  *sync.WaitGroup
 }
 
 type SearchData struct {
@@ -55,6 +58,13 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 
 // Start starts the SearchThreadpool
 func (s *SearchUnit) Start() {
+	for i := 0; i < *ArgsParser.Ap.SearchThreads; i++ {
+		go func() {
+			for data := range s.Chan {
+				s.NearestNeighbors(data.Node, data.Target, data.Queue, data.DistanceFunc, data.DimensionDiff)
+			}
+		}()
+	}
 }
 
 // NewSearchUnit returns a new SearchUnit

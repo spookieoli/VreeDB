@@ -6,14 +6,15 @@ import (
 
 // ArgsParser struct
 type ArgsParser struct {
-	Ip           *string
-	Port         *int
-	Secure       *bool
-	CertFile     *string
-	KeyFile      *string
-	CreateApiKey *bool
-	Loglocation  *string
-	FileStore    *string
+	Ip            *string
+	Port          *int
+	SearchThreads *int
+	Secure        *bool
+	CertFile      *string
+	KeyFile       *string
+	CreateApiKey  *bool
+	Loglocation   *string
+	FileStore     *string
 }
 
 // Ap is a global ArgsParser
@@ -32,6 +33,7 @@ func init() {
 	Ap.CertFile = flag.String("certfile", "", "The path to the certificate file")
 	Ap.KeyFile = flag.String("keyfile", "", "The path to the key file")
 	Ap.CreateApiKey = flag.Bool("createapikey", false, "Create a new API key")
+	Ap.SearchThreads = flag.Int("searchthreads", 2, "The number of search threads")
 
 	// Parse
 	flag.Parse()
