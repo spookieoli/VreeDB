@@ -25,7 +25,12 @@ type SearchData struct {
 	DimensionDiff *Vector.Vector
 }
 
-// NearestNeighbors returns the results nearest neighbours to the given target vector
+// NearestNeighbors returns the results nearest neighbours to the given target vector.
+// It calculates the axis for the given node and computes the distance and axis difference
+// between the node vector and the target vector. It then pushes the node into the queue
+// by invoking the `In` channel of `queue`. It also decides whether to search the left or
+// right child node based on the target vector values. Finally, it recursively calls
+// `NearestNeighbors` on the primary and secondary child nodes.
 func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
 	if node == nil || node.Vector == nil {
