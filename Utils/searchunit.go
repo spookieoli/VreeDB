@@ -53,10 +53,12 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 		primary = node.Right
 		secondary = node.Left
 	}
+	s.AddToWaitGroup()
 	s.Chan <- &SearchData{Node: primary, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
 
 	// If the distance is smaller than the dimensionDiff we need to search the other side
 	if axisDiff < dimensionDiff.Data[axis]*s.dimensionMultiplier {
+		s.AddToWaitGroup()
 		s.Chan <- &SearchData{secondary, target, queue, distanceFunc, dimensionDiff}
 	}
 }
@@ -66,7 +68,6 @@ func (s *SearchUnit) Start() {
 	for i := 0; i < *ArgsParser.Ap.SearchThreads; i++ {
 		go func() {
 			for data := range s.Chan {
-				s.AddToWaitGroup()
 				s.NearestNeighbors(data.Node, data.Target, data.Queue, data.DistanceFunc, data.DimensionDiff)
 				s.releaseWaitGroup()
 			}
@@ -92,6 +93,7 @@ func (s *SearchUnit) releaseWaitGroup() {
 // Search starts the search
 func (s *SearchUnit) Search(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
+	s.AddToWaitGroup()
 	s.Chan <- &SearchData{Node: node, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
 	s.wg.Wait()
 	close(s.Chan)
