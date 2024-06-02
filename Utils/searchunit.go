@@ -34,7 +34,6 @@ type SearchData struct {
 func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
 	if node == nil || node.Vector == nil {
-		s.releaseWaitGroup()
 		return
 	}
 	axis := node.Depth % node.Vector.Length
@@ -67,7 +66,9 @@ func (s *SearchUnit) Start() {
 	for i := 0; i < *ArgsParser.Ap.SearchThreads; i++ {
 		go func() {
 			for data := range s.Chan {
+				s.AddToWaitGroup()
 				s.NearestNeighbors(data.Node, data.Target, data.Queue, data.DistanceFunc, data.DimensionDiff)
+				s.releaseWaitGroup()
 			}
 		}()
 	}
@@ -78,8 +79,8 @@ func NewSearchUnit(filter *[]Filter.Filter, dimensionMultiplier float64) *Search
 	return &SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: make(chan *SearchData, 1000), wg: &sync.WaitGroup{}}
 }
 
-// InitWaitGroup blocks until the SearchUnit is finished
-func (s *SearchUnit) InitWaitGroup() {
+// AddToWaitGroup blocks until the SearchUnit is finished
+func (s *SearchUnit) AddToWaitGroup() {
 	s.wg.Add(1)
 }
 

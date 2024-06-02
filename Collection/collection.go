@@ -84,14 +84,16 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 	// add it to the Space
 	(*c.Space)[vector.Id] = vector
 
-	// Save the Collection to the FS
-	pos, err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
-	if err != nil {
-		Logger.Log.Log("Error saving vector to file: " + err.Error())
-		return err
+	// Save the Collection to the FS - only if this is a new vector
+	if vector.SaveVectorPosition == -1 {
+		pos, err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
+		if err != nil {
+			Logger.Log.Log("Error saving vector to file: " + err.Error())
+			return err
+		}
+		// Save the position of the vector in the SaveVectorWriter
+		vector.SaveVectorPosition = pos
 	}
-	// Save the position of the vector in the SaveVectorWriter
-	vector.SaveVectorPosition = pos
 
 	// Set classifier ready to true
 	c.ClassifierReady = true

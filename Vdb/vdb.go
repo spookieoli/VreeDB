@@ -189,9 +189,6 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	// Start the Queue Thread
 	queue.StartThreads()
 
-	// Add 1 to the queue waitgroup
-	queue.AddToWaitGroup()
-
 	// Get the starting time
 	t := time.Now()
 	su := Utils.NewSearchUnit(filter, 0.1)

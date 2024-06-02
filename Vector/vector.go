@@ -47,9 +47,9 @@ func NewVector(id string, data []float64, payload *map[string]interface{}, colle
 			// if we cannot write to the file we panic
 			panic(err)
 		}
-		return &Vector{Id: id, Data: data, Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps, CLength: clen}
+		return &Vector{Id: id, Data: data, Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps, CLength: clen, SaveVectorPosition: -1}
 	} else {
-		return &Vector{Id: id, Data: data, Length: len(data), Payload: payload, Indexed: false, mut: &sync.RWMutex{}, Collection: collection}
+		return &Vector{Id: id, Data: data, Length: len(data), Payload: payload, Indexed: false, mut: &sync.RWMutex{}, Collection: collection, SaveVectorPosition: -1}
 	}
 }
 
