@@ -180,9 +180,11 @@ func (c *Collection) Recreate() {
 	defer c.Mut.Unlock()
 	c.Nodes = &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
-		v.RecreateMut() // This needed to recreate the vector mut, it will not be saved in the gob file
-		c.Nodes.Insert(v)
-		c.SetDiaSpace(v)
+		if !v.IsDeleted() {
+			v.RecreateMut() // This needed to recreate the vector mut, it will not be saved in the gob file
+			c.Nodes.Insert(v)
+			c.SetDiaSpace(v)
+		}
 	}
 }
 
@@ -190,8 +192,10 @@ func (c *Collection) Recreate() {
 func (c *Collection) Rebuild() {
 	c.Nodes = &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
-		c.Nodes.Insert(v)
-		c.SetDiaSpace(v)
+		if !v.IsDeleted() {
+			c.Nodes.Insert(v)
+			c.SetDiaSpace(v)
+		}
 	}
 }
 

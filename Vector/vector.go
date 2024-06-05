@@ -87,3 +87,9 @@ func (v *Vector) RecreateMut() {
 func (v *Vector) Delete() {
 	v.deleted = true
 }
+
+// IsDeleted returns a boolean value indicating whether the Vector is marked as deleted.
+// If true, it means the Vector has been deleted; otherwise, it has not been deleted.
+func (v *Vector) IsDeleted() bool {
+	return v.deleted
+}
