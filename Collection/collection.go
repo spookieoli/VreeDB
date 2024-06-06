@@ -21,24 +21,24 @@ import (
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
 type Collection struct {
-	Name                string
-	Nodes               *Node.Node
-	VectorDimension     int
-	DistanceFunc        func(*Vector.Vector, *Vector.Vector) (float64, error)
-	Mut                 sync.RWMutex
-	Space               *map[string]*Vector.Vector
-	MaxVector           *Vector.Vector
-	MinVector           *Vector.Vector
-	DimensionDiff       *Vector.Vector
-	DiagonalLength      float64
-	DistanceFuncName    string
-	Classifiers         map[string]Classifier
-	ClassifierReady     bool
-	Indexes             map[string]*Index
-	ClassifierTraining  map[string]Classifier
-	TSNE_Dimensions     []*Vector.Vector
-	TSNE_Train          bool
-	DeletedVectorsCount int64
+	Name               string
+	Nodes              *Node.Node
+	VectorDimension    int
+	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
+	Mut                sync.RWMutex
+	Space              *map[string]*Vector.Vector
+	DeletedVectors     *map[string]*Vector.Vector
+	MaxVector          *Vector.Vector
+	MinVector          *Vector.Vector
+	DimensionDiff      *Vector.Vector
+	DiagonalLength     float64
+	DistanceFuncName   string
+	Classifiers        map[string]Classifier
+	ClassifierReady    bool
+	Indexes            map[string]*Index
+	ClassifierTraining map[string]Classifier
+	TSNE_Dimensions    []*Vector.Vector
+	TSNE_Train         bool
 }
 
 // Interface for the Classifier
@@ -65,7 +65,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	// create the collection
 	col := &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
-		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index)}
+		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index), DeletedVectors: &map[string]*Vector.Vector{}}
 
 	// Start the DeleteWatcher - it will watch in the background for deleted vectors
 	go col.DeleteWatcher()
@@ -129,8 +129,8 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		}
 		// set the vector as deleted
 		(*c.Space)[id].Delete()
-		// add 1 to the DeletedVectorsCount
-		c.DeletedVectorsCount++
+		// add the vector to the deleted vectors
+		(*c.DeletedVectors)[id] = (*c.Space)[id]
 	}
 	return nil
 }
@@ -138,7 +138,7 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 // DeleteWatcher will delete all collected deleted Vectors from the Collection - it will be called every 10 seconds in a go routine
 func (c *Collection) DeleteWatcher() {
 	for {
-		if c.DeletedVectorsCount == 0 {
+		if len(*c.DeletedVectors) > 0 {
 			nodes := c.Rebuild()
 			c.Mut.Lock()
 			c.Nodes = nodes
@@ -152,11 +152,15 @@ func (c *Collection) DeleteWatcher() {
 // DeleteMarkedVectors deletes vectors that are marked as deleted in the collection's space.
 // It iterates over the space and removes vectors that have the `deleted` flag set to true.
 func (c *Collection) DeleteMarkedVectors() {
-	for _, v := range *c.Space {
+	for _, v := range *c.DeletedVectors {
 		if v.IsDeleted() {
 			delete(*c.Space, v.Id)
 		}
 	}
+	// Delete the deleted vectors from the deleted vectors
+	c.Mut.Lock()
+	c.DeletedVectors = &map[string]*Vector.Vector{}
+	c.Mut.Unlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
@@ -173,6 +177,12 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 
 	// Calculate the DiogonalLength of the Collection
 	Utils.Utils.CalculateDiogonalLength(&c.DiagonalLength, c.VectorDimension, c.DimensionDiff)
+}
+
+// SetLocalDiaSpace sets the diagonal space of the Collection in local variables
+func (c *Collection) SetLocalDiaSpace(vector *Vector.Vector) (*Vector.Vector, *Vector.Vector, *Vector.Vector, float64) {
+	// TODO: work on this
+	return nil, nil, nil, 0
 }
 
 // GetNodeCount returns the number of points in the Collection
