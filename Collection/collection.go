@@ -62,9 +62,15 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 		distanceFunc = Utils.Utils.CosineDistance
 	}
 
-	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
+	// create the collection
+	col := &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
 		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index)}
+
+	// Start the DeleteWatcher - it will watch in the background for deleted vectors
+	go col.DeleteWatcher()
+
+	return col
 }
 
 // Insert inserts a vector into the collection
