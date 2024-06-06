@@ -16,6 +16,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
@@ -122,13 +123,37 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		}
 		// set the vector as deleted
 		(*c.Space)[id].Delete()
+		// add 1 to the DeletedVectorsCount
+		c.DeletedVectorsCount++
 	}
-	// Rebuild the KD-Tree
-	c.Rebuild()
 	return nil
 }
 
-// SetDIaSpace will set the diagonal space of the Collection
+// DeleteWatcher will delete all collected deleted Vectors from the Collection - it will be called every 10 seconds in a go routine
+func (c *Collection) DeleteWatcher() {
+	for {
+		if c.DeletedVectorsCount == 0 {
+			nodes := c.Rebuild()
+			c.Mut.Lock()
+			c.Nodes = nodes
+			c.Mut.Unlock()
+			c.DeleteMarkedVectors()
+			time.Sleep(10 * time.Second)
+		}
+	}
+}
+
+// DeleteMarkedVectors deletes vectors that are marked as deleted in the collection's space.
+// It iterates over the space and removes vectors that have the `deleted` flag set to true.
+func (c *Collection) DeleteMarkedVectors() {
+	for _, v := range *c.Space {
+		if v.IsDeleted() {
+			delete(*c.Space, v.Id)
+		}
+	}
+}
+
+// SetDiaSpace will set the diagonal space of the Collection
 func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 	// Update the max and min vectors
 	wg := sync.WaitGroup{}
@@ -186,15 +211,15 @@ func (c *Collection) Recreate() {
 	}
 }
 
-// Rebuild is like Recreate but it does not use the Mut and will not use the RecreateMut function
-func (c *Collection) Rebuild() {
-	c.Nodes = &Node.Node{Depth: 0}
+// Rebuild will create a new KD-Tree from the SpaceMap
+func (c *Collection) Rebuild() *Node.Node {
+	nodes := &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
 		if !v.IsDeleted() {
-			c.Nodes.Insert(v)
-			c.SetDiaSpace(v)
+			nodes.Insert(v)
 		}
 	}
+	return nodes
 }
 
 // CheckID will Check if the given ID is already in the Collection Space
