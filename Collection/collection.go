@@ -20,23 +20,24 @@ import (
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
 type Collection struct {
-	Name               string
-	Nodes              *Node.Node
-	VectorDimension    int
-	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
-	Mut                sync.RWMutex
-	Space              *map[string]*Vector.Vector
-	MaxVector          *Vector.Vector
-	MinVector          *Vector.Vector
-	DimensionDiff      *Vector.Vector
-	DiagonalLength     float64
-	DistanceFuncName   string
-	Classifiers        map[string]Classifier
-	ClassifierReady    bool
-	Indexes            map[string]*Index
-	ClassifierTraining map[string]Classifier
-	TSNE_Dimensions    []*Vector.Vector
-	TSNE_Train         bool
+	Name                string
+	Nodes               *Node.Node
+	VectorDimension     int
+	DistanceFunc        func(*Vector.Vector, *Vector.Vector) (float64, error)
+	Mut                 sync.RWMutex
+	Space               *map[string]*Vector.Vector
+	MaxVector           *Vector.Vector
+	MinVector           *Vector.Vector
+	DimensionDiff       *Vector.Vector
+	DiagonalLength      float64
+	DistanceFuncName    string
+	Classifiers         map[string]Classifier
+	ClassifierReady     bool
+	Indexes             map[string]*Index
+	ClassifierTraining  map[string]Classifier
+	TSNE_Dimensions     []*Vector.Vector
+	TSNE_Train          bool
+	DeletedVectorsCount int64
 }
 
 // Interface for the Classifier
@@ -105,7 +106,6 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 // Delete deletes a vector from the collection
 // CAUTION - Delete will not remove the vectors Data from the DB Files .bin! - it will only flag the vector as deleted
-// The vector will be removed from the KD-Tree and the Space and will not be loaded into the KD-Tree again
 func (c *Collection) DeleteVectorByID(ids []string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
@@ -120,10 +120,8 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		if err != nil {
 			return err
 		}
-		// Set the datastart to -1
-		(*c.Space)[id].DataStart = -1
-		// Delete the vector from the Space
-		delete(*c.Space, id)
+		// set the vector as deleted
+		(*c.Space)[id].Delete()
 	}
 	// Rebuild the KD-Tree
 	c.Rebuild()
