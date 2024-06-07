@@ -19,6 +19,7 @@ type Vector struct {
 	PayloadStart       int64
 	Indexed            bool
 	SaveVectorPosition int64
+	deleted            bool
 	mut                *sync.RWMutex
 }
 
@@ -80,4 +81,15 @@ func (v *Vector) GetData() *[]float64 {
 // RecreateMut will recreate the mut
 func (v *Vector) RecreateMut() {
 	v.mut = &sync.RWMutex{}
+}
+
+// Delete marks the Vector as deleted by setting the `deleted` flag to true
+func (v *Vector) Delete() {
+	v.deleted = true
+}
+
+// IsDeleted returns a boolean value indicating whether the Vector is marked as deleted.
+// If true, it means the Vector has been deleted; otherwise, it has not been deleted.
+func (v *Vector) IsDeleted() bool {
+	return v.deleted
 }

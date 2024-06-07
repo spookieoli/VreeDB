@@ -16,6 +16,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Collection is a struct that holds a name, a pointer to a Node, a vector dimension and a distance function
@@ -26,6 +27,7 @@ type Collection struct {
 	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
 	Mut                sync.RWMutex
 	Space              *map[string]*Vector.Vector
+	DeletedVectors     *map[string]*Vector.Vector
 	MaxVector          *Vector.Vector
 	MinVector          *Vector.Vector
 	DimensionDiff      *Vector.Vector
@@ -60,9 +62,15 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 		distanceFunc = Utils.Utils.CosineDistance
 	}
 
-	return &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
+	// create the collection
+	col := &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
-		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index)}
+		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index), DeletedVectors: &map[string]*Vector.Vector{}}
+
+	// Start the DeleteWatcher - it will watch in the background for deleted vectors
+	go col.DeleteWatcher()
+
+	return col
 }
 
 // Insert inserts a vector into the collection
@@ -105,7 +113,6 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 // Delete deletes a vector from the collection
 // CAUTION - Delete will not remove the vectors Data from the DB Files .bin! - it will only flag the vector as deleted
-// The vector will be removed from the KD-Tree and the Space and will not be loaded into the KD-Tree again
 func (c *Collection) DeleteVectorByID(ids []string) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
@@ -120,17 +127,41 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 		if err != nil {
 			return err
 		}
-		// Set the datastart to -1
-		(*c.Space)[id].DataStart = -1
-		// Delete the vector from the Space
-		delete(*c.Space, id)
+		// set the vector as deleted
+		(*c.Space)[id].Delete()
+		// add the vector to the deleted vectors
+		(*c.DeletedVectors)[id] = (*c.Space)[id]
 	}
-	// Rebuild the KD-Tree
-	c.Rebuild()
 	return nil
 }
 
-// SetDIaSpace will set the diagonal space of the Collection
+// DeleteWatcher will delete all collected deleted Vectors from the Collection - it will be called every 10 seconds in a go routine
+func (c *Collection) DeleteWatcher() {
+	for {
+		if len(*c.DeletedVectors) > 0 {
+			c.Mut.RLock()
+			nodes := c.Rebuild()
+			c.Nodes = nodes
+			c.DeleteMarkedVectors()
+			c.Mut.RUnlock()
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+
+// DeleteMarkedVectors deletes vectors that are marked as deleted in the collection's space.
+// It iterates over the space and removes vectors that have the `deleted` flag set to true.
+func (c *Collection) DeleteMarkedVectors() {
+	for _, v := range *c.DeletedVectors {
+		if v.IsDeleted() {
+			delete(*c.Space, v.Id)
+		}
+	}
+	// Delete the deleted vectors from the deleted vectors
+	c.DeletedVectors = &map[string]*Vector.Vector{}
+}
+
+// SetDiaSpace will set the diagonal space of the Collection
 func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 	// Update the max and min vectors
 	wg := sync.WaitGroup{}
@@ -144,6 +175,12 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 
 	// Calculate the DiogonalLength of the Collection
 	Utils.Utils.CalculateDiogonalLength(&c.DiagonalLength, c.VectorDimension, c.DimensionDiff)
+}
+
+// SetLocalDiaSpace sets the diagonal space of the Collection in local variables
+func (c *Collection) SetLocalDiaSpace(vector *Vector.Vector) (*Vector.Vector, *Vector.Vector, *Vector.Vector, float64) {
+	// TODO: work on this
+	return nil, nil, nil, 0
 }
 
 // GetNodeCount returns the number of points in the Collection
@@ -180,19 +217,23 @@ func (c *Collection) Recreate() {
 	defer c.Mut.Unlock()
 	c.Nodes = &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
-		v.RecreateMut() // This needed to recreate the vector mut, it will not be saved in the gob file
-		c.Nodes.Insert(v)
-		c.SetDiaSpace(v)
+		if !v.IsDeleted() {
+			v.RecreateMut() // This needed to recreate the vector mut, it will not be saved in the gob file
+			c.Nodes.Insert(v)
+			c.SetDiaSpace(v)
+		}
 	}
 }
 
-// Rebuild is like Recreate but it does not use the Mut and will not use the RecreateMut function
-func (c *Collection) Rebuild() {
-	c.Nodes = &Node.Node{Depth: 0}
+// Rebuild will create a new KD-Tree from the SpaceMap
+func (c *Collection) Rebuild() *Node.Node {
+	nodes := &Node.Node{Depth: 0}
 	for _, v := range *c.Space {
-		c.Nodes.Insert(v)
-		c.SetDiaSpace(v)
+		if !v.IsDeleted() {
+			nodes.Insert(v)
+		}
 	}
+	return nodes
 }
 
 // CheckID will Check if the given ID is already in the Collection Space

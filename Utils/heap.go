@@ -86,6 +86,8 @@ func (hc *HeapControl) worker() {
 			if err != nil {
 				Logger.Log.Log("Error validating filters: " + err.Error())
 			}
+		} else if item.node.Vector.IsDeleted() {
+			continue
 		} else {
 			// Insert the item into the heap
 			hc.Insert(item.node, item.dist, item.diff)
