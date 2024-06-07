@@ -139,11 +139,11 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
+			c.Mut.RLock()
 			nodes := c.Rebuild()
-			c.Mut.Lock()
 			c.Nodes = nodes
-			c.Mut.Unlock()
 			c.DeleteMarkedVectors()
+			c.Mut.RUnlock()
 			time.Sleep(10 * time.Second)
 		}
 	}
@@ -158,9 +158,7 @@ func (c *Collection) DeleteMarkedVectors() {
 		}
 	}
 	// Delete the deleted vectors from the deleted vectors
-	c.Mut.Lock()
 	c.DeletedVectors = &map[string]*Vector.Vector{}
-	c.Mut.Unlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
