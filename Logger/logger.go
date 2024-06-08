@@ -2,19 +2,14 @@ package Logger
 
 import (
 	"VreeDB/ArgsParser"
+	"log"
 	"os"
-	"time"
 )
 
-// Logger struct
-type Logger struct {
-	Logfile *os.File
-	In      chan string
-	Quit    chan bool
-}
-
 // Log is a singleton
-var Log *Logger
+var infoLogger *log.Logger
+var errorLogger *log.Logger
+var debugLogger *log.Logger
 
 // init initializes the Logger - Log is singleton
 func init() {
@@ -24,38 +19,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Log = &Logger{Logfile: f, In: make(chan string, 100), Quit: make(chan bool)}
-}
-
-// Start will start the LoggerService
-func (l *Logger) Start() {
-	go func() {
-		for {
-			select {
-			case msg := <-l.In:
-				// write date:time message to the log file
-				l.Log(msg + "\n")
-			case <-l.Quit:
-				return
-			}
-
-		}
-	}()
-}
-
-// Log writes a string to the log file
-func (l *Logger) Log(s string) {
-	// write the current date and the time to the log file + the string
-	date := time.Now()
-	s = date.Format("2006-01-02T15:04:05Z07:00") + " " + s + "\n"
-	_, err := l.Logfile.WriteString(s)
-	// panic if there is an error - logfile is critical
-	if err != nil {
-		panic(err)
-	}
-}
-
-// Stop will stop the LoggerService
-func (l *Logger) Stop() {
-	l.Quit <- true
+	// Create the loggers
+	infoLogger = log.New(f, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	errorLogger = log.New(f, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	debugLogger = log.New(f, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
