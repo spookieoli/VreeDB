@@ -15,6 +15,7 @@ type ArgsParser struct {
 	CreateApiKey  *bool
 	Loglocation   *string
 	FileStore     *string
+	LogLevel      *string
 }
 
 // Ap is a global ArgsParser
@@ -34,6 +35,7 @@ func init() {
 	Ap.KeyFile = flag.String("keyfile", "", "The path to the key file")
 	Ap.CreateApiKey = flag.Bool("createapikey", false, "Create a new API key")
 	Ap.SearchThreads = flag.Int("searchthreads", 2, "The number of search threads")
+	Ap.LogLevel = flag.String("loglevel", "INFO", "The log level")
 
 	// Parse
 	flag.Parse()

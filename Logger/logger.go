@@ -6,11 +6,19 @@ import (
 	"time"
 )
 
+const (
+	INFO    = "INFO"    // INFO is the default log level
+	DEBUG   = "DEBUG"   // DEBUG is a debug log level
+	WARNING = "WARNING" // WARNING is a warning log level
+	ERROR   = "ERROR"   // ERROR is an error log level
+)
+
 // Logger struct
 type Logger struct {
-	Logfile *os.File
-	In      chan string
-	Quit    chan bool
+	Logfile  *os.File
+	In       chan string
+	Quit     chan bool
+	LOGLEVEL string
 }
 
 // Log is a singleton
@@ -24,7 +32,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Log = &Logger{Logfile: f, In: make(chan string, 100), Quit: make(chan bool)}
+	Log = &Logger{Logfile: f, In: make(chan string, 100), Quit: make(chan bool), LOGLEVEL: *ArgsParser.Ap.LogLevel}
 }
 
 // Start will start the LoggerService
