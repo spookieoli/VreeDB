@@ -18,9 +18,15 @@ const (
 // Logger struct
 type Logger struct {
 	Logfile  *os.File
-	In       chan string
+	In       chan *LogMessage
 	Quit     chan bool
 	LOGLEVEL Level
+}
+
+// LogMessage struct represents a log message and its associated log level.
+type LogMessage struct {
+	Message string
+	Level   string
 }
 
 // Log is a singleton
@@ -34,7 +40,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Log = &Logger{Logfile: f, In: make(chan string, 100), Quit: make(chan bool), LOGLEVEL: Level(*ArgsParser.Ap.LogLevel)}
+	Log = &Logger{Logfile: f, In: make(chan *LogMessage, 100), Quit: make(chan bool), LOGLEVEL: Level(*ArgsParser.Ap.LogLevel)}
 }
 
 // Start will start the LoggerService
@@ -44,7 +50,9 @@ func (l *Logger) Start() {
 			select {
 			case msg := <-l.In:
 				// write date:time message to the log file
-				l.Log(msg + "\n")
+				if Level(msg.Level) == l.LOGLEVEL {
+					l.LogIt(msg.Message + "\n")
+				}
 			case <-l.Quit:
 				return
 			}
@@ -53,8 +61,8 @@ func (l *Logger) Start() {
 	}()
 }
 
-// Log writes a string to the log file
-func (l *Logger) Log(s string) {
+// LogIt writes a string to the log file
+func (l *Logger) LogIt(s string) {
 	// write the current date and the time to the log file + the string
 	date := time.Now()
 	s = date.Format("2006-01-02T15:04:05Z07:00") + " " + s + "\n"
@@ -63,6 +71,13 @@ func (l *Logger) Log(s string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Log will log a message with a given level to the Logger's input channel.
+// The message and level are wrapped in a LogMessage struct and sent to the channel.
+// It does not return any value.
+func (l *Logger) Log(message, level string) {
+	l.In <- &LogMessage{Message: message, Level: level}
 }
 
 // Stop will stop the LoggerService
