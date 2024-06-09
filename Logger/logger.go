@@ -52,6 +52,14 @@ func (l *Logger) Start() {
 			case msg := <-l.In:
 				// write date:time message to the log file
 				if Level(msg.Level) == l.LOGLEVEL {
+					date := time.Now()
+					var sb strings.Builder
+					sb.WriteString(date.Format("2006-01-02T15:04:05Z07:00"))
+					sb.WriteString(" [")
+					sb.WriteString(msg.Level)
+					sb.WriteString("] ")
+					sb.WriteString(msg.Message)
+					sb.WriteString("\n")
 					l.LogIt(msg.Message)
 				}
 			case <-l.Quit:
@@ -76,15 +84,7 @@ func (l *Logger) LogIt(s string) {
 // The message and level are wrapped in a LogMessage struct and sent to the channel.
 // It does not return any value.
 func (l *Logger) Log(message, level string) {
-	date := time.Now()
-	var sb strings.Builder
-	sb.WriteString(date.Format("2006-01-02T15:04:05Z07:00"))
-	sb.WriteString(" [")
-	sb.WriteString(level)
-	sb.WriteString("] ")
-	sb.WriteString(message)
-	sb.WriteString("\n")
-	l.In <- &LogMessage{Message: sb.String(), Level: level}
+	l.In <- &LogMessage{Message: message, Level: level}
 }
 
 // Stop will stop the LoggerService
