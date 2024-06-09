@@ -139,11 +139,11 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
-			c.Mut.Lock()
+			c.Mut.RLock()
 			nodes := c.Rebuild()
 			c.Nodes = nodes
 			c.DeleteMarkedVectors()
-			c.Mut.Unlock()
+			c.Mut.RUnlock()
 		}
 		time.Sleep(1800 * time.Second)
 	}
@@ -178,9 +178,19 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 }
 
 // SetLocalDiaSpace sets the diagonal space of the Collection in local variables
-func (c *Collection) SetLocalDiaSpace(vector *Vector.Vector) (*Vector.Vector, *Vector.Vector, *Vector.Vector, float64) {
-	// TODO: work on this
-	return nil, nil, nil, 0
+func (c *Collection) SetLocalDiaSpace(diff, min, max, vector *Vector.Vector, length *float64, dim *int) {
+	// Update the max and min vectors
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go Utils.Utils.GetMaxDimension(max, vector, &wg)
+	go Utils.Utils.GetMinDimension(min, vector, &wg)
+	wg.Wait()
+
+	// Calculate the difference between the max and min vectors
+	Utils.Utils.CalculateDimensionDiff(*dim, diff, max, min)
+
+	// Calculate the DiogonalLength of the Collection
+	Utils.Utils.CalculateDiogonalLength(length, *dim, diff)
 }
 
 // GetNodeCount returns the number of points in the Collection
