@@ -139,11 +139,11 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
-			c.Mut.RLock()
+			c.Mut.Lock()
 			nodes := c.Rebuild()
 			c.Nodes = nodes
 			c.DeleteMarkedVectors()
-			c.Mut.RUnlock()
+			c.Mut.Unlock()
 		}
 		time.Sleep(10 * time.Second)
 	}
