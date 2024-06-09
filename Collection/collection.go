@@ -140,8 +140,7 @@ func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
 			c.Mut.RLock()
-			nodes := c.Rebuild()
-			c.Nodes = nodes
+			c.Rebuild()
 			c.DeleteMarkedVectors()
 			c.Mut.RUnlock()
 		}
@@ -178,16 +177,16 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 }
 
 // SetLocalDiaSpace sets the diagonal space of the Collection in local variables
-func (c *Collection) SetLocalDiaSpace(diff, min, max, vector *Vector.Vector, length *float64, dim *int) {
+func (c *Collection) SetLocalDiaSpace(diff, minn, maxx, vector *Vector.Vector, length *float64, dim *int) {
 	// Update the max and min vectors
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	go Utils.Utils.GetMaxDimension(max, vector, &wg)
-	go Utils.Utils.GetMinDimension(min, vector, &wg)
+	go Utils.Utils.GetMaxDimension(maxx, vector, &wg)
+	go Utils.Utils.GetMinDimension(minn, vector, &wg)
 	wg.Wait()
 
 	// Calculate the difference between the max and min vectors
-	Utils.Utils.CalculateDimensionDiff(*dim, diff, max, min)
+	Utils.Utils.CalculateDimensionDiff(*dim, diff, maxx, minn)
 
 	// Calculate the DiogonalLength of the Collection
 	Utils.Utils.CalculateDiogonalLength(length, *dim, diff)
@@ -236,14 +235,23 @@ func (c *Collection) Recreate() {
 }
 
 // Rebuild will create a new KD-Tree from the SpaceMap
-func (c *Collection) Rebuild() *Node.Node {
+func (c *Collection) Rebuild() {
+	minn := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	maxx := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	diff := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
 	nodes := &Node.Node{Depth: 0}
+	length := float64(0)
 	for _, v := range *c.Space {
 		if !v.IsDeleted() {
 			nodes.Insert(v)
+			c.SetLocalDiaSpace(diff, minn, maxx, v, &length, &c.VectorDimension)
 		}
 	}
-	return nodes
+	c.Nodes = nodes
+	c.MaxVector = maxx
+	c.MinVector = minn
+	c.DimensionDiff = diff
+	c.DiagonalLength = length
 }
 
 // CheckID will Check if the given ID is already in the Collection Space
