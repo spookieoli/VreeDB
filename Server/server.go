@@ -71,7 +71,7 @@ func (s *Server) addRoutes(mux *http.ServeMux) {
 
 // Start starts the server
 func (s *Server) Start() {
-	Logger.Log.Log("Server is listening on " + s.Ip + ":" + strconv.Itoa(s.Port))
+	Logger.Log.Log("Server is listening on "+s.Ip+":"+strconv.Itoa(s.Port), "INFO")
 	if s.Secure {
 		log.Fatal(s.Server.ListenAndServeTLS(s.CertFile, s.KeyFile))
 	} else {

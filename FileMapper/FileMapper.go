@@ -54,7 +54,7 @@ func (f *FileMapper) Start(collections []string) {
 			// if not create it
 			file, err := os.Create(*ArgsParser.Ap.FileStore + name + ".bin")
 			if err != nil {
-				Logger.Log.Log("Error creating file: " + err.Error())
+				Logger.Log.Log("Error creating file: "+err.Error(), "ERROR")
 				panic(err)
 			}
 			file.Close()
@@ -74,13 +74,13 @@ func (f *FileMapper) GetCompressedBuffer(arr []float64) (bytes.Buffer, error) {
 	gz := gzip.NewWriter(&buf)
 	err := gob.NewEncoder(gz).Encode(arr)
 	if err != nil {
-		Logger.Log.Log("Error encoding array: " + err.Error())
+		Logger.Log.Log("Error encoding array: "+err.Error(), "ERROR")
 		// Here we panic because we can't continue without encoding the array
 		return buf, fmt.Errorf("cant encode data")
 	}
 	err = gz.Close()
 	if err != nil {
-		Logger.Log.Log("Error closing GzipWriter: " + err.Error())
+		Logger.Log.Log("Error closing GzipWriter: "+err.Error(), "ERROR")
 		return buf, fmt.Errorf("Error closing GzipWriter: " + err.Error())
 	}
 	return buf, nil
@@ -96,7 +96,7 @@ func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, 
 	// open the file again for writing und append
 	file, err := os.OpenFile(f.FileName[collection], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening file: " + err.Error())
+		Logger.Log.Log("Error opening file: "+err.Error(), "ERROR")
 		// Here we panic because we can't continue without the file
 		panic(err)
 	}
@@ -106,7 +106,7 @@ func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, 
 	// Get the Start position
 	start, err := f.File[collection].Seek(0, io.SeekEnd)
 	if err != nil {
-		Logger.Log.Log("Error seeking to end of file: " + err.Error())
+		Logger.Log.Log("Error seeking to end of file: "+err.Error(), "ERROR")
 		// Here we panic because we can't continue without the start position
 		panic(err)
 	}
@@ -120,7 +120,7 @@ func (f *FileMapper) WriteVector(arr []float64, collection string) (int64, int, 
 	// Write the data to the file
 	n, err := f.File[collection].Write(buf.Bytes())
 	if err != nil {
-		Logger.Log.Log("Error writing to file: " + err.Error())
+		Logger.Log.Log("Error writing to file: "+err.Error(), "ERROR")
 		// Here we panic because we can't continue without writing to the file
 		panic(err)
 	}
@@ -184,7 +184,7 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	// Encode the payload
 	err := enc.Encode(payload)
 	if err != nil {
-		Logger.Log.Log("Error encoding payload: " + err.Error())
+		Logger.Log.Log("Error encoding payload: "+err.Error(), "ERROR")
 		return 0, err
 	}
 	encodedBytes := buf.Bytes()
@@ -201,7 +201,7 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	// Sicherstellen, dass die Datei groß genug ist
 	fileInfo, err := f.File[collection].Stat()
 	if err != nil {
-		Logger.Log.Log("Error getting file info: " + err.Error())
+		Logger.Log.Log("Error getting file info: "+err.Error(), "ERROR")
 		return 0, err
 	}
 
@@ -213,7 +213,7 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	if requiredSize >= fileSize {
 		err = file.Truncate(requiredSize)
 		if err != nil {
-			Logger.Log.Log("Error truncating file: " + err.Error())
+			Logger.Log.Log("Error truncating file: "+err.Error(), "ERROR")
 			return 0, err
 		}
 	}
@@ -221,14 +221,14 @@ func (f *FileMapper) WritePayload(payload *map[string]interface{}, collection st
 	// Zur letzten Position in der Datei springen
 	offset, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
-		Logger.Log.Log("Error seeking to end of file: " + err.Error())
+		Logger.Log.Log("Error seeking to end of file: "+err.Error(), "ERROR")
 		return 0, err
 	}
 
 	// Serialisierte Daten in die Datei schreiben
 	_, err = file.Write(encodedBytes)
 	if err != nil {
-		Logger.Log.Log("Error writing to file: " + err.Error())
+		Logger.Log.Log("Error writing to file: "+err.Error(), "ERROR")
 		return 0, err
 	}
 	// Map the file again
@@ -255,7 +255,7 @@ func (f *FileMapper) ReadPayload(offset int64, collection string) (*map[string]i
 	dec := gob.NewDecoder(buf)
 	err := dec.Decode(&m)
 	if err != nil {
-		Logger.Log.Log("Error decoding payload: " + err.Error())
+		Logger.Log.Log("Error decoding payload: "+err.Error(), "ERROR")
 		return nil, err
 	}
 	return &m, nil
@@ -269,7 +269,7 @@ func (f *FileMapper) MapFile(collection string) {
 	// get the file info
 	fileInfo, err := f.File[collection].Stat()
 	if err != nil {
-		Logger.Log.Log("Error getting file info: " + err.Error())
+		Logger.Log.Log("Error getting file info: "+err.Error(), "ERROR")
 		// We panic here because we can't continue without the file info
 		panic(err)
 	}
@@ -278,7 +278,7 @@ func (f *FileMapper) MapFile(collection string) {
 	if fileInfo.Size() != 0 {
 		mappedData, err := syscall.Mmap(int(f.File[collection].Fd()), 0, int(fileInfo.Size()), syscall.PROT_READ, syscall.MAP_SHARED)
 		if err != nil {
-			Logger.Log.Log("Error mapping file: " + err.Error())
+			Logger.Log.Log("Error mapping file: "+err.Error(), "ERROR")
 			// We panic here because we can't continue without the mapped data
 			panic(err)
 		}
@@ -296,7 +296,7 @@ func (f *FileMapper) Unmap(collection string) {
 		err := syscall.Munmap(f.MappedData[collection])
 		if err != nil {
 			// We panic here because we can't continue without the mapped data
-			Logger.Log.Log("Error unmapping file: " + err.Error())
+			Logger.Log.Log("Error unmapping file: "+err.Error(), "ERROR")
 			panic(err)
 		}
 		f.Mapped[collection] = false
@@ -342,7 +342,7 @@ func (f *FileMapper) DelCollection(collection string) {
 	if err == nil {
 		err = os.Remove(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 		if err != nil {
-			Logger.Log.Log("Error deleting meta file: " + err.Error())
+			Logger.Log.Log("Error deleting meta file: "+err.Error(), "ERROR")
 		}
 	}
 	// Remove the collection.json if exists
@@ -350,7 +350,7 @@ func (f *FileMapper) DelCollection(collection string) {
 	if err == nil {
 		err = os.Remove(*ArgsParser.Ap.FileStore + collection + ".json")
 		if err != nil {
-			Logger.Log.Log("Error deleting collection config file: " + err.Error())
+			Logger.Log.Log("Error deleting collection config file: "+err.Error(), "ERROR")
 		}
 	}
 	// Remove the collection from the CollectionNames
@@ -370,7 +370,7 @@ func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, 
 	// Open the file "collection"_meta.bin
 	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening meta.json file: " + err.Error())
+		Logger.Log.Log("Error opening meta.json file: "+err.Error(), "ERROR")
 		return 0, err
 	}
 	defer file.Close()
@@ -378,7 +378,7 @@ func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, 
 	// Get the position of the Filepointer
 	pos, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
-		Logger.Log.Log("Error seeking to end of file: " + err.Error())
+		Logger.Log.Log("Error seeking to end of file: "+err.Error(), "ERROR")
 		return 0, err
 	}
 
@@ -389,7 +389,7 @@ func (w *FileMapper) SaveVectorWriter(id string, datastart, payloadstart int64, 
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(sv)
 	if err != nil {
-		Logger.Log.Log("Error encoding SaveVector: " + err.Error())
+		Logger.Log.Log("Error encoding SaveVector: "+err.Error(), "ERROR")
 		return 0, err
 	}
 	return pos, nil
@@ -408,7 +408,7 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 	if err == nil {
 		file, err := os.Open(*ArgsParser.Ap.FileStore + collection + "_meta.bin")
 		if err != nil {
-			Logger.Log.Log("Error opening meta.json file: " + err.Error())
+			Logger.Log.Log("Error opening meta.json file: "+err.Error(), "ERROR")
 			return nil, err
 		}
 		defer file.Close()
@@ -420,13 +420,13 @@ func (w *FileMapper) SaveVectorRead(collection string) (*map[string]SaveVector, 
 			// where are we in the file - save the position
 			sv.SaveVectorPosition, err = file.Seek(0, io.SeekCurrent)
 			if err != nil {
-				Logger.Log.Log("Error getting position: " + err.Error())
+				Logger.Log.Log("Error getting position: "+err.Error(), "ERROR")
 				return nil, err
 			}
 			if err := decoder.Decode(&sv); err == io.EOF {
 				break
 			} else if err != nil {
-				Logger.Log.Log("Error decoding SaveVector: " + err.Error())
+				Logger.Log.Log("Error decoding SaveVector: "+err.Error(), "ERROR")
 				return nil, err
 			}
 			vectors[sv.VectorID] = sv
@@ -442,7 +442,7 @@ func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection
 	defer w.Mut[collection].Unlock()
 	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+collection+"_meta.bin", os.O_RDWR, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening meta.json file: " + err.Error())
+		Logger.Log.Log("Error opening meta.json file: "+err.Error(), "ERROR")
 		return err
 	}
 	defer file.Close()
@@ -450,7 +450,7 @@ func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection
 	// Set the file pointer to the position
 	_, err = file.Seek(pos, io.SeekStart)
 	if err != nil {
-		Logger.Log.Log("Error seeking to position in file: " + err.Error())
+		Logger.Log.Log("Error seeking to position in file: "+err.Error(), "ERROR")
 		return err
 	}
 
@@ -459,19 +459,19 @@ func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&prevSaveVector)
 	if err != nil {
-		Logger.Log.Log("Error decoding previous data: " + err.Error())
+		Logger.Log.Log("Error decoding previous data: "+err.Error(), "ERROR")
 		return err
 	}
 
 	// Overwrite the previous element with spaces
 	_, err = file.Seek(pos, io.SeekStart)
 	if err != nil {
-		Logger.Log.Log("Error seeking to position in file: " + err.Error())
+		Logger.Log.Log("Error seeking to position in file: "+err.Error(), "ERROR")
 		return err
 	}
 	prevData, err := json.Marshal(prevSaveVector)
 	if err != nil {
-		Logger.Log.Log("Error marshalling previous data: " + err.Error())
+		Logger.Log.Log("Error marshalling previous data: "+err.Error(), "ERROR")
 		return err
 	}
 
@@ -481,7 +481,7 @@ func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection
 	// Use json to encode the SaveVector
 	data, err := json.Marshal(sv)
 	if err != nil {
-		Logger.Log.Log("Error encoding SaveVector: " + err.Error())
+		Logger.Log.Log("Error encoding SaveVector: "+err.Error(), "ERROR")
 		return err
 	}
 
@@ -494,18 +494,18 @@ func (w *FileMapper) SaveVectorWriteAt(datastart, payloadstart int64, collection
 		}
 		_, err = file.Write(spaces)
 		if err != nil {
-			Logger.Log.Log("Error writing to file: " + err.Error())
+			Logger.Log.Log("Error writing to file: "+err.Error(), "ERROR")
 			return err
 		}
 		// Write the data at the specified position
 		_, err = file.WriteAt(data, pos)
 		if err != nil {
-			Logger.Log.Log("Error writing to file: " + err.Error())
+			Logger.Log.Log("Error writing to file: "+err.Error(), "ERROR")
 			return err
 		}
 		return nil
 	} else {
-		Logger.Log.Log("Data is larger than previous data")
+		Logger.Log.Log("Data is larger than previous data", "INFO")
 		return fmt.Errorf("Data is larger than previous data - FORBIDDEN - this is a BUG - please report!")
 	}
 }

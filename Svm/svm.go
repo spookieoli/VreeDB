@@ -64,7 +64,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 
 	// Train the SVM
 	for epoch := 0; epoch < epochs; epoch++ {
-		Logger.Log.Log("Epoch " + fmt.Sprint(epoch))
+		Logger.Log.Log("Epoch "+fmt.Sprint(epoch), "INFO")
 		for i := 0; i < n; i++ {
 			sumArr := make([]float64, n)
 			// Create a wait group to wait for all go routines to finish
@@ -87,7 +87,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 			}
 		}
 		// Delete the Mutex
-		Logger.Log.Log("Epoch " + fmt.Sprint(epoch) + " done")
+		Logger.Log.Log("Epoch "+fmt.Sprint(epoch)+" done", "INFO")
 	}
 
 	// End the go routines
@@ -119,7 +119,7 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 	for _, point := range data {
 		m, err := FileMapper.Mapper.ReadPayload(point.PayloadStart, mcs.Collection)
 		if err != nil {
-			Logger.Log.Log("Error reading payload: " + err.Error())
+			Logger.Log.Log("Error reading payload: "+err.Error(), "INFO")
 			return
 		}
 		point.Payload = m
@@ -143,9 +143,9 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}, PayloadStart: point.PayloadStart}
 			}
 		}
-		Logger.Log.Log("Training SVM for class " + fmt.Sprint(class))
+		Logger.Log.Log("Training SVM for class "+fmt.Sprint(class), "INFO")
 		svm.Train(modifiedData, epochs, C, degree)
-		Logger.Log.Log("Training done for class " + fmt.Sprint(class))
+		Logger.Log.Log("Training done for class "+fmt.Sprint(class), "INFO")
 		mcs.Classifiers[class] = svm
 		// Clear Context and Cancel
 		svm.Ctx = nil
@@ -159,7 +159,7 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 
 	// Log that the training is done
 	mcs.Training = false
-	Logger.Log.Log("Training of MultiClassSVM " + mcs.Name + " in Collection " + mcs.Collection + " done")
+	Logger.Log.Log("Training of MultiClassSVM "+mcs.Name+" in Collection "+mcs.Collection+" done", "INFO")
 }
 
 // Predict is a function that predicts the class of a given vector

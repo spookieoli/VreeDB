@@ -96,7 +96,7 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 	if vector.SaveVectorPosition == -1 {
 		pos, err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
 		if err != nil {
-			Logger.Log.Log("Error saving vector to file: " + err.Error())
+			Logger.Log.Log("Error saving vector to file: "+err.Error(), "ERROR")
 			return err
 		}
 		// Save the position of the vector in the SaveVectorWriter
@@ -277,7 +277,7 @@ func (c *Collection) DeleteClassifier(name string) error {
 	// Delete the Classifiers again to make sure it is not saved
 	err := c.SaveClassifier()
 	if err != nil {
-		Logger.Log.Log(err.Error())
+		Logger.Log.Log(err.Error(), "ERROR")
 		return err
 	}
 	return nil
@@ -322,7 +322,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 	// Save the classifier
 	err := c.SaveClassifier()
 	if err != nil {
-		Logger.Log.Log("Error saving classifier: " + err.Error())
+		Logger.Log.Log("Error saving classifier: "+err.Error(), "ERROR")
 		return err
 	}
 	return nil
@@ -350,7 +350,7 @@ func (c *Collection) SaveClassifier() error {
 	if err != nil {
 		return err
 	}
-	Logger.Log.Log("Successfully saved classifier")
+	Logger.Log.Log("Successfully saved classifier", "INFO")
 	return nil
 }
 

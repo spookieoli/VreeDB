@@ -85,7 +85,7 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 
 		// update Embeddings
 		t.updateEmbeddings(t.embeddings, gradients)
-		Logger.Log.Log("TSNE Iteration took: " + strconv.FormatInt(int64(time.Since(start).Seconds()), 10))
+		Logger.Log.Log("TSNE Iteration took: "+strconv.FormatInt(int64(time.Since(start).Seconds()), 10), "INFO")
 	}
 	// CLose the
 	close(t.Chan)
@@ -197,7 +197,7 @@ func (t *ThreadpoolDataSum) Calculate() {
 	var err error
 	*t.dist, err = Utils.Utils.EuclideanDistance(t.embedding1, t.embedding2)
 	if err != nil {
-		Logger.Log.Log(err.Error())
+		Logger.Log.Log(err.Error(), "ERROR")
 		return
 	}
 

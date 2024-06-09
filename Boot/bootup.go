@@ -39,7 +39,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Open the file
 			file, err := os.Open("collections/" + entry.Name())
 			if err != nil {
-				Logger.Log.Log("Error opening file: " + err.Error())
+				Logger.Log.Log("Error opening file: "+err.Error(), "ERROR")
 				continue
 			}
 			// create a new CollectionConfig
@@ -47,7 +47,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Decode the file
 			err = json.NewDecoder(file).Decode(&c)
 			if err != nil {
-				Logger.Log.Log("Error decoding file: " + err.Error())
+				Logger.Log.Log("Error decoding file: "+err.Error(), "ERROR")
 				continue
 			}
 			// Enter the collection into the map
@@ -62,7 +62,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Restore vectors (if any)
 			vectors, err := b.RestoreVectors(c.Name, collections[c.Name].VectorDimension)
 			if err != nil {
-				Logger.Log.Log("Error restoring vectors: " + err.Error())
+				Logger.Log.Log("Error restoring vectors: "+err.Error(), "ERROR")
 				continue
 			}
 			// Set the vectors
@@ -76,18 +76,18 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 
 			// Restore Indexes
 			err = collections[c.Name].RebuildIndex()
-			Logger.Log.Log("Collection " + c.Name + " indexes restored")
+			Logger.Log.Log("Collection "+c.Name+" indexes restored", "ERROR")
 
 			// recreate the SVMs (if present)
 			err = collections[c.Name].ReadClassifiers()
 			if err != nil {
-				Logger.Log.Log("Error reading SVMs: " + err.Error())
+				Logger.Log.Log("Error reading SVMs: "+err.Error(), "ERROR")
 			}
-			Logger.Log.Log("Collection " + c.Name + " classifiers restored")
+			Logger.Log.Log("Collection "+c.Name+" classifiers restored", "INFO")
 
 			// Close the file
 			file.Close()
-			Logger.Log.Log("Collection " + c.Name + " restored")
+			Logger.Log.Log("Collection "+c.Name+" restored", "INFO")
 		}
 	}
 	return collections
@@ -105,7 +105,7 @@ func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*
 	vectors := make(map[string]*Vector.Vector)
 	m, err := FileMapper.Mapper.SaveVectorRead(collection)
 	if err != nil {
-		Logger.Log.Log("Error reading SaveVector: " + err.Error())
+		Logger.Log.Log("Error reading SaveVector: "+err.Error(), "ERROR")
 		return nil, err
 	}
 

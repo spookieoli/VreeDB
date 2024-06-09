@@ -84,7 +84,7 @@ func (hc *HeapControl) worker() {
 		if ok, err := hc.validateFilters(&item); !ok {
 			// If the filters are not valid log the possible error
 			if err != nil {
-				Logger.Log.Log("Error validating filters: " + err.Error())
+				Logger.Log.Log("Error validating filters: "+err.Error(), "ERROR")
 			}
 		} else if item.node.Vector.IsDeleted() {
 			continue

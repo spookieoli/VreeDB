@@ -203,7 +203,7 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			// if we came here it means that all values are in the slice
 			return true, nil
 		default:
-			Logger.Log.Log("invalid value in filter - in can only be used for slices of values")
+			Logger.Log.Log("invalid value in filter - in can only be used for slices of values", "INFO")
 			return false, nil
 		}
 	case In:
@@ -220,12 +220,12 @@ func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
 			}
 			return false, nil
 		default:
-			Logger.Log.Log("invalid value in filter - in can only be used for slices of values")
+			Logger.Log.Log("invalid value in filter - in can only be used for slices of values", "INFO")
 			return false, nil
 		}
 	default:
 		// May never happen
-		Logger.Log.Log("invalid operator in filter - this is a bug - please report")
+		Logger.Log.Log("invalid operator in filter - this is a bug - please report", "ERROR")
 		return false, nil
 	}
 	return false, nil
