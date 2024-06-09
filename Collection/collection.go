@@ -145,7 +145,7 @@ func (c *Collection) DeleteWatcher() {
 			c.DeleteMarkedVectors()
 			c.Mut.Unlock()
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(1800 * time.Second)
 	}
 }
 
