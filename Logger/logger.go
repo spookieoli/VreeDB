@@ -3,6 +3,7 @@ package Logger
 import (
 	"VreeDB/ArgsParser"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func (l *Logger) Start() {
 			case msg := <-l.In:
 				// write date:time message to the log file
 				if Level(msg.Level) == l.LOGLEVEL {
-					l.LogIt(msg.Message + "\n")
+					l.LogIt(msg.Message)
 				}
 			case <-l.Quit:
 				return
@@ -63,9 +64,7 @@ func (l *Logger) Start() {
 
 // LogIt writes a string to the log file
 func (l *Logger) LogIt(s string) {
-	// write the current date and the time to the log file + the string
-	date := time.Now()
-	s = date.Format("2006-01-02T15:04:05Z07:00") + " " + s + "\n"
+	// message to the file
 	_, err := l.Logfile.WriteString(s)
 	// panic if there is an error - logfile is critical
 	if err != nil {
@@ -77,7 +76,15 @@ func (l *Logger) LogIt(s string) {
 // The message and level are wrapped in a LogMessage struct and sent to the channel.
 // It does not return any value.
 func (l *Logger) Log(message, level string) {
-	l.In <- &LogMessage{Message: message, Level: level}
+	date := time.Now()
+	var sb strings.Builder
+	sb.WriteString(date.Format("2006-01-02T15:04:05Z07:00"))
+	sb.WriteString(" [")
+	sb.WriteString(level)
+	sb.WriteString("] ")
+	sb.WriteString(message)
+	sb.WriteString("\n")
+	l.In <- &LogMessage{Message: sb.String(), Level: level}
 }
 
 // Stop will stop the LoggerService
