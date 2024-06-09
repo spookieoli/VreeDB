@@ -42,6 +42,7 @@ func init() {
 		panic(err)
 	}
 	Log = &Logger{Logfile: f, In: make(chan *LogMessage, 100), Quit: make(chan bool), LOGLEVEL: Level(*ArgsParser.Ap.LogLevel)}
+	Log.Start()
 }
 
 // Start starts the go routines
