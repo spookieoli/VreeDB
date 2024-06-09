@@ -50,18 +50,7 @@ func (l *Logger) Start() {
 		for {
 			select {
 			case msg := <-l.In:
-				// write date:time message to the log file
-				if Level(msg.Level) == l.LOGLEVEL {
-					date := time.Now()
-					var sb strings.Builder
-					sb.WriteString(date.Format("2006-01-02T15:04:05Z07:00"))
-					sb.WriteString(" [")
-					sb.WriteString(msg.Level)
-					sb.WriteString("] ")
-					sb.WriteString(msg.Message)
-					sb.WriteString("\n")
-					l.LogIt(msg.Message)
-				}
+				l.LogIt(msg)
 			case <-l.Quit:
 				return
 			}
@@ -71,12 +60,16 @@ func (l *Logger) Start() {
 }
 
 // LogIt writes a string to the log file
-func (l *Logger) LogIt(s string) {
-	// message to the file
-	_, err := l.Logfile.WriteString(s)
-	// panic if there is an error - logfile is critical
-	if err != nil {
-		panic(err)
+func (l *Logger) LogIt(msg *LogMessage) {
+	// Loglevel INFO will only show ERROR and INFO
+	if l.LOGLEVEL == INFO && (msg.Level == string(ERROR) || msg.Level == string(INFO)) {
+		l.BuildAndSend(msg)
+	} else if l.LOGLEVEL == DEBUG && (msg.Level == string(ERROR) || msg.Level == string(INFO) || msg.Level == string(DEBUG) || msg.Level == string(WARNING)) {
+		l.BuildAndSend(msg)
+	} else if l.LOGLEVEL == WARNING && (msg.Level == string(ERROR) || msg.Level == string(WARNING)) {
+		l.BuildAndSend(msg)
+	} else if l.LOGLEVEL == ERROR && (msg.Level == string(ERROR)) {
+		l.BuildAndSend(msg)
 	}
 }
 
@@ -85,6 +78,24 @@ func (l *Logger) LogIt(s string) {
 // It does not return any value.
 func (l *Logger) Log(message, level string) {
 	l.In <- &LogMessage{Message: message, Level: level}
+}
+
+func (l *Logger) BuildAndSend(msg *LogMessage) {
+	date := time.Now()
+	var sb strings.Builder
+	sb.WriteString(date.Format("2006-01-02T15:04:05Z07:00"))
+	sb.WriteString(" [")
+	sb.WriteString(msg.Level)
+	sb.WriteString("] ")
+	sb.WriteString(msg.Message)
+	sb.WriteString("\n")
+
+	// message to the file
+	_, err := l.Logfile.WriteString(sb.String())
+	// panic if there is an error - logfile is critical
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Stop will stop the LoggerService
