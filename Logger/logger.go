@@ -44,7 +44,7 @@ func init() {
 	Log = &Logger{Logfile: f, In: make(chan *LogMessage, 100), Quit: make(chan bool), LOGLEVEL: Level(*ArgsParser.Ap.LogLevel)}
 }
 
-// Start will start the LoggerService
+// Start starts the go routines
 func (l *Logger) Start() {
 	go func() {
 		for {
@@ -59,7 +59,16 @@ func (l *Logger) Start() {
 	}()
 }
 
-// LogIt writes a string to the log file
+// LogIt is responsible for filtering and logging a message based on the current log level.
+// It checks the log level and the message level, and if they meet the filtering criteria, it calls BuildAndSend to log the message.
+// It does not return any value.
+// Arguments:
+// - msg: a pointer to a LogMessage struct, representing the message to be logged.
+//
+// If the log level is INFO, only messages with levels ERROR and INFO will be logged.
+// If the log level is DEBUG, messages with levels ERROR, INFO, DEBUG, and WARNING will be logged.
+// If the log level is WARNING, only messages with levels ERROR and WARNING will be logged.
+// If the log level is ERROR, only messages with level ERROR will be logged.
 func (l *Logger) LogIt(msg *LogMessage) {
 	// Loglevel INFO will only show ERROR and INFO
 	if l.LOGLEVEL == INFO && (msg.Level == string(ERROR) || msg.Level == string(INFO)) {
@@ -80,6 +89,12 @@ func (l *Logger) Log(message, level string) {
 	l.In <- &LogMessage{Message: message, Level: level}
 }
 
+// BuildAndSend takes a LogMessage and builds a log string with a timestamp, level, and message.
+// It writes the log string to the Logger's Logfile.
+// If there is an error writing to the Logfile, it panics.
+//
+// Arguments:
+// - msg: a pointer to a LogMessage, representing the message to be logged.
 func (l *Logger) BuildAndSend(msg *LogMessage) {
 	date := time.Now()
 	var sb strings.Builder
