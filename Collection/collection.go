@@ -139,10 +139,10 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
-			c.Mut.RLock()
 			c.Rebuild()
+			c.Mut.Lock()
 			c.DeleteMarkedVectors()
-			c.Mut.RUnlock()
+			c.Mut.Unlock()
 		}
 		time.Sleep(1800 * time.Second)
 	}
@@ -241,17 +241,21 @@ func (c *Collection) Rebuild() {
 	diff := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
 	nodes := &Node.Node{Depth: 0}
 	length := float64(0)
+	c.Mut.RLock()
 	for _, v := range *c.Space {
 		if !v.IsDeleted() {
 			nodes.Insert(v)
 			c.SetLocalDiaSpace(diff, minn, maxx, v, &length, &c.VectorDimension)
 		}
 	}
+	c.Mut.RUnlock()
+	c.Mut.Lock()
 	c.Nodes = nodes
 	c.MaxVector = maxx
 	c.MinVector = minn
 	c.DimensionDiff = diff
 	c.DiagonalLength = length
+	c.Mut.Unlock()
 }
 
 // CheckID will Check if the given ID is already in the Collection Space
