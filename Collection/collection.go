@@ -140,9 +140,9 @@ func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
 			c.Rebuild()
-			c.Mut.Lock()
+			c.Mut.RLock()
 			c.DeleteMarkedVectors()
-			c.Mut.Unlock()
+			c.Mut.RUnlock()
 		}
 		time.Sleep(1800 * time.Second)
 	}
