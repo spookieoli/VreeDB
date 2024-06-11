@@ -441,7 +441,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 					v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
 					err = r.DB.Collections[pb.CollectionName].Insert(v)
 					if err != nil {
-						Logger.Log.Log("Error in BulkAdd: " + err.Error())
+						Logger.Log.Log("Error in BulkAdd: "+err.Error(), "ERROR")
 						return
 					}
 				}
@@ -751,7 +751,7 @@ func (r *Routes) TrainClassifier(w http.ResponseWriter, req *http.Request) {
 				err := r.DB.Collections[tc.CollectionName].TrainClassifier(tc.ClassifierName, tc.Degree, tc.C,
 					tc.Epochs, tc.Batchsize)
 				if err != nil {
-					Logger.Log.Log(err.Error())
+					Logger.Log.Log(err.Error(), "ERROR")
 				}
 			}()
 
@@ -813,7 +813,7 @@ func (r *Routes) DeleteClassifier(w http.ResponseWriter, req *http.Request) {
 			r.DB.Collections[dc.CollectionName].DeleteClassifier(dc.ClassifierName)
 
 			// Log the deletion
-			Logger.Log.Log("Classifier " + dc.ClassifierName + " in Collection " + dc.CollectionName + " deleted")
+			Logger.Log.Log("Classifier "+dc.ClassifierName+" in Collection "+dc.CollectionName+" deleted", "INFO")
 
 			// Send the success or error message to the client
 			w.WriteHeader(http.StatusOK)
@@ -1121,13 +1121,13 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 			go func() {
 				err = r.DB.Collections[ic.CollectionName].CreateIndex(ic.IndexName, ic.IndexName)
 				if err != nil {
-					Logger.Log.Log("Error creating index: " + err.Error())
+					Logger.Log.Log("Error creating index: "+err.Error(), "ERROR")
 					return
 				}
 				// save the index
 				err = r.DB.Collections[ic.CollectionName].SaveIndexes()
 				if err != nil {
-					Logger.Log.Log("Error saving indexes: " + err.Error())
+					Logger.Log.Log("Error saving indexes: "+err.Error(), "ERROR")
 					return
 				}
 			}()
@@ -1198,7 +1198,7 @@ func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
 			//  Show the template
 			err = r.renderTemplate("showapikey", w, data)
 			if err != nil {
-				Logger.Log.Log(err.Error())
+				Logger.Log.Log(err.Error(), "ERROR")
 			}
 			return
 		} else {
@@ -1223,7 +1223,7 @@ func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
 		//  Show the template
 		err := r.renderTemplate("neuralnetbuilder", w, data)
 		if err != nil {
-			Logger.Log.Log(err.Error())
+			Logger.Log.Log(err.Error(), "ERROR")
 		}
 		return
 	} else {
@@ -1258,11 +1258,10 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 
 			err = collection.CreateTSNE(tsne.Dimensions, tsne.Iterations, tsne.Learningrate)
 			if err != nil {
-				Logger.Log.Log("Error creating TSNE: " + err.Error())
-				fmt.Println(err.Error())
+				Logger.Log.Log("Error creating TSNE: "+err.Error(), "ERROR")
 				return
 			} else {
-				Logger.Log.Log("TSNE created")
+				Logger.Log.Log("TSNE created", "INFO")
 				w.WriteHeader(http.StatusOK)
 				// This is required for proper client-side parsing of json body
 				w.Header().Set("Content-Type", "application/json")

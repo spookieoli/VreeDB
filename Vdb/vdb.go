@@ -24,7 +24,7 @@ var DB *Vdb
 // init initializes the Vdb
 func init() {
 	DB = &Vdb{Mapper: FileMapper.Mapper}
-	Logger.Log.Log("VectorDatabase initialized")
+	Logger.Log.Log("VectorDatabase initialized", "INFO")
 }
 
 // InitFileMapper initializes the FileMapper
@@ -51,7 +51,7 @@ func (v *Vdb) AddCollection(name string, vectorDimension int, distanceFunc strin
 	if err != nil {
 		return err
 	}
-	Logger.Log.Log("Collection " + name + " added")
+	Logger.Log.Log("Collection "+name+" added", "INFO")
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (v *Vdb) DeleteCollection(name string) error {
 	delete(v.Collections, name)
 	// Delete the Collection from the FileMapper
 	v.Mapper.DelCollection(name)
-	Logger.Log.Log("Collection " + name + " deleted")
+	Logger.Log.Log("Collection "+name+" deleted", "INFO")
 	return nil
 }
 
@@ -92,7 +92,7 @@ func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 		if err != nil {
 			return err
 		}
-		Logger.Log.Log("Point deleted from collection ")
+		Logger.Log.Log("Point deleted from collection ", "INFO")
 		return nil
 	}
 	return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
@@ -130,7 +130,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	queue.Wg.Wait()
 
 	// Print the time it took
-	Logger.Log.Log("Search took: " + time.Since(t).String())
+	Logger.Log.Log("Search took: "+time.Since(t).String(), "INFO")
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
@@ -153,7 +153,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	for i := 0; i < len(data); i++ {
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
-			Logger.Log.Log("Error reading payload: " + err.Error())
+			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
 			continue
 		}
 		// if getvector is true we also return the vector
@@ -207,7 +207,7 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	queue.Wg.Wait()
 
 	// Print the time it took
-	Logger.Log.Log("Search took: " + time.Since(t).String())
+	Logger.Log.Log("Search took: "+time.Since(t).String(), "INFO")
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
@@ -230,7 +230,7 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	for i := 0; i < len(data); i++ {
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
-			Logger.Log.Log("Error reading payload: " + err.Error())
+			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
 			continue
 		}
 		// if getvector is true we also return the vector

@@ -80,7 +80,7 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 			(*layers)[i].Activation = Linear
 			(*layers)[i].Derivative = LinearDerivative
 		} else {
-			Logger.Log.Log("Unknown activation function: " + layer.ActivationName)
+			Logger.Log.Log("Unknown activation function: "+layer.ActivationName, "ERROR")
 			return nil, fmt.Errorf("Unknown activation function: %s", layer.ActivationName)
 		}
 	}
@@ -88,7 +88,7 @@ func NewNetwork(ljson *[]LayerJSON, lossfunction string) (*Network, error) {
 
 	// The last layer must have the softmax activation function
 	if (*n.Layers)[len(*n.Layers)-1].ActivationName != "softmax" {
-		Logger.Log.Log("The last layer must have the softmax activation function")
+		Logger.Log.Log("The last layer must have the softmax activation function", "ERROR")
 		return nil, fmt.Errorf("The last layer must have the softmax activation function")
 	}
 
@@ -190,7 +190,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 		n.mut.Unlock()
 
 		// Log the progress
-		Logger.Log.Log("Epoch: " + fmt.Sprint(epoch) + ", Loss: " + fmt.Sprint(totalLoss/float64(totalBatches)))
+		Logger.Log.Log("Epoch: "+fmt.Sprint(epoch)+", Loss: "+fmt.Sprint(totalLoss/float64(totalBatches)), "INFO")
 	}
 }
 
@@ -205,7 +205,7 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 		// First we need to get the payload of the vector
 		payload, err := FileMapper.Mapper.ReadPayload(v.PayloadStart, v.Collection)
 		if err != nil {
-			Logger.Log.Log("Error reading payload while creating NeuralNet Traindata: " + err.Error())
+			Logger.Log.Log("Error reading payload while creating NeuralNet Traindata: "+err.Error(), "ERROR")
 			return nil, nil, err
 		}
 
@@ -238,7 +238,7 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 	if len(x) == 0 || len(y) == 0 {
 		return nil, nil, fmt.Errorf("No NeuralNet Traindata created - check if Label exists and is an Array of float64")
 	} else {
-		Logger.Log.Log("NeuralNet Traindata created successfully, x: " + fmt.Sprint(len(x)) + ", y: " + fmt.Sprint(len(y)))
+		Logger.Log.Log("NeuralNet Traindata created successfully, x: "+fmt.Sprint(len(x))+", y: "+fmt.Sprint(len(y)), "INFO")
 	}
 	return x, y, nil
 }

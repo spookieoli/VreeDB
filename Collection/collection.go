@@ -96,7 +96,7 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 	if vector.SaveVectorPosition == -1 {
 		pos, err := FileMapper.Mapper.SaveVectorWriter(vector.Id, vector.DataStart, vector.PayloadStart, c.Name)
 		if err != nil {
-			Logger.Log.Log("Error saving vector to file: " + err.Error())
+			Logger.Log.Log("Error saving vector to file: "+err.Error(), "ERROR")
 			return err
 		}
 		// Save the position of the vector in the SaveVectorWriter
@@ -139,13 +139,11 @@ func (c *Collection) DeleteVectorByID(ids []string) error {
 func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
-			c.Mut.RLock()
-			nodes := c.Rebuild()
-			c.Nodes = nodes
+			c.Rebuild()
 			c.DeleteMarkedVectors()
-			c.Mut.RUnlock()
+			Logger.Log.Log("rebuild VectorTree complete", "INFO")
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(1800 * time.Second)
 	}
 }
 
@@ -154,11 +152,15 @@ func (c *Collection) DeleteWatcher() {
 func (c *Collection) DeleteMarkedVectors() {
 	for _, v := range *c.DeletedVectors {
 		if v.IsDeleted() {
+			c.Mut.Lock()
 			delete(*c.Space, v.Id)
+			c.Mut.Unlock()
 		}
 	}
 	// Delete the deleted vectors from the deleted vectors
+	c.Mut.Lock()
 	c.DeletedVectors = &map[string]*Vector.Vector{}
+	c.Mut.Unlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
@@ -178,9 +180,19 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 }
 
 // SetLocalDiaSpace sets the diagonal space of the Collection in local variables
-func (c *Collection) SetLocalDiaSpace(vector *Vector.Vector) (*Vector.Vector, *Vector.Vector, *Vector.Vector, float64) {
-	// TODO: work on this
-	return nil, nil, nil, 0
+func (c *Collection) SetLocalDiaSpace(diff, minn, maxx, vector *Vector.Vector, length *float64, dim *int) {
+	// Update the max and min vectors
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go Utils.Utils.GetMaxDimension(maxx, vector, &wg)
+	go Utils.Utils.GetMinDimension(minn, vector, &wg)
+	wg.Wait()
+
+	// Calculate the difference between the max and min vectors
+	Utils.Utils.CalculateDimensionDiff(*dim, diff, maxx, minn)
+
+	// Calculate the DiogonalLength of the Collection
+	Utils.Utils.CalculateDiogonalLength(length, *dim, diff)
 }
 
 // GetNodeCount returns the number of points in the Collection
@@ -226,14 +238,27 @@ func (c *Collection) Recreate() {
 }
 
 // Rebuild will create a new KD-Tree from the SpaceMap
-func (c *Collection) Rebuild() *Node.Node {
+func (c *Collection) Rebuild() {
+	minn := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	maxx := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	diff := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
 	nodes := &Node.Node{Depth: 0}
+	length := float64(0)
+	c.Mut.RLock()
 	for _, v := range *c.Space {
 		if !v.IsDeleted() {
 			nodes.Insert(v)
+			c.SetLocalDiaSpace(diff, minn, maxx, v, &length, &c.VectorDimension)
 		}
 	}
-	return nodes
+	c.Mut.RUnlock()
+	c.Mut.Lock()
+	c.Nodes = nodes
+	c.MaxVector = maxx
+	c.MinVector = minn
+	c.DimensionDiff = diff
+	c.DiagonalLength = length
+	c.Mut.Unlock()
 }
 
 // CheckID will Check if the given ID is already in the Collection Space
@@ -277,7 +302,7 @@ func (c *Collection) DeleteClassifier(name string) error {
 	// Delete the Classifiers again to make sure it is not saved
 	err := c.SaveClassifier()
 	if err != nil {
-		Logger.Log.Log(err.Error())
+		Logger.Log.Log(err.Error(), "ERROR")
 		return err
 	}
 	return nil
@@ -322,7 +347,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 	// Save the classifier
 	err := c.SaveClassifier()
 	if err != nil {
-		Logger.Log.Log("Error saving classifier: " + err.Error())
+		Logger.Log.Log("Error saving classifier: "+err.Error(), "ERROR")
 		return err
 	}
 	return nil
@@ -350,7 +375,7 @@ func (c *Collection) SaveClassifier() error {
 	if err != nil {
 		return err
 	}
-	Logger.Log.Log("Successfully saved classifier")
+	Logger.Log.Log("Successfully saved classifier", "INFO")
 	return nil
 }
 

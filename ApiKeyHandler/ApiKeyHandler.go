@@ -36,18 +36,18 @@ func init() {
 	if ApiHandler.CheckActive() {
 		err := ApiHandler.CreateApiKeyFile()
 		if err != nil {
-			Logger.Log.Log("Error creating file collections/__apikeys")
+			Logger.Log.Log("Error creating file collections/__apikeys", "ERROR")
 			panic(err) // we cannot create the file - kill the server
 		}
 	}
 	ApiHandler.LoadApiKeys()
-	Logger.Log.Log("ApiKeyHandler initialized")
+	Logger.Log.Log("ApiKeyHandler initialized", "INFO")
 
 	// Argument Createapikey is set - create a new ApiKey
 	if *ArgsParser.Ap.CreateApiKey {
 		apiKey, err := ApiHandler.CreateApiKey()
 		if err != nil {
-			Logger.Log.Log("Error creating ApiKey")
+			Logger.Log.Log("Error creating ApiKey", "ERROR")
 			panic(err)
 		}
 		fmt.Println("New ApiKey created (PLEASE NOTE THIS ONE!): " + apiKey)
@@ -68,11 +68,11 @@ func (ap *ApiKeyHandler) CreateApiKeyFile() error {
 	// Create the file collections/__apikeys
 	file, err := os.Create("collections/__apikeys")
 	if err != nil {
-		Logger.Log.Log("Error creating file collections/__apikeys")
+		Logger.Log.Log("Error creating file collections/__apikeys", "ERROR")
 		return err
 	}
 	defer file.Close()
-	Logger.Log.Log("File collections/__apikeys created")
+	Logger.Log.Log("File collections/__apikeys created", "INFO")
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 	// Write the changes to the file using gob
 	file, err := os.OpenFile("collections/__apikeys", os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening file collections/__apikeys")
+		Logger.Log.Log("Error opening file collections/__apikeys", "ERROR")
 		return "", err
 	}
 	defer file.Close()
@@ -107,14 +107,14 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(ap.ApiKeyHashes)
 	if err != nil {
-		Logger.Log.Log("Error encoding map to file")
+		Logger.Log.Log("Error encoding map to file", "ERROR")
 		return "", err
 	}
 
 	// Write the map to the file
 	_, err = file.Write(buf.Bytes())
 	if err != nil {
-		Logger.Log.Log("Error writing map to file")
+		Logger.Log.Log("Error writing map to file", "ERROR")
 		return "", err
 	}
 
@@ -134,7 +134,7 @@ func (ap *ApiKeyHandler) DeleteApiKey(apiKey string) error {
 	// Write the changes to the file using gob
 	file, err := os.OpenFile("collections/__apikeys", os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening file collections/__apikeys")
+		Logger.Log.Log("Error opening file collections/__apikeys", "ERROR")
 		return err
 	}
 	defer file.Close()
@@ -144,14 +144,14 @@ func (ap *ApiKeyHandler) DeleteApiKey(apiKey string) error {
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(ap.ApiKeyHashes)
 	if err != nil {
-		Logger.Log.Log("Error encoding map to file")
+		Logger.Log.Log("Error encoding map to file", "ERROR")
 		return err
 	}
 
 	// Write the map to the file
 	_, err = file.Write(buf.Bytes())
 	if err != nil {
-		Logger.Log.Log("Error writing map to file")
+		Logger.Log.Log("Error writing map to file", "ERROR")
 		return err
 	}
 
@@ -163,7 +163,7 @@ func (ap *ApiKeyHandler) LoadApiKeys() error {
 	// Open the file collections/__apikeys
 	file, err := os.Open("collections/__apikeys")
 	if err != nil {
-		Logger.Log.Log("Error opening file collections/__apikeys")
+		Logger.Log.Log("Error opening file collections/__apikeys", "ERROR")
 		return err
 	}
 	defer file.Close()
@@ -172,7 +172,7 @@ func (ap *ApiKeyHandler) LoadApiKeys() error {
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(&ap.ApiKeyHashes)
 	if err != nil {
-		Logger.Log.Log("Error decoding file collections/__apikeys - EOF Error OK on first run!")
+		Logger.Log.Log("Error decoding file collections/__apikeys - EOF Error OK if no APIKEY created!", "INFO")
 		return err
 	}
 	return nil
