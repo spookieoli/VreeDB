@@ -76,7 +76,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 
 			// Restore Indexes
 			err = collections[c.Name].RebuildIndex()
-			Logger.Log.Log("Collection "+c.Name+" indexes restored", "ERROR")
+			Logger.Log.Log("Collection "+c.Name+" indexes restored", "INFO")
 
 			// recreate the SVMs (if present)
 			err = collections[c.Name].ReadClassifiers()

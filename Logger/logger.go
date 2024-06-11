@@ -41,7 +41,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Log = &Logger{Logfile: f, In: make(chan *LogMessage, 100), Quit: make(chan bool), LOGLEVEL: Level(*ArgsParser.Ap.LogLevel)}
+	Log = &Logger{Logfile: f, In: make(chan *LogMessage, 100), Quit: make(chan bool), LOGLEVEL: Level(strings.ToUpper(*ArgsParser.Ap.LogLevel))}
 	Log.Start()
 }
 

@@ -140,9 +140,8 @@ func (c *Collection) DeleteWatcher() {
 	for {
 		if len(*c.DeletedVectors) > 0 {
 			c.Rebuild()
-			c.Mut.RLock()
 			c.DeleteMarkedVectors()
-			c.Mut.RUnlock()
+			Logger.Log.Log("rebuild VectorTree complete", "INFO")
 		}
 		time.Sleep(1800 * time.Second)
 	}
@@ -153,11 +152,15 @@ func (c *Collection) DeleteWatcher() {
 func (c *Collection) DeleteMarkedVectors() {
 	for _, v := range *c.DeletedVectors {
 		if v.IsDeleted() {
+			c.Mut.Lock()
 			delete(*c.Space, v.Id)
+			c.Mut.Unlock()
 		}
 	}
 	// Delete the deleted vectors from the deleted vectors
+	c.Mut.Lock()
 	c.DeletedVectors = &map[string]*Vector.Vector{}
+	c.Mut.Unlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
