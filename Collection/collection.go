@@ -150,17 +150,15 @@ func (c *Collection) DeleteWatcher() {
 // DeleteMarkedVectors deletes vectors that are marked as deleted in the collection's space.
 // It iterates over the space and removes vectors that have the `deleted` flag set to true.
 func (c *Collection) DeleteMarkedVectors() {
+	c.Mut.RLock()
 	for _, v := range *c.DeletedVectors {
 		if v.IsDeleted() {
-			c.Mut.Lock()
 			delete(*c.Space, v.Id)
-			c.Mut.Unlock()
 		}
 	}
 	// Delete the deleted vectors from the deleted vectors
-	c.Mut.Lock()
 	c.DeletedVectors = &map[string]*Vector.Vector{}
-	c.Mut.Unlock()
+	c.Mut.RUnlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
