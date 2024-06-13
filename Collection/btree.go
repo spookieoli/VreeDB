@@ -8,3 +8,9 @@ type TreeNode struct {
 	children []*TreeNode
 	isLeaf   bool
 }
+
+// Tree represents a tree data structure.
+// It contains a pointer to the root node of the tree.
+type Tree struct {
+	root *TreeNode
+}
