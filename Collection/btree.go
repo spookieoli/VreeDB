@@ -12,5 +12,6 @@ type TreeNode struct {
 // Tree represents a tree data structure.
 // It contains a pointer to the root node of the tree.
 type Tree struct {
-	root *TreeNode
+	root       *TreeNode
+	Collection string
 }
