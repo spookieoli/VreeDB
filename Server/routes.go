@@ -552,6 +552,64 @@ func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+func (r *Routes) DeletePointWithFilter(w http.ResponseWriter, req *http.Request) {
+	r.AData <- "DELETE"
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error parsing form"))
+			return
+		}
+		defer req.Body.Close()
+		// load the request into the Point via json decode
+		dp := &DeletePoint{}
+		err = json.NewDecoder(req.Body).Decode(dp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error decoding json"))
+			return
+		}
+		// Check if Auth is valid
+		if r.ApiKeyHandler.CheckApiKey(dp.ApiKey) || r.validateCookie(req) {
+			// Check if Collection exists
+			if _, ok := r.DB.Collections[dp.CollectionName]; !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Collection does not exist"))
+				return
+			}
+
+			//check if there is a Filter
+			if dp.Filter == nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Filter must be provided"))
+				return
+			}
+
+			// Delete the point from the Collection
+			err = r.DB.DeleteWithFilter(dp.CollectionName, *dp.Filter)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			// Send the success or error message to the client
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Point deleted"))
+			return
+		}
+		// send not authorized to the user
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Unauthorized"))
+		return
+	}
+	// Send notfound to the user
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
+	return
+}
+
 func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {

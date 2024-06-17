@@ -143,9 +143,10 @@ type Data struct {
 
 // DeletePoint is the struct that will be used to delete a point from a Collection, when send by REST
 type DeletePoint struct {
-	ApiKey         string   `json:"api_key"`
-	CollectionName string   `json:"collection_name"`
-	Id             []string `json:"id"`
+	ApiKey         string           `json:"api_key"`
+	CollectionName string           `json:"collection_name"`
+	Id             []string         `json:"id"`
+	Filter         *[]Filter.Filter `json:"filter"` // Must not be present in the request default nil
 }
 
 // ApiKeyCreator is the struct that will be used to create a new Api key

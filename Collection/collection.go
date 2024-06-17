@@ -3,6 +3,7 @@ package Collection
 import (
 	"VreeDB/ArgsParser"
 	"VreeDB/FileMapper"
+	"VreeDB/Filter"
 	"VreeDB/Logger"
 	"VreeDB/NN"
 	"VreeDB/Node"
@@ -616,4 +617,37 @@ func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64
 // GetTSNEDimensions returns the TSNE_Dimensions slice of Vector pointers from the collection.
 func (c *Collection) GetTSNEDimensions() []*Vector.Vector {
 	return c.TSNE_Dimensions
+}
+
+// SerialDelete deletes vectors from the collection based on the provided filter.
+// It follows these steps:
+// - Locks the collection's mutex to ensure exclusive access
+// - Initializes an empty slice to store the IDs of the vectors that match the filter
+// - Iterates through the collection's vector space
+// - If a vector satisfies the filter condition, its ID is appended to the slice of IDs
+// - Calls DeleteVectorByID with the slice of IDs to delete the vectors
+// - Unlocks the collection's mutex
+// - Returns an error if an error occurs during the deletion process, otherwise returns nil
+func (c *Collection) SerialDelete(filters []Filter.Filter) error {
+	c.Mut.Lock()
+	defer c.Mut.Unlock()
+
+	// the ids of the string will be stored here
+	ids := []string{}
+
+	// Loop through the vectorspace
+	for _, filter := range filters {
+		for _, vector := range *c.Space {
+			if ok, _ := filter.ValidateFilter(vector); ok {
+				ids = append(ids, vector.Id)
+			}
+		}
+	}
+
+	// Delete the vectors
+	err := c.DeleteVectorByID(ids)
+	if err != nil {
+		return err
+	}
+	return nil
 }
