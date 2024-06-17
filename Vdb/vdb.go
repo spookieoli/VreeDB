@@ -252,3 +252,15 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	})
 	return results
 }
+
+// DeleteWithFilter deletes vectors from the specified collection based on the provided filters.
+// It performs the following steps:
+// - Calls the SerialDelete method of the specified collection to delete the vectors matching the filters
+// - Returns an error if the SerialDelete method returns an error, otherwise returns nil
+func (v *Vdb) DeleteWithFilter(col string, filters []Filter.Filter) error {
+	err := v.Collections[col].SerialDelete(filters)
+	if err != nil {
+		return err
+	}
+	return nil
+}
