@@ -247,10 +247,9 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 	return x, y, nil
 }
 
-// Accuracy calculates the accuracy of the neural network by comparing the predicted labels
-// with the actual labels provided in the test data. It returns the ratio of correct predictions
-// to the total number of predictions.
-// TODO: This function is not yet tested
+// Accuracy calculates the accuracy of the neural network on the given test data
+// by comparing the predictions with the test labels. It returns the accuracy,
+// which is the number of correct predictions divided by the total number of predictions.
 func (n *Network) Accuracy(testData [][]float64, testLabels [][]float64) float64 {
 	var correctCount float64
 
@@ -266,6 +265,7 @@ func (n *Network) Accuracy(testData [][]float64, testLabels [][]float64) float64
 			}
 		}
 
+		// Check if the prediction is correct
 		for _, pred := range prediction.([]float64) {
 			if pred != testLabels[i][0] {
 				continue OUTER
