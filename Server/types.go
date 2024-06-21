@@ -94,6 +94,7 @@ type Collection struct {
 	DiagonalLength  float64  `json:"diagonal_length"`
 	Classifier      []string `json:"classifier"`
 	ClassifierReady bool     `json:"classifier_ready"`
+	Dimensions      int      `json:"dimensions"`
 }
 
 // RuntimeData is the struct that will be used to display Application runtime data
@@ -198,7 +199,8 @@ func NewData() Data {
 	for _, collection := range Vdb.DB.Collections {
 		data.Collections = append(data.Collections, Collection{Name: collection.Name, NodeCount: len(*collection.Space),
 			DistanceFunc: collection.DistanceFuncName, DiagonalLength: collection.DiagonalLength,
-			Classifier: collection.ClassifierToSlice(), ClassifierReady: collection.ClassifierReady})
+			Classifier: collection.ClassifierToSlice(), ClassifierReady: collection.ClassifierReady,
+			Dimensions: collection.VectorDimension})
 	}
 	data.Application = RuntimeData{RamUsage: Utils.Utils.GetMemoryUsage(), FreeRam: Utils.Utils.GetAvailableRAM(),
 		Uptime: 0, Percent: (Utils.Utils.GetMemoryUsage() / Utils.Utils.GetAvailableRAM()) * 100,
