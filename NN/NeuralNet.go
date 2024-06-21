@@ -34,6 +34,7 @@ type TrainProgress struct {
 	Progress       float64 `json:"progress"`
 	Epoch          int     `json:"epoch"`
 	Loss           float64 `json:"loss"`
+	Accuracy       float64 `json:"accuracy"`
 }
 
 type Layer struct {
@@ -186,7 +187,10 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 		// Save loss, and progress in the TrainPhase slice, so that it can be accessed by the user
 		// This is done in a thread safe way
 		n.mut.Lock()
-		n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs), Epoch: epoch, Loss: totalLoss / float64(totalBatches)})
+		// check accuaraacy
+		accuracy := n.Accuracy(trainingData, targets)
+		n.TrainPhase = append(n.TrainPhase, TrainProgress{ClassifierName: "Classifier", Progress: float64(epoch+1.0) / float64(epochs),
+			Epoch: epoch, Loss: totalLoss / float64(totalBatches), Accuracy: accuracy})
 		n.mut.Unlock()
 
 		// Log the progress
@@ -241,6 +245,29 @@ func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]fl
 		Logger.Log.Log("NeuralNet Traindata created successfully, x: "+fmt.Sprint(len(x))+", y: "+fmt.Sprint(len(y)), "INFO")
 	}
 	return x, y, nil
+}
+
+// Accuracy calculates the accuracy of the neural network by comparing the predicted labels
+// with the actual labels provided in the test data. It returns the ratio of correct predictions
+// to the total number of predictions.
+// TODO: This function is not yet tested
+func (n *Network) Accuracy(testData [][]float64, testLabels [][]float64) float64 {
+	var correctCount float64
+
+	for i, data := range testData {
+		prediction := n.Predict(data)
+		for _, pred := range prediction.([]float64) {
+			if pred == testLabels[i][0] {
+				correctCount++
+				break
+			}
+		}
+	}
+
+	// The accuracy is the number of correct predictions divided by the total number of predictions.
+	accuracy := correctCount / float64(len(testData))
+
+	return accuracy
 }
 
 // Predict - predicts the output for the given input
