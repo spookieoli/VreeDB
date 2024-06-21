@@ -255,13 +255,23 @@ func (n *Network) Accuracy(testData [][]float64, testLabels [][]float64) float64
 	var correctCount float64
 
 	for i, data := range testData {
+	OUTER:
 		prediction := n.Predict(data)
-		for _, pred := range prediction.([]float64) {
-			if pred == testLabels[i][0] {
-				correctCount++
-				break
+		// all values under 0.5 must be set to 0 and all values above 0.5 must be set to 1
+		for i, v := range prediction.([]float64) {
+			if v < 0.5 {
+				prediction.([]float64)[i] = 0
+			} else {
+				prediction.([]float64)[i] = 1
 			}
 		}
+
+		for _, pred := range prediction.([]float64) {
+			if pred != testLabels[i][0] {
+				continue OUTER
+			}
+		}
+		correctCount++
 	}
 
 	// The accuracy is the number of correct predictions divided by the total number of predictions.
