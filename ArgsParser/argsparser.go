@@ -16,6 +16,7 @@ type ArgsParser struct {
 	Loglocation   *string
 	FileStore     *string
 	LogLevel      *string
+	PGOCollect    *bool
 }
 
 // Ap is a global ArgsParser
@@ -36,6 +37,7 @@ func init() {
 	Ap.CreateApiKey = flag.Bool("createapikey", false, "Create a new API key")
 	Ap.SearchThreads = flag.Int("searchthreads", 2, "The number of search threads")
 	Ap.LogLevel = flag.String("loglevel", "INFO", "The log level")
+	Ap.PGOCollect = flag.Bool("pgocollect", false, "Collect PGO data")
 
 	// Parse
 	flag.Parse()

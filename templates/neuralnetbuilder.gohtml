@@ -155,6 +155,10 @@
             </div>
         </div>
     </div>
+<!-- "Terminal" Container -->
+<div id="trainingProgressContainer" style="font-family: monospace; background-color: #000; color: #0F0; padding: 10px; width: 100%; height: 300px; overflow: auto;">
+    <!-- concat data here -->
+</div>
 </div>
 <script>
     $(document).ready(function() {
@@ -239,22 +243,24 @@
                 contentType: "application/json",
                 data: JSON.stringify(data_send),
                 success: function(data) {
-                    console.log("THE DATAGET IS:", data);
                     // Update the progress bar with the new data
                     $progress.progress({
                         percent: data.progress * 100
                     });
 
+                    // Update the terminal-like console
+                    $('#trainingProgressContainer').append("<pre><code>Current progress: " + (data.progress * 100).toFixed(2) + "%</code></pre>");
+                    var consoleDiv = document.getElementById("trainingProgressContainer");
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
                     if ((data.progress*100) >= 100) {
-                        console.log("STOP")
                         clearInterval(updateInterval);
-                    }else{
-                        console.log(data.progress*100)
+                        $('#trainingProgressContainer').append("<pre><code>Training successfully completed!</code></pre>");
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     // Log any errors to the console
-                    console.error("Request failed: " + textStatus + ", " + errorThrown);
+                    $('#trainingProgressContainer').append("<pre><code>Error: " + textStatus + ", " + errorThrown + "</code></pre>");
                     clearInterval(updateInterval);
                 }
             });
