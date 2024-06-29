@@ -11,6 +11,9 @@ import (
 	"sync"
 )
 
+// epsilon due to the way floats are represented in memory, it is not possible to compare two floats directly
+const epsilon float64 = 0.00000001
+
 // Types *************************************
 
 type Network struct {
