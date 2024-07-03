@@ -86,7 +86,7 @@ func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) 
 			}
 
 			// Update the Alpha
-			if float64((*svm.Data[i].Payload)["Label"].(int))*(sum+svm.Bias) < 1+epsilon {
+			if float64((*svm.Data[i].Payload)["Label"].(int))*(sum+svm.Bias) < 1-epsilon {
 				svm.Alpha[i] += C
 			}
 		}
