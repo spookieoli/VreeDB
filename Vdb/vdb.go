@@ -119,9 +119,6 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	t := time.Now()
 	su := Utils.NewSearchUnit(filter, 0.1)
 
-	// start the su threads
-	su.Start()
-
 	// search
 	su.Search(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc, v.Collections[collectionName].DimensionDiff)
 
@@ -195,9 +192,6 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 	// Get the starting time
 	t := time.Now()
 	su := Utils.NewSearchUnit(filter, 0.1)
-
-	// start the su threads
-	su.Start()
 
 	// search
 	su.Search(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, v.Collections[collectionName].DistanceFunc, v.Collections[collectionName].DimensionDiff)

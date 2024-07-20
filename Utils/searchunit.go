@@ -1,7 +1,6 @@
 package Utils
 
 import (
-	"VreeDB/ArgsParser"
 	"VreeDB/Filter"
 	"VreeDB/Node"
 	"VreeDB/Vector"
@@ -23,6 +22,7 @@ type SearchData struct {
 	Queue         *HeapControl
 	DistanceFunc  func(*Vector.Vector, *Vector.Vector) (float64, error)
 	DimensionDiff *Vector.Vector
+	SU            *SearchUnit
 }
 
 // NearestNeighbors returns the results nearest neighbours to the given target vector.
@@ -54,34 +54,25 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 		secondary = node.Left
 	}
 	s.AddToWaitGroup()
+	// We put this in a goroutine to prevent a possible deadlock
 	go func() {
-		s.Chan <- &SearchData{Node: primary, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
+		s.Chan <- &SearchData{Node: primary, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff, SU: s}
 	}()
 
 	// If the distance is smaller than the dimensionDiff we need to search the other side
 	if axisDiff < dimensionDiff.Data[axis]*s.dimensionMultiplier {
 		s.AddToWaitGroup()
-		go func() {
-			s.Chan <- &SearchData{secondary, target, queue, distanceFunc, dimensionDiff}
-		}()
-	}
-}
 
-// Start starts the SearchThreadpool
-func (s *SearchUnit) Start() {
-	for i := 0; i < *ArgsParser.Ap.SearchThreads; i++ {
+		// We put this in a goroutine to prevent a possible deadlock
 		go func() {
-			for data := range s.Chan {
-				s.NearestNeighbors(data.Node, data.Target, data.Queue, data.DistanceFunc, data.DimensionDiff)
-				s.releaseWaitGroup()
-			}
+			s.Chan <- &SearchData{secondary, target, queue, distanceFunc, dimensionDiff, s}
 		}()
 	}
 }
 
 // NewSearchUnit returns a new SearchUnit
 func NewSearchUnit(filter *[]Filter.Filter, dimensionMultiplier float64) *SearchUnit {
-	return &SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: make(chan *SearchData, 100000), wg: &sync.WaitGroup{}}
+	return &SearchUnit{dimensionMultiplier: dimensionMultiplier, Filter: filter, Chan: Searcher.GetChan(), wg: &sync.WaitGroup{}}
 }
 
 // AddToWaitGroup blocks until the SearchUnit is finished
