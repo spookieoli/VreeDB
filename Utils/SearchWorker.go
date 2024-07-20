@@ -7,7 +7,7 @@ import (
 
 // SearchWorker represents the worker used for searching.
 type SearchWorker struct {
-	Chan        chan *SearchData
+	schan       chan *SearchData
 	WorkerCount int
 }
 
@@ -16,23 +16,23 @@ var Searcher *SearchWorker
 
 // init initializes the Searcher variable with a new SearchWorker instance.
 func init() {
-	Searcher = &SearchWorker{Chan: make(chan *SearchData, 100000), WorkerCount: 0}
+	Searcher = &SearchWorker{schan: make(chan *SearchData, 100000), WorkerCount: 0}
 	Searcher.Start()
-	fmt.Println("Searching Workers ready")
+	fmt.Println("Search Workers ready")
 }
 
 // GetChan returns the channel of the SearchWorker.
-func (s *SearchWorker) GetChan() chan *SearchData {
-	return s.Chan
+func (sw *SearchWorker) GetChan() chan *SearchData {
+	return sw.schan
 }
 
 // Start starts the search by creating worker goroutines that consume jobs from the channel.
 // Each worker goroutine executes the NearestNeighbors method on the data received from the channel,
 // and then releases the WaitGroup of the SearchUnit.
-func (s *SearchWorker) Start() {
+func (sw *SearchWorker) Start() {
 	for i := 0; i < *ArgsParser.Ap.SearchThreads; i++ {
 		go func() {
-			for data := range s.Chan {
+			for data := range sw.schan {
 				data.SU.NearestNeighbors(data.Node, data.Target, data.Queue, data.DistanceFunc, data.DimensionDiff)
 				data.SU.releaseWaitGroup()
 			}

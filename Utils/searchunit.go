@@ -44,7 +44,6 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 
 	// Just push it into the queue if it is small enough it will be added
 	queue.In <- HeapChannelStruct{node: node, dist: dist, diff: axisDiff, Filter: s.Filter}
-
 	var primary, secondary *Node.Node
 	if target.Data[axis] < node.Vector.Data[axis] {
 		primary = node.Left
@@ -62,7 +61,6 @@ func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, qu
 	// If the distance is smaller than the dimensionDiff we need to search the other side
 	if axisDiff < dimensionDiff.Data[axis]*s.dimensionMultiplier {
 		s.AddToWaitGroup()
-
 		// We put this in a goroutine to prevent a possible deadlock
 		go func() {
 			s.Chan <- &SearchData{secondary, target, queue, distanceFunc, dimensionDiff, s}
@@ -89,7 +87,6 @@ func (s *SearchUnit) releaseWaitGroup() {
 func (s *SearchUnit) Search(node *Node.Node, target *Vector.Vector, queue *HeapControl,
 	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
 	s.AddToWaitGroup()
-	s.Chan <- &SearchData{Node: node, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff}
+	s.Chan <- &SearchData{Node: node, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff, SU: s}
 	s.wg.Wait()
-	close(s.Chan)
 }
