@@ -2,6 +2,7 @@ package ArgsParser
 
 import (
 	"flag"
+	"runtime"
 )
 
 // ArgsParser struct
@@ -35,12 +36,18 @@ func init() {
 	Ap.CertFile = flag.String("certfile", "", "The path to the certificate file")
 	Ap.KeyFile = flag.String("keyfile", "", "The path to the key file")
 	Ap.CreateApiKey = flag.Bool("createapikey", false, "Create a new API key")
-	Ap.SearchThreads = flag.Int("searchthreads", 2, "The number of search threads")
+	Ap.SearchThreads = flag.Int("searchthreads", runtime.NumCPU()/2, "The number of search threads")
 	Ap.LogLevel = flag.String("loglevel", "INFO", "The log level")
 	Ap.PGOCollect = flag.Bool("pgocollect", false, "Collect PGO data")
 
 	// Parse
 	flag.Parse()
+
+	// Check if SearchThreads is gt 0
+	if *Ap.SearchThreads <= 0 {
+		// Exit
+		panic("SearchThreads must be greater than 0")
+	}
 
 	// Check if Ap.FileStore ends with a slash
 	if (*Ap.FileStore)[len(*Ap.FileStore)-1] != '/' {
