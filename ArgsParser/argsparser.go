@@ -18,6 +18,9 @@ type ArgsParser struct {
 	FileStore     *string
 	LogLevel      *string
 	PGOCollect    *bool
+	AVX           *bool
+	AVX256        *bool
+	AVX512        *bool
 }
 
 // Ap is a global ArgsParser
@@ -39,6 +42,7 @@ func init() {
 	Ap.SearchThreads = flag.Int("searchthreads", runtime.NumCPU()/2, "The number of search threads")
 	Ap.LogLevel = flag.String("loglevel", "INFO", "The log level")
 	Ap.PGOCollect = flag.Bool("pgocollect", false, "Collect PGO data")
+	Ap.AVX = flag.Bool("avx", false, "Use AVX")
 
 	// Parse
 	flag.Parse()
