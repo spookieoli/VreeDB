@@ -33,17 +33,11 @@ func main() {
 	}
 
 	// if AVX is true than we check if the CPU supports AVX
-	if *ArgsParser.Ap.AVX {
+	if *ArgsParser.Ap.AVX256 {
 		if C.check_avx_support() == 0 {
 			panic("CPU does not support AVX")
 		} else {
-			if *ArgsParser.Ap.AVX && C.check_avx512_support() == 1 {
-				fmt.Println("CPU supports AVX256 and AVX512 - using AVX512")
-				*ArgsParser.Ap.AVX512 = true
-			} else {
-				fmt.Println("CPU supports AVX256 - using AVX256")
-				*ArgsParser.Ap.AVX256 = true
-			}
+			fmt.Println("CPU supports AVX256 - using AVX256")
 		}
 	}
 

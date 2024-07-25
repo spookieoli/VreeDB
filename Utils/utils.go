@@ -1,5 +1,137 @@
 package Utils
 
+/*
+#cgo CFLAGS: -O3 -mavx
+#cgo LDFLAGS: -lm
+#include <immintrin.h>
+#include <math.h>
+
+double euclidean_distance_avx(const double* a, const double* b, int n) {
+    __m256d sum = _mm256_setzero_pd(); // Setzt sum auf 0
+    int i;
+
+    // Unroll the loop to process 16 elements at a time if possible
+    for (i = 0; i <= n - 16; i += 16) {
+        __m256d va1 = _mm256_loadu_pd(&a[i]);
+        __m256d vb1 = _mm256_loadu_pd(&b[i]);
+        __m256d diff1 = _mm256_sub_pd(va1, vb1);
+        __m256d sq1 = _mm256_mul_pd(diff1, diff1);
+
+        __m256d va2 = _mm256_loadu_pd(&a[i + 4]);
+        __m256d vb2 = _mm256_loadu_pd(&b[i + 4]);
+        __m256d diff2 = _mm256_sub_pd(va2, vb2);
+        __m256d sq2 = _mm256_mul_pd(diff2, diff2);
+
+        __m256d va3 = _mm256_loadu_pd(&a[i + 8]);
+        __m256d vb3 = _mm256_loadu_pd(&b[i + 8]);
+        __m256d diff3 = _mm256_sub_pd(va3, vb3);
+        __m256d sq3 = _mm256_mul_pd(diff3, diff3);
+
+        __m256d va4 = _mm256_loadu_pd(&a[i + 12]);
+        __m256d vb4 = _mm256_loadu_pd(&b[i + 12]);
+        __m256d diff4 = _mm256_sub_pd(va4, vb4);
+        __m256d sq4 = _mm256_mul_pd(diff4, diff4);
+
+        sum = _mm256_add_pd(sum, sq1);
+        sum = _mm256_add_pd(sum, sq2);
+        sum = _mm256_add_pd(sum, sq3);
+        sum = _mm256_add_pd(sum, sq4);
+    }
+
+    // Handle the remaining elements (if any) in chunks of 4
+    for (; i <= n - 4; i += 4) {
+        __m256d va = _mm256_loadu_pd(&a[i]);
+        __m256d vb = _mm256_loadu_pd(&b[i]);
+        __m256d diff = _mm256_sub_pd(va, vb);
+        __m256d sq = _mm256_mul_pd(diff, diff);
+        sum = _mm256_add_pd(sum, sq);
+    }
+
+    // Sum the elements in the __m256d register
+    __m256d temp = _mm256_hadd_pd(sum, sum);
+    temp = _mm256_hadd_pd(temp, temp);
+    __m128d sum_high = _mm256_extractf128_pd(temp, 1);
+    __m128d result = _mm_add_pd(_mm256_castpd256_pd128(temp), sum_high);
+    double final_sum = _mm_cvtsd_f64(_mm_hadd_pd(result, result));
+
+    // Handle the remaining elements (if any) one by one
+    for (; i < n; i++) {
+        double diff = a[i] - b[i];
+        final_sum += diff * diff;
+    }
+
+    return sqrt(final_sum);
+}
+
+double cosine_distance_avx(const double* a, const double* b, int n) {
+    __m256d sum_a = _mm256_setzero_pd();
+    __m256d sum_b = _mm256_setzero_pd();
+    __m256d sum_ab = _mm256_setzero_pd();
+    int i;
+
+    // Unroll the loop to process 16 elements at a time if possible
+    for (i = 0; i <= n - 16; i += 16) {
+        __m256d va1 = _mm256_loadu_pd(&a[i]);
+        __m256d vb1 = _mm256_loadu_pd(&b[i]);
+        sum_ab = _mm256_add_pd(sum_ab, _mm256_mul_pd(va1, vb1));
+        sum_a = _mm256_add_pd(sum_a, _mm256_mul_pd(va1, va1));
+        sum_b = _mm256_add_pd(sum_b, _mm256_mul_pd(vb1, vb1));
+
+        __m256d va2 = _mm256_loadu_pd(&a[i + 4]);
+        __m256d vb2 = _mm256_loadu_pd(&b[i + 4]);
+        sum_ab = _mm256_add_pd(sum_ab, _mm256_mul_pd(va2, vb2));
+        sum_a = _mm256_add_pd(sum_a, _mm256_mul_pd(va2, va2));
+        sum_b = _mm256_add_pd(sum_b, _mm256_mul_pd(vb2, vb2));
+
+        __m256d va3 = _mm256_loadu_pd(&a[i + 8]);
+        __m256d vb3 = _mm256_loadu_pd(&b[i + 8]);
+        sum_ab = _mm256_add_pd(sum_ab, _mm256_mul_pd(va3, vb3));
+        sum_a = _mm256_add_pd(sum_a, _mm256_mul_pd(va3, va3));
+        sum_b = _mm256_add_pd(sum_b, _mm256_mul_pd(vb3, vb3));
+
+        __m256d va4 = _mm256_loadu_pd(&a[i + 12]);
+        __m256d vb4 = _mm256_loadu_pd(&b[i + 12]);
+        sum_ab = _mm256_add_pd(sum_ab, _mm256_mul_pd(va4, vb4));
+        sum_a = _mm256_add_pd(sum_a, _mm256_mul_pd(va4, va4));
+        sum_b = _mm256_add_pd(sum_b, _mm256_mul_pd(vb4, vb4));
+    }
+
+    // Handle the remaining elements (if any) in chunks of 4
+    for (; i <= n - 4; i += 4) {
+        __m256d va = _mm256_loadu_pd(&a[i]);
+        __m256d vb = _mm256_loadu_pd(&b[i]);
+        sum_ab = _mm256_add_pd(sum_ab, _mm256_mul_pd(va, vb));
+        sum_a = _mm256_add_pd(sum_a, _mm256_mul_pd(va, va));
+        sum_b = _mm256_add_pd(sum_b, _mm256_mul_pd(vb, vb));
+    }
+
+    // Sum the elements in the __m256d registers
+    __m256d temp_ab = _mm256_add_pd(sum_ab, _mm256_permute2f128_pd(sum_ab, sum_ab, 1));
+    temp_ab = _mm256_add_pd(temp_ab, _mm256_permute_pd(temp_ab, 0x5));
+    double final_sum_ab = _mm_cvtsd_f64(_mm256_castpd256_pd128(temp_ab)) + _mm_cvtsd_f64(_mm256_extractf128_pd(temp_ab, 1));
+
+    __m256d temp_a = _mm256_add_pd(sum_a, _mm256_permute2f128_pd(sum_a, sum_a, 1));
+    temp_a = _mm256_add_pd(temp_a, _mm256_permute_pd(temp_a, 0x5));
+    double final_sum_a = _mm_cvtsd_f64(_mm256_castpd256_pd128(temp_a)) + _mm_cvtsd_f64(_mm256_extractf128_pd(temp_a, 1));
+
+    __m256d temp_b = _mm256_add_pd(sum_b, _mm256_permute2f128_pd(sum_b, sum_b, 1));
+    temp_b = _mm256_add_pd(temp_b, _mm256_permute_pd(temp_b, 0x5));
+    double final_sum_b = _mm_cvtsd_f64(_mm256_castpd256_pd128(temp_b)) + _mm_cvtsd_f64(_mm256_extractf128_pd(temp_b, 1));
+
+    // Handle the remaining elements (if any) one by one
+    for (; i < n; i++) {
+        double va = a[i];
+        double vb = b[i];
+        final_sum_ab += va * vb;
+        final_sum_a += va * va;
+        final_sum_b += vb * vb;
+    }
+
+    return 1.0 - (final_sum_ab / (sqrt(final_sum_a) * sqrt(final_sum_b)));
+}
+*/
+import "C"
+
 import (
 	"VreeDB/Vector"
 	"crypto/rand"
@@ -7,6 +139,7 @@ import (
 	"math"
 	"runtime"
 	"sync"
+	"unsafe"
 )
 
 type Util struct {
@@ -46,6 +179,11 @@ func (u *Util) EuclideanDistance(vector1, vector2 *Vector.Vector) (float64, erro
 	return math.Sqrt(sum), nil
 }
 
+// EuclideanDistanceAVX256 calculates the Euclidean distance between two vectors using AVX256
+func (u *Util) EuclideanDistanceAVX256(vector1, vector2 *Vector.Vector) (float64, error) {
+	return float64(C.euclidean_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
+}
+
 // CosineDistance function calculates the Cosine distance between two vectors
 func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) {
 	var sum, sum1, sum2 float64
@@ -63,6 +201,10 @@ func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) 
 	}
 
 	return 1 - (sum / (math.Sqrt(sum1) * math.Sqrt(sum2))), nil
+}
+
+func (u *Util) CosineDistanceAVX256(vector1, vector2 *Vector.Vector) (float64, error) {
+	return float64(C.cosine_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
 // FastSqrt is a faster implementation of the Sqrt function
