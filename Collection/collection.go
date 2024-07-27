@@ -58,9 +58,17 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 	dd := &Vector.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
 
 	if strings.ToLower(distanceFuncName) == "euclid" {
-		distanceFunc = Utils.Utils.EuclideanDistance
+		if *ArgsParser.Ap.AVX256 {
+			distanceFunc = Utils.Utils.EuclideanDistanceAVX256
+		} else {
+			distanceFunc = Utils.Utils.EuclideanDistance
+		}
 	} else {
-		distanceFunc = Utils.Utils.CosineDistance
+		if *ArgsParser.Ap.AVX256 {
+			distanceFunc = Utils.Utils.CosineDistanceAVX256
+		} else {
+			distanceFunc = Utils.Utils.CosineDistance
+		}
 	}
 
 	// create the collection

@@ -16,7 +16,7 @@ var Searcher *SearchWorker
 
 // init initializes the Searcher variable with a new SearchWorker instance.
 func init() {
-	Searcher = &SearchWorker{schan: make(chan *SearchData, 100000), WorkerCount: 0}
+	Searcher = &SearchWorker{schan: make(chan *SearchData, 1000000), WorkerCount: 0}
 	Searcher.Start()
 	fmt.Println("Search Workers ready")
 }
