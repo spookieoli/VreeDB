@@ -50,6 +50,10 @@ int check_avx512_support() {
     return 1; // AVX512 supported
 }
 
+int check_neon_support() {
+    return 0;
+}
+
 // if arm is defined - check for neon support
 #elif defined(__arm__) || defined(__aarch64__)
 
@@ -83,6 +87,10 @@ int check_avx_support() {
 }
 
 int check_avx512_support() {
+    return 0;
+}
+
+int check_neon_support() {
     return 0;
 }
 #endif
