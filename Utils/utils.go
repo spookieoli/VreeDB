@@ -3,6 +3,10 @@ package Utils
 /*
 #cgo CFLAGS: -O3 -mavx
 #cgo LDFLAGS: -lm
+
+#include <stdint.h>
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
 #include <immintrin.h>
 #include <math.h>
 
@@ -129,6 +133,116 @@ double cosine_distance_avx(const double* a, const double* b, int n) {
 
     return 1.0 - (final_sum_ab / (sqrt(final_sum_a) * sqrt(final_sum_b)));
 }
+
+// dummy for x86 x64
+double euclidean_distance_neon(double *array1, double *array2, int len){
+	return 0;
+}
+
+double cosine_distance_neon(double *array1, double *array2, int len) {
+	return 0;
+}
+
+#elif defined(__arm__) || defined(__aarch64__)
+
+#include <arm_neon.h>
+#include <math.h>
+
+double euclidean_distance_neon(double *array1, double *array2, int len) {
+	double result = 0;
+	float64x2_t a, b, resultNeon = vdupq_n_f64(0.0);
+
+    // Loop over full 2-value chunks of the arrays
+	for(int i = 0; i < len - 1; i+=2) {
+		a = vld1q_f64(array1 + i);
+		b = vld1q_f64(array2 + i);
+
+        a = vsubq_f64(a, b); // a = a - b
+		resultNeon = vmlaq_f64(resultNeon, a, a); // resultNeon = resultNeon + a * a
+	}
+
+    // Add results of vector computation back into a standard double variable
+    double resultArray[2];
+	vst1q_f64(resultArray, resultNeon);
+    result += resultArray[0] + resultArray[1];
+
+	// If the array length is not even, we have one remaining value to process
+	if(len % 2 != 0) {
+		double diff = array1[len-1] - array2[len-1];
+		result += diff * diff;
+	}
+
+	return sqrt(result);
+}
+
+double cosine_distance_neon(double *array1, double *array2, int len) {
+    double dot_product = 0.0, norm_a = 0.0, norm_b = 0.0;
+    float64x2_t a, b, dp_vec = vdupq_n_f64(0.0), norm_a_vec = vdupq_n_f64(0.0), norm_b_vec = vdupq_n_f64(0.0);
+
+    // Loop over full 2-value chunks of the arrays
+    for(int i = 0; i < len - 1; i+=2) {
+        a = vld1q_f64(array1 + i);
+        b = vld1q_f64(array2 + i);
+
+        dp_vec = vmlaq_f64(dp_vec, a, b); // dp_vec += a * b
+        norm_a_vec = vmlaq_f64(norm_a_vec, a, a); // norm_a_vec += a * a
+        norm_b_vec = vmlaq_f64(norm_b_vec, b, b); // norm_b_vec += b * b
+    }
+
+    // Add results of vector computation back into standard double variables
+    double dp_arr[2], norm_a_arr[2], norm_b_arr[2];
+    vst1q_f64(dp_arr, dp_vec);
+    vst1q_f64(norm_a_arr, norm_a_vec);
+    vst1q_f64(norm_b_arr, norm_b_vec);
+
+    dot_product += dp_arr[0] + dp_arr[1];
+    norm_a += norm_a_arr[0] + norm_a_arr[1];
+    norm_b += norm_b_arr[0] + norm_b_arr[1];
+
+    // If the array length is not even, we have one remaining value to process
+    if(len % 2 != 0) {
+        double a_val = array1[len-1];
+        double b_val = array2[len-1];
+
+        dot_product += a_val * b_val;
+        norm_a += a_val * a_val;
+        norm_b += b_val * b_val;
+    }
+
+    // Cosine similarity is dot product divided by product of norms (Lengths of array1 and array2)
+    double cos_sim = dot_product / (sqrt(norm_a) * sqrt(norm_b));
+    // Cosine distance is 1 - cosine similarity
+    return 1.0 - cos_sim;
+}
+
+double euclidean_distance_avx(const double* a, const double* b, int n) {
+	return 0;
+}
+
+double cosine_distance_avx(const double* a, const double* b, int n){
+	return 0;
+}
+
+#else
+
+double euclidean_distance_avx(const double* a, const double* b, int n) {
+	return 0;
+}
+
+double cosine_distance_avx(const double* a, const double* b, int n){
+	return 0;
+}
+
+double euclidean_distance_neon(double *array1, double *array2, int len){
+	return 0;
+}
+
+double cosine_distance_neon(double *array1, double *array2, int len) {
+	return 0;
+}
+
+#endif
+
 */
 import "C"
 
@@ -184,6 +298,11 @@ func (u *Util) EuclideanDistanceAVX256(vector1, vector2 *Vector.Vector) (float64
 	return float64(C.euclidean_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
+// EuclideanDistanceNEON calculates the Euclidean distance between two vectors using ARM/NEON
+func (u *Util) EuclideanDistanceNEON(vector1, vector2 *Vector.Vector) (float64, error) {
+	return float64(C.euclidean_distance_neon((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
+}
+
 // CosineDistance function calculates the Cosine distance between two vectors
 func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) {
 	var sum, sum1, sum2 float64
@@ -203,8 +322,14 @@ func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) 
 	return 1 - (sum / (math.Sqrt(sum1) * math.Sqrt(sum2))), nil
 }
 
+// CosineDistanceAVX256 calculates the Cosine distance between two vectors using AVX256.
 func (u *Util) CosineDistanceAVX256(vector1, vector2 *Vector.Vector) (float64, error) {
 	return float64(C.cosine_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
+}
+
+// CosineDistanceNEON calculates the cosine distance between two vectors using ARM/NEON.
+func (u *Util) CosineDistanceNEON(vector1, vector2 *Vector.Vector) (float64, error) {
+	return float64(C.cosine_distance_neon((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
 // FastSqrt is a faster implementation of the Sqrt function
