@@ -50,6 +50,33 @@ int check_avx512_support() {
     return 1; // AVX512 supported
 }
 
+// if arm is defined - check for neon support
+#elif defined(__arm__) || defined(__aarch64__)
+
+#include <arm_neon.h>
+
+int check_neon_support() {
+    #if defined(__aarch64__)
+    return 1;
+    #else
+    // Check for NEON support on ARM32
+    uint32_t info;
+    __asm__ __volatile__ (
+        "mrc p15, 0, %0, c1, c0, 2"
+        : "=r" (info)
+    );
+    return (info & (1 << 12)) != 0;
+    #endif
+}
+
+int check_avx_support() {
+    return 0;
+}
+
+int check_avx512_support() {
+    return 0;
+}
+
 #else
 int check_avx_support() {
     return 0;
