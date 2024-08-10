@@ -32,4 +32,4 @@ RUN go build -o VreeDB .
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["./VreeDB", "-avx=True"]
+CMD ["./VreeDB", "-avx256=True"]
