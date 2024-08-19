@@ -25,6 +25,9 @@ COPY . .
 # Compile the AVX check C code
 RUN cd /avx && gcc -c -o avx_check.o avx_check.c && ar rcs libavx_check.a avx_check.o
 
+# Disable telemetry
+CMD ["go", "telemetry", "off"]
+
 # Build the Go app
 RUN go build -o VreeDB .
 
