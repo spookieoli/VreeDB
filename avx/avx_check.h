@@ -3,5 +3,6 @@
 
 int check_avx_support();
 int check_avx512_support();
+int check_neon_support();
 
 #endif // AVX_CHECK_H
