@@ -13,19 +13,13 @@ RUN apt-get update && apt-get install -y gcc
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
 
-# Set the default environment to DEV
-ENV ENV DEV
-
 # Create the collections folder
 RUN mkdir -p /collections
 
 # Copy the source from the current directory to the Working Directory inside the Docker container
 COPY . .
 
-# Compile the AVX check C code
-RUN cd /avx && gcc -c -o avx_check.o avx_check.c && ar rcs libavx_check.a avx_check.o
-
-# Disable telemetry
+# Disable GOLANG telemetry
 CMD ["go", "telemetry", "off"]
 
 # Build the Go app
