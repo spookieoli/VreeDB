@@ -162,6 +162,7 @@ func main() {
 	// get the signal
 	<-signalChan
 
+	// let the user know we are shutting down
 	fmt.Println("Shutting down the server")
 
 	// Shutdown the server
