@@ -143,13 +143,14 @@ func main() {
 	// The Server variable
 	var server *Server.Server
 
-	// Start the Server - to shutdown the server gracefully we need to use a go routine
 	go func() {
+		// Start the Server - to shutdown the server gracefully we need to use a go routine
 		server = Server.NewServer(*ArgsParser.Ap.Ip, *ArgsParser.Ap.Port, *ArgsParser.Ap.CertFile,
 			*ArgsParser.Ap.KeyFile, *ArgsParser.Ap.Secure)
 		// Add Systemevent to the AccessList
 		AccessDataHUB.AccessList.ReadChan <- "SYSTEMEVENT"
 		server.Start()
+		fmt.Println("Stopped serving clients")
 	}()
 
 	// create the signal channel
@@ -160,6 +161,8 @@ func main() {
 
 	// get the signal
 	<-signalChan
+
+	fmt.Println("Shutting down the server")
 
 	// Shutdown the server
 	server.Shutdown()
