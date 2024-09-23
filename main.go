@@ -116,7 +116,9 @@ import (
 	"VreeDB/Server"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/pprof"
+	"syscall"
 )
 
 func main() {
@@ -138,12 +140,29 @@ func main() {
 	// Check if the CPU supports vector acceleration
 	checkVectorAcceleration()
 
-	// Start the Server
-	server := Server.NewServer(*ArgsParser.Ap.Ip, *ArgsParser.Ap.Port, *ArgsParser.Ap.CertFile,
-		*ArgsParser.Ap.KeyFile, *ArgsParser.Ap.Secure)
-	// Add Systemevent to the AccessList
-	AccessDataHUB.AccessList.ReadChan <- "SYSTEMEVENT"
-	server.Start()
+	// The Server variable
+	var server *Server.Server
+
+	// Start the Server - to shutdown the server gracefully we need to use a go routine
+	go func() {
+		server = Server.NewServer(*ArgsParser.Ap.Ip, *ArgsParser.Ap.Port, *ArgsParser.Ap.CertFile,
+			*ArgsParser.Ap.KeyFile, *ArgsParser.Ap.Secure)
+		// Add Systemevent to the AccessList
+		AccessDataHUB.AccessList.ReadChan <- "SYSTEMEVENT"
+		server.Start()
+	}()
+
+	// create the signal channel
+	signalChan := make(chan os.Signal, 1)
+
+	// wait for the signal
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// get the signal
+	<-signalChan
+
+	// Shutdown the server
+	server.Shutdown()
 }
 
 // check_vector_acceleration checks if the CPU supports vector acceleration and prints the selected acceleration method.
