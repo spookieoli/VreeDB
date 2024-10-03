@@ -1402,3 +1402,44 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Not Found"))
 	return
 }
+
+// Geo2Cartesian This is a helper Route to create Cartesian Coordinates from Geo Coordinates
+func (r *Routes) Geo2Cartesian(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/geo2cartesian" {
+		// Parse the form
+		err := req.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Create var
+		geo := Geo{}
+
+		// Decode the request body into geo struct
+		decoder := json.NewDecoder(req.Body)
+		err = decoder.Decode(&geo)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer req.Body.Close()
+
+		// Check if Cookie or Apikey are ok
+		if r.ApiKeyHandler.CheckApiKey(geo.ApiKey) || r.validateCookie(req) {
+
+			// Get the vectors from the collection
+			cartesian := Utils.Utils.Geo2Cat(geo.Latitude, geo.Longitude, geo.Altitude)
+
+			data := &Cartesian{X: cartesian[0], Y: cartesian[1], Z: cartesian[2]}
+
+			// Send it to the user
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(data)
+			return
+		}
+		// Tell the user not authorized
+		http.Error(w, "Not authorized in Geo2Cartesian!", http.StatusUnauthorized)
+		return
+	}
+}
