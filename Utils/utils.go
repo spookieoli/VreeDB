@@ -257,6 +257,7 @@ import (
 )
 
 type Util struct {
+	earthRadius, flattening, eccentricityfactor float64
 }
 
 // CollectionConfig is a struct to hold the configuration of a Collection
@@ -280,7 +281,11 @@ var Utils *Util
 
 // init initializes the Util
 func init() {
-	Utils = &Util{}
+	Utils = &Util{
+		earthRadius:        6378137.0,
+		flattening:         1 / 298.257223563,
+		eccentricityfactor: 2*0.0818191908426 - 0.0818191908426*0.0818191908426,
+	}
 }
 
 // EuclideanDistance function calculates the Euclidean distance between two vectors
@@ -397,4 +402,23 @@ func (u *Util) CreateUUID() string {
 		panic(err)
 	}
 	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+// Geo2Cat converts the latitude, longitude and altitude to a cartesian coordinate
+func (u *Util) Geo2Cat(latitude, longitude, altitude float64) *[3]float64 {
+
+	// val of return
+	var cartesian [3]float64
+
+	// recalculations of the latitude and longitude
+	latrad := math.Pi * latitude / 180
+	lonrad := math.Pi * longitude / 180
+
+	N := u.earthRadius / math.Sqrt(1-u.eccentricityfactor*math.Sin(latrad)*math.Sin(latrad))
+
+	// calculate the cartesian coordinates
+	cartesian[0] = (N + altitude) * math.Cos(latrad) * math.Cos(lonrad)
+	cartesian[1] = (N + altitude) * math.Cos(latrad) * math.Sin(lonrad)
+	cartesian[2] = (N*(1-u.eccentricityfactor) + altitude) * math.Sin(latrad)
+	return &cartesian
 }

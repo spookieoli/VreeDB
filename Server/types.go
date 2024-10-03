@@ -150,6 +150,17 @@ type DeletePoint struct {
 	Filter         *[]Filter.Filter `json:"filter"` // Must not be present in the request default nil
 }
 
+type Cartesian struct {
+	X, Y, Z float64
+}
+
+type Geo struct {
+	ApiKey    string
+	Latitude  float64
+	Longitude float64
+	Altitude  float64
+}
+
 // ApiKeyCreator is the struct that will be used to create a new Api key
 type ApiKeyCreator struct {
 	ApiKey string `json:"api_key"`
