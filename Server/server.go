@@ -5,6 +5,8 @@ import (
 	"VreeDB/Boot"
 	"VreeDB/Logger"
 	"VreeDB/Vdb"
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -73,8 +75,28 @@ func (s *Server) addRoutes(mux *http.ServeMux) {
 func (s *Server) Start() {
 	Logger.Log.Log("Server is listening on "+s.Ip+":"+strconv.Itoa(s.Port), "INFO")
 	if s.Secure {
-		log.Fatal(s.Server.ListenAndServeTLS(s.CertFile, s.KeyFile))
+		if err := s.Server.ListenAndServeTLS(s.CertFile, s.KeyFile); err != nil {
+			log.Fatalf("Server failed to start: %v", err)
+		}
 	} else {
-		log.Fatal(s.Server.ListenAndServe())
+		if err := s.Server.ListenAndServe(); err != nil {
+			log.Fatalf("Server failed to start: %v", err)
+		}
 	}
+}
+
+// Shutdown shuts down the server
+func (s *Server) Shutdown() {
+	Logger.Log.Log("Server is shutting down", "INFO")
+
+	// Create a context with timeout - we give all Clients 10 seconds to finish their requests
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Shutdown the server
+	err := s.Server.Shutdown(ctx)
+	if err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+	fmt.Println("Server gracefully stopped")
 }

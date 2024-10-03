@@ -7,17 +7,20 @@ FROM golang:latest
 # Add Maintainer Info
 LABEL maintainer="spookieoli"
 
+# Install gcc and other necessary tools
+RUN apt-get update && apt-get install -y gcc
+
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
 
-# Set the default environment to DEV
-ENV ENV DEV
-
-# create the collections folder
+# Create the collections folder
 RUN mkdir -p /collections
 
 # Copy the source from the current directory to the Working Directory inside the Docker container
 COPY . .
+
+# Disable GOLANG telemetry
+CMD ["go", "telemetry", "off"]
 
 # Build the Go app
 RUN go build -o VreeDB .
@@ -26,4 +29,4 @@ RUN go build -o VreeDB .
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["./VreeDB"]
+CMD ["./VreeDB", "-avx256=True"]
