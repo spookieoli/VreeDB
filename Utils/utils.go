@@ -257,7 +257,7 @@ import (
 )
 
 type Util struct {
-	earthRadius, flattening, eccentricityfactor float64
+	earthRadius, eccentricityfactor float64
 }
 
 // CollectionConfig is a struct to hold the configuration of a Collection
@@ -283,8 +283,7 @@ var Utils *Util
 func init() {
 	Utils = &Util{
 		earthRadius:        6378137.0,
-		flattening:         1 / 298.257223563,
-		eccentricityfactor: 2*0.0818191908426 - 0.0818191908426*0.0818191908426,
+		eccentricityfactor: 0.00669437999014,
 	}
 }
 
