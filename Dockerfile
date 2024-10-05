@@ -22,8 +22,8 @@ COPY . .
 # unpack world.geojson.lrz in static/
 RUN lrzip -d -o static/world.geojson static/world.geojson.lrz
 
-# Disable GOLANG telemetry
-CMD ["go", "telemetry", "off"]
+# Disable GOLANG telemetry - change to RUN command and not cmd
+RUN go telemetry off
 
 # Build the Go app
 RUN go build -o VreeDB .
