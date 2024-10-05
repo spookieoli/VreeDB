@@ -28,6 +28,9 @@ RUN go telemetry off
 # Build the Go app
 RUN go build -o VreeDB .
 
+# Copy the wasm_exec.js file to the static folder
+RUN cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" static/
+
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
