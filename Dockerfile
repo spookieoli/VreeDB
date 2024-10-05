@@ -8,7 +8,7 @@ FROM golang:latest
 LABEL maintainer="spookieoli"
 
 # Install gcc and other necessary tools
-RUN apt-get update && apt-get install -y gcc
+RUN apt-get update && apt-get install -y gcc lrzip
 
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
@@ -18,6 +18,9 @@ RUN mkdir -p /collections
 
 # Copy the source from the current directory to the Working Directory inside the Docker container
 COPY . .
+
+# unpack world.geojson.lrz in static/
+RUN lrzip -d -o static/world.geojson static/world.geojson.lrz
 
 # Disable GOLANG telemetry
 CMD ["go", "telemetry", "off"]
