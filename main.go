@@ -111,7 +111,6 @@ int check_neon_support() {
 import "C"
 
 import (
-	"VreeDB/AccessDataHUB"
 	"VreeDB/ArgsParser"
 	"VreeDB/Server"
 	"fmt"
@@ -147,8 +146,7 @@ func main() {
 		// Start the Server - to shutdown the server gracefully we need to use a go routine
 		server = Server.NewServer(*ArgsParser.Ap.Ip, *ArgsParser.Ap.Port, *ArgsParser.Ap.CertFile,
 			*ArgsParser.Ap.KeyFile, *ArgsParser.Ap.Secure)
-		// Add Systemevent to the AccessList
-		AccessDataHUB.AccessList.ReadChan <- "SYSTEMEVENT"
+		// Start the server
 		server.Start()
 		fmt.Println("Stopped serving clients")
 	}()
