@@ -537,23 +537,12 @@
                 .attr("fill", "#69b3a2")
                 .attr("stroke", "#fff");
 
-            // Markieren von Düsseldorf
-            const duesseldorfCoordinates = [6.7735, 51.2277];
-            const [x, y] = projection(duesseldorfCoordinates);
-
-            const point = g.append("circle")
-                .attr("cx", x)
-                .attr("cy", y)
-                .attr("r", 5)
-                .attr("fill", "red");
-
             svg.call(d3.zoom().extent([[0, 0], [width, height]]).scaleExtent([1, 8]).on("zoom", zoomed));
 
             function zoomed(event) {
                 const transform = event.transform;
                 g.attr("transform", transform);
                 g.selectAll("circle").attr("transform", d => `translate(${transform.apply([x, y])})`);
-                point.attr("r", 5 / transform.k);
             }
         }).catch(function (error) {
             console.error("Error loading GeoJSON data:", error);
