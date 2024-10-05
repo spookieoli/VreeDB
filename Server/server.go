@@ -76,11 +76,15 @@ func (s *Server) Start() {
 	Logger.Log.Log("Server is listening on "+s.Ip+":"+strconv.Itoa(s.Port), "INFO")
 	if s.Secure {
 		if err := s.Server.ListenAndServeTLS(s.CertFile, s.KeyFile); err != nil {
-			log.Fatalf("Server failed to start: %v", err)
+			if err.Error() != "http: Server closed" {
+				log.Fatalf("Server failed to start: %v", err)
+			}
 		}
 	} else {
 		if err := s.Server.ListenAndServe(); err != nil {
-			log.Fatalf("Server failed to start: %v", err)
+			if err.Error() != "http: Server closed" {
+				log.Fatalf("Server failed to start: %v", err)
+			}
 		}
 	}
 }
