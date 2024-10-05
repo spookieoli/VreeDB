@@ -181,6 +181,15 @@
 </div>
 <div class="ui tab segment" data-tab="geodata">
     <h2 class="ui header">GeoData Visualization</h2>
+    <div class="ui floating dropdown labeled icon button" style="float:right;">
+        <i class="database icon"></i>
+        <span class="text">Select Geo-Collection</span>
+        <div class="menu">
+            {{range .Collections}}
+                <div class="item" data-value="{{.Name}}">{{.Name}}</div>
+            {{end}}
+        </div>
+    </div>
     <div id="map"></div>
 </div>
 
