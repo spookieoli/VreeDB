@@ -90,6 +90,8 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			Logger.Log.Log("Collection "+c.Name+" restored", "INFO")
 		}
 	}
+	// Log that we are done
+	Logger.Log.Log("VreeDB Bootup complete", "INFO")
 	return collections
 }
 
