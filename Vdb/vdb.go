@@ -9,6 +9,7 @@ import (
 	"VreeDB/Vector"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -134,37 +135,44 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
-		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
-		for i := 0; i < len(data); i++ {
-			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
-				data = append(data[:i], data[i+1:]...)
-				i--
+		// Create a new slice to hold the filtered results
+		filteredData := data[:0]
+		for _, d := range data {
+			if d.Distance <= maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+				filteredData = append(filteredData, d)
 			}
 		}
+		data = filteredData
 	}
 
 	// Create the ResultSet
 	results := make([]*Utils.ResultSet, len(data))
 
 	// Get the Payloads back from the Memory Map
+	var wg sync.WaitGroup
+	wg.Add(len(data))
 	for i := 0; i < len(data); i++ {
-		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
-		if err != nil {
-			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
-			continue
-		}
-		// if getvector is true we also return the vector
-		var vd *[]float64
-		if *getvector {
-			vd = &data[i].Node.Vector.Data
-		}
-		// if getid is true we also return the id
-		var id string
-		if *getid {
-			id = data[i].Node.Vector.Id
-		}
-		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
+		go func(i int) {
+			defer wg.Done()
+			m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
+			if err != nil {
+				Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
+				return
+			}
+			// if getvector is true we also return the vector
+			var vd *[]float64
+			if *getvector {
+				vd = &data[i].Node.Vector.Data
+			}
+			// if getid is true we also return the id
+			var id string
+			if *getid {
+				id = data[i].Node.Vector.Id
+			}
+			results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
+		}(i)
 	}
+	wg.Wait()
 
 	// Sort the results by distance, smallest first
 	sort.Slice(results, func(i, j int) bool {
@@ -208,37 +216,44 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
-		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
-		for i := 0; i < len(data); i++ {
-			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
-				data = append(data[:i], data[i+1:]...)
-				i--
+		// Create a new slice to hold the filtered results
+		filteredData := data[:0]
+		for _, d := range data {
+			if d.Distance <= maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+				filteredData = append(filteredData, d)
 			}
 		}
+		data = filteredData
 	}
 
 	// Create the ResultSet
 	results := make([]*Utils.ResultSet, len(data))
 
 	// Get the Payloads back from the Memory Map
+	var wg sync.WaitGroup
+	wg.Add(len(data))
 	for i := 0; i < len(data); i++ {
-		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
-		if err != nil {
-			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
-			continue
-		}
-		// if getvector is true we also return the vector
-		var vd *[]float64
-		if *getvector {
-			vd = &data[i].Node.Vector.Data
-		}
-		// if getid is true we also return the id
-		var id string
-		if *getid {
-			id = data[i].Node.Vector.Id
-		}
-		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
+		go func(i int) {
+			defer wg.Done()
+			m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
+			if err != nil {
+				Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
+				return
+			}
+			// if getvector is true we also return the vector
+			var vd *[]float64
+			if *getvector {
+				vd = &data[i].Node.Vector.Data
+			}
+			// if getid is true we also return the id
+			var id string
+			if *getid {
+				id = data[i].Node.Vector.Id
+			}
+			results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
+		}(i)
 	}
+	wg.Wait()
 
 	// Sort the results by distance, smallest first
 	sort.Slice(results, func(i, j int) bool {
