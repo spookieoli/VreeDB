@@ -552,6 +552,8 @@ func (r *Routes) DeletePointById(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+// DeletePointWithFilter handles HTTP requests to delete a point in a collection based on the provided filter.
+// Ensures authorization is valid, checks for collection and filter existence, and processes the deletion.
 func (r *Routes) DeletePointWithFilter(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
@@ -610,6 +612,9 @@ func (r *Routes) DeletePointWithFilter(w http.ResponseWriter, req *http.Request)
 	return
 }
 
+// DeletePoint handles HTTP requests for deleting a point from a specified collection.
+// It expects a JSON payload with the point to be deleted and the collection name.
+// The method validates the API key or cookie for authentication and checks if the collection exists.
 func (r *Routes) DeletePoint(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "DELETE"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/deletepoint" {
@@ -1234,7 +1239,7 @@ func (r *Routes) GetAccessData(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// showapikey will show the apikey
+// ShowApiKey handles displaying the API key. If the API key doesn't exist, it creates and shows a new one.
 func (r *Routes) ShowApiKey(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodGet && strings.ToLower(req.URL.String()) == "/showapikey" {
@@ -1291,6 +1296,7 @@ func (r *Routes) NeuralNetBuilder(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// CreateTSNE creates a tSNE data visualization model based on the HTTP POST request containing the tSNE parameters.
 func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/createtsne" {
@@ -1338,6 +1344,7 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+// GetTSNEData returns the tSNE data visualization model based on the HTTP POST request containing the tSNE parameters.
 func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "SYSTEMEVENT"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/gettsnedata" {
