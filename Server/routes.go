@@ -149,8 +149,8 @@ func (r *Routes) Index(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Delete deletes a Collection // TODO Rename to DeleteCollection
-func (r *Routes) Delete(w http.ResponseWriter, req *http.Request) {
+// DeleteCollection deletes a Collection
+func (r *Routes) DeleteCollection(w http.ResponseWriter, req *http.Request) {
 	r.AData <- "TRANSACTION"
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/delete" {
 		// Limit the size of the request
