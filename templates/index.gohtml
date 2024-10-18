@@ -52,7 +52,6 @@
     <a class="item" data-tab="visualization">Visualization</a>
     <a class="item" data-tab="workbench">Workbench</a>
     <a class="item" data-tab="neuralnetbuilder">Neural Net Builder</a>
-    <a class="item" data-tab="geodata">GeoData Visualization</a>
     <a class="item" id="logoutButton" style="margin-left: auto;">Logout</a>
 </div>
 
@@ -178,19 +177,6 @@
             </div>
         </div>
     </div>
-</div>
-<div class="ui tab segment" data-tab="geodata">
-    <h2 class="ui header">GeoData Visualization</h2>
-    <div class="ui floating dropdown labeled icon button" style="float:right;">
-        <i class="database icon"></i>
-        <span class="text">Select Geo-Collection</span>
-        <div class="menu">
-            {{range .Collections}}
-                <div class="item" data-value="{{.Name}}">{{.Name}}</div>
-            {{end}}
-        </div>
-    </div>
-    <div id="map"></div>
 </div>
 
 <!-- Include jQuery and Semantic UI JavaScript -->
@@ -516,63 +502,6 @@
                     console.log(error);
                 }
             });
-        });
-    });
-
-
-    // Funktion zum Initialisieren der Karte
-    function initializeMap() {
-        console.log("Initializing map...");
-
-        const width = document.getElementById('map').clientWidth;
-        const height = 500;
-
-        const svg = d3.select("#map").append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-        const projection = d3.geoMercator().scale(100).translate([width / 2, height / 1.5]);
-
-        const path = d3.geoPath().projection(projection);
-
-        const g = svg.append("g");
-
-        d3.json("/static/world.geojson").then(function (geojson) {
-            console.log("GeoJSON data loaded:", geojson);
-            g.selectAll("path")
-                .data(geojson.features)
-                .enter().append("path")
-                .attr("d", path)
-                .attr("fill", "#69b3a2")
-                .attr("stroke", "#fff");
-
-            svg.call(d3.zoom().extent([[0, 0], [width, height]]).scaleExtent([1, 8]).on("zoom", zoomed));
-
-            function zoomed(event) {
-                const transform = event.transform;
-                g.attr("transform", transform);
-                g.selectAll("circle").attr("transform", d => `translate(${transform.apply([x, y])})`);
-            }
-        }).catch(function (error) {
-            console.error("Error loading GeoJSON data:", error);
-        });
-    }
-
-    // checking
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log("DOM fully loaded and parsed");
-
-        // Initialize tabs
-        $('.menu .item').tab({
-            onVisible: function (tabPath) {
-                console.log("Tab visible:", tabPath);
-                if (tabPath === 'geodata') {
-                    if (!$('#map').data('initialized')) {
-                        initializeMap();
-                        $('#map').data('initialized', true);  // Set a flag to initialize the map only once
-                    }
-                }
-            }
         });
     });
 
