@@ -1147,8 +1147,6 @@ func (r *Routes) CreateIndex(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// Close the body - this is important for the next request
-		defer req.Body.Close()
 		// Check if all field of the IndexCreator are set
 		if ic.CollectionName == "" || ic.IndexName == "" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -1259,7 +1257,6 @@ func (r *Routes) CreateTSNE(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer req.Body.Close()
 
 		// Check if Auth is valid
 		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
@@ -1314,7 +1311,6 @@ func (r *Routes) GetTSNEData(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer req.Body.Close()
 
 		// Check if Cookie or Apikey are ok
 		if r.ApiKeyHandler.CheckApiKey(tsne.ApiKey) || r.validateCookie(req) {
@@ -1380,7 +1376,6 @@ func (r *Routes) Geo2Cartesian(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer req.Body.Close()
 
 		// Check if Cookie or Apikey are ok
 		if r.ApiKeyHandler.CheckApiKey(geo.ApiKey) || r.validateCookie(req) {
