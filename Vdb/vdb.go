@@ -124,6 +124,14 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// Close the channel and wait for the Queue to finish
 	queue.CloseChannel()
+
+	// Here we have some time to do some other stuff
+	filterRes := false
+	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+		filterRes = true
+	}
+
+	// Wait for the Queue to finish
 	queue.Wg.Wait()
 
 	// Print the time it took
@@ -134,7 +142,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	dataLen := len(data)
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
-	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+	if filterRes {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
 		for i := 0; i < dataLen; i++ {
 			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
