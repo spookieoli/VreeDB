@@ -324,6 +324,7 @@ func (r *Routes) ListCollections(w http.ResponseWriter, req *http.Request) {
 
 // AddPoint adds a point to a Collection
 func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
 	if req.Method == http.MethodPost && strings.ToLower(req.URL.String()) == "/addpoint" {
 		// Limit the size of the request
 		req.Body = http.MaxBytesReader(w, req.Body, 10000000)
