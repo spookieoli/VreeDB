@@ -131,11 +131,12 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
+	dataLen := len(data)
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
-		for i := 0; i < len(data); i++ {
+		for i := 0; i < dataLen; i++ {
 			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
 				data = append(data[:i], data[i+1:]...)
 				i--
@@ -147,7 +148,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	results := make([]*Utils.ResultSet, len(data))
 
 	// Get the Payloads back from the Memory Map
-	for i := 0; i < len(data); i++ {
+	for i := 0; i < dataLen; i++ {
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
