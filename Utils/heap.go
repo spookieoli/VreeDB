@@ -19,7 +19,7 @@ type HeapChannelStruct struct {
 // HeapControl is a struct that holds a slice of HeapItems and the maximum number of entries
 type HeapControl struct {
 	Heap       Heap
-	maxEntries int
+	MaxResults int
 	In         chan HeapChannelStruct
 	MaxDiff    float64
 	Wg         sync.WaitGroup
@@ -66,7 +66,7 @@ func (h *Heap) Pop() interface{} {
 
 // NewHeapControl initializes the heap with a given size
 func NewHeapControl(n int) *HeapControl {
-	h := &HeapControl{maxEntries: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 100000), MaxDiff: 0}
+	h := &HeapControl{MaxResults: n, Heap: Heap{}, In: make(chan HeapChannelStruct, 100000), MaxDiff: 0}
 	heap.Init(&h.Heap)
 	return h
 }
@@ -113,7 +113,7 @@ func (hc *HeapControl) validateFilters(hcs *HeapChannelStruct) (bool, error) {
 // Insert inserts a node into the heap
 func (hc *HeapControl) Insert(node *Node.Node, distance, diff float64) {
 	heap.Push(&hc.Heap, &HeapItem{Node: node, Distance: distance, Diff: diff})
-	if hc.Heap.Len() > hc.maxEntries {
+	if hc.Heap.Len() > hc.MaxResults {
 		heap.Pop(&hc.Heap)
 	}
 }

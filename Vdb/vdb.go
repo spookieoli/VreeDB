@@ -131,6 +131,9 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 		filterRes = true
 	}
 
+	// Create the ResultSet
+	results := make([]*Utils.ResultSet, queue.MaxResults)
+
 	// Wait for the Queue to finish
 	queue.Wg.Wait()
 
@@ -152,8 +155,10 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 		}
 	}
 
-	// Create the ResultSet
-	results := make([]*Utils.ResultSet, len(data))
+	// only create a new slice if the dataLen is smaller than the MaxResults
+	if dataLen < queue.MaxResults {
+		results = make([]*Utils.ResultSet, dataLen)
+	}
 
 	// Get the Payloads back from the Memory Map
 	for i := 0; i < dataLen; i++ {
@@ -207,6 +212,17 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 
 	// Close the channel and wait for the Queue to finish
 	queue.CloseChannel()
+
+	// Here we have some time to do some other stuff
+	filterRes := false
+	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+		filterRes = true
+	}
+
+	// Create the ResultSet
+	results := make([]*Utils.ResultSet, queue.MaxResults)
+
+	// Wait for the Queue to finish
 	queue.Wg.Wait()
 
 	// Print the time it took
@@ -214,11 +230,12 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
+	dataLen := len(data)
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
-	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+	if filterRes {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
-		for i := 0; i < len(data); i++ {
+		for i := 0; i < dataLen; i++ {
 			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
 				data = append(data[:i], data[i+1:]...)
 				i--
@@ -226,11 +243,13 @@ func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *U
 		}
 	}
 
-	// Create the ResultSet
-	results := make([]*Utils.ResultSet, len(data))
+	// only create a new slice if the dataLen is smaller than the MaxResults
+	if dataLen < queue.MaxResults {
+		results = make([]*Utils.ResultSet, dataLen)
+	}
 
 	// Get the Payloads back from the Memory Map
-	for i := 0; i < len(data); i++ {
+	for i := 0; i < dataLen; i++ {
 		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
