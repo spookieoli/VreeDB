@@ -95,6 +95,7 @@ func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 		if Q[i] == 0 {
 			return nil, fmt.Errorf("Q[%d] is 0", i)
 		}
+		// Add the KL divergence
 		klDiv += P[i] * math.Log(P[i]/Q[i])
 	}
 
