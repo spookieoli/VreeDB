@@ -8,7 +8,7 @@ FROM golang:latest
 LABEL maintainer="Oliver Sharif"
 
 # Install gcc and other necessary tools
-RUN apt-get update && apt-get install -y gcc lrzip upx
+RUN apt-get update && apt-get install -y gcc lrzip upx-ucl
 
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
