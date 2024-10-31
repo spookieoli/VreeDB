@@ -2,6 +2,7 @@ package memory
 
 import (
 	"fmt"
+	"math"
 	"syscall/js"
 )
 
@@ -65,4 +66,24 @@ func (t *TSNE) js2go(d *js.Value) (error, *[][]float64) {
 func (t *TSNE) execute() *[][]float64 {
 	// Perform the t-SNE algorithm
 	return t.Data
+}
+
+// kullbackLeiblerDivergence calculates the Kullback-Leibler divergence between two probability distributions.
+func kullbackLeiblerDivergence(P, Q []float64) (error, *float64) {
+	if len(P) != len(Q) {
+		return fmt.Errorf("length of P and Q should be equal"), nil
+	}
+
+	// Calculate the Kullback-Leibler divergence
+	klDiv := 0.0
+	for i := range P {
+		if P[i] == 0 {
+			continue // We will ignore the 0 values
+		}
+		if Q[i] == 0 {
+			return fmt.Errorf("Q[%d] is 0", i), nil
+		}
+		klDiv += P[i] * math.Log(P[i]/Q[i])
+	}
+	return nil, &klDiv
 }
