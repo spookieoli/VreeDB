@@ -15,7 +15,7 @@ type TSNE struct {
 // NewTSNE creates a new TSNE struct with the given parameters.
 func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, d *js.Value) *TSNE {
 	tsne := &TSNE{}
-	data := tsne.JS2GO(d)
+	data := tsne.js2go(d)
 	tsne.Perplexity = perplexity
 	tsne.Theta = theta
 	tsne.MaxIter = maxIter
@@ -25,12 +25,12 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 	return tsne
 }
 
-// JS2GO converts a JavaScript 2D array to a Go 2D array.
-func (t *TSNE) JS2GO(d *js.Value) *[][]float64 {
+// js2go converts a JavaScript 2D array to a Go 2D array.
+func (t *TSNE) js2go(d *js.Value) *[][]float64 {
 	var data [][]float64
-
-	for i := 0; i < d.Get("length").Int(); i++ {
-		row := []float64{}
+	length := d.Get("length").Int()
+	for i := 0; i < length; i++ {
+		var row []float64
 		for j := 0; j < d.Index(i).Get("length").Int(); j++ {
 			row = append(row, d.Index(i).Index(j).Float())
 		}
