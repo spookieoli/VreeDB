@@ -25,8 +25,14 @@ RUN lrzip -d -o static/world.geojson static/world.geojson.lrz
 # Disable GOLANG telemetry - change to RUN command and not cmd
 RUN go telemetry off
 
+# change dir to /wasm
+WORKDIR /wasm
+
 # First build the wasm file
-RUN GOOS=js GOARCH=wasm go build -o static/main.wasm wasm/main.go
+RUN go build -o ../static/tsne.wasm .
+
+# change dir back to /
+WORKDIR /
 
 # Build the Go app
 RUN go build -o VreeDB .
