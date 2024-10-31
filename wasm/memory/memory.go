@@ -9,11 +9,12 @@ type TSNE struct {
 	MaxIter                int
 	MaxIterWithoutProgress int
 	Verbose                bool
+	learningRate           float64
 	Data                   *[][]float64 // Data is a pointer to a 2D array (slice) of floats
 }
 
 // NewTSNE creates a new TSNE struct with the given parameters.
-func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, d *js.Value) *TSNE {
+func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, learningRate float64, d *js.Value) *TSNE {
 	tsne := &TSNE{}
 	data := tsne.js2go(d)
 	tsne.Perplexity = perplexity
@@ -21,6 +22,7 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 	tsne.MaxIter = maxIter
 	tsne.MaxIterWithoutProgress = maxIterWithoutProgress
 	tsne.Verbose = verbose
+	tsne.learningRate = learningRate
 	tsne.Data = data
 	return tsne
 }
