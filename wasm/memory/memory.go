@@ -15,10 +15,11 @@ type TSNE struct {
 	Verbose                bool
 	learningRate           float64
 	Data                   *[][]float64 // Data is a pointer to a 2D array (slice) of floats
+	targetDim              int
 }
 
 // NewTSNE creates a new TSNE struct with the given parameters.
-func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, learningRate float64, d *js.Value) (*TSNE, error) {
+func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, learningRate float64, targetDim int, d *js.Value) (*TSNE, error) {
 	// Create the Data field from the input data
 	tsne := &TSNE{}
 	data, err := tsne.js2go(d)
@@ -35,6 +36,7 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 	tsne.MaxIterWithoutProgress = maxIterWithoutProgress
 	tsne.Verbose = verbose
 	tsne.learningRate = learningRate
+	tsne.targetDim = targetDim
 	tsne.Data = data
 	return tsne, err
 }
@@ -47,8 +49,8 @@ func (t *TSNE) js2go(d *js.Value) (*[][]float64, error) {
 	llength := d.Index(0).Get("length").Int()
 
 	// Check if the length of the vector is less than 3
-	if llength <= 3 {
-		return nil, fmt.Errorf("length of vector Dimension may not be under 3")
+	if llength <= 2 {
+		return nil, fmt.Errorf("length of vector Dimension may not be under 2")
 	}
 
 	// Convert the 2D array to a Go 2D array
