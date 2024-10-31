@@ -18,14 +18,14 @@ type TSNE struct {
 }
 
 // NewTSNE creates a new TSNE struct with the given parameters.
-func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, learningRate float64, d *js.Value) (error, *TSNE) {
+func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgress int, verbose bool, learningRate float64, d *js.Value) (*TSNE, error) {
 	// Create the Data field from the input data
 	tsne := &TSNE{}
-	err, data := tsne.js2go(d)
+	data, err := tsne.js2go(d)
 
 	// Check if there was an error converting the data
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	// Set the parameters for the t-SNE algorithm
@@ -36,11 +36,11 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 	tsne.Verbose = verbose
 	tsne.learningRate = learningRate
 	tsne.Data = data
-	return nil, tsne
+	return tsne, err
 }
 
 // js2go converts a JavaScript 2D array to a Go 2D array.
-func (t *TSNE) js2go(d *js.Value) (error, *[][]float64) {
+func (t *TSNE) js2go(d *js.Value) (*[][]float64, error) {
 	// Set the data field from the input data
 	var data [][]float64
 	length := d.Get("length").Int()
@@ -48,7 +48,7 @@ func (t *TSNE) js2go(d *js.Value) (error, *[][]float64) {
 
 	// Check if the length of the vector is less than 3
 	if llength <= 3 {
-		return fmt.Errorf("length of vector Dimension may not be under 3"), nil
+		return nil, fmt.Errorf("length of vector Dimension may not be under 3")
 	}
 
 	// Convert the 2D array to a Go 2D array
@@ -59,7 +59,7 @@ func (t *TSNE) js2go(d *js.Value) (error, *[][]float64) {
 		}
 		data = append(data, row)
 	}
-	return nil, &data
+	return &data, nil
 }
 
 // execute will execute the t-SNE algorithm.
@@ -69,9 +69,9 @@ func (t *TSNE) execute() *[][]float64 {
 }
 
 // kullbackLeiblerDivergence calculates the Kullback-Leibler divergence between two probability distributions.
-func kullbackLeiblerDivergence(P, Q []float64) (error, *float64) {
+func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 	if len(P) != len(Q) {
-		return fmt.Errorf("length of P and Q should be equal"), nil
+		return nil, fmt.Errorf("length of P and Q should be equal")
 	}
 
 	// Calculate the Kullback-Leibler divergence
@@ -81,9 +81,9 @@ func kullbackLeiblerDivergence(P, Q []float64) (error, *float64) {
 			continue // We will ignore the 0 values
 		}
 		if Q[i] == 0 {
-			return fmt.Errorf("Q[%d] is 0", i), nil
+			return nil, fmt.Errorf("Q[%d] is 0", i)
 		}
 		klDiv += P[i] * math.Log(P[i]/Q[i])
 	}
-	return nil, &klDiv
+	return &klDiv, nil
 }
