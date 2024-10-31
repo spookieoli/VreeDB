@@ -29,6 +29,7 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 func (t *TSNE) js2go(d *js.Value) *[][]float64 {
 	var data [][]float64
 	length := d.Get("length").Int()
+
 	for i := 0; i < length; i++ {
 		var row []float64
 		for j := 0; j < d.Index(i).Get("length").Int(); j++ {
