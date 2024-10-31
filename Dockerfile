@@ -8,7 +8,7 @@ FROM golang:latest
 LABEL maintainer="Oliver Sharif"
 
 # Install gcc and other necessary tools
-RUN apt-get update && apt-get install -y gcc lrzip
+RUN apt-get update && apt-get install -y gcc lrzip upx
 
 # Set the Current Working Directory inside the Docker container
 WORKDIR /
@@ -30,6 +30,9 @@ WORKDIR /wasm
 
 # First build the wasm file
 RUN go build -o ../static/tsne.wasm .
+
+# use upx to shrink the wasm file
+RUN upx --brute ../static/tsne.wasm
 
 # change dir back to /
 WORKDIR /
