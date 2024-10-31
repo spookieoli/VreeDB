@@ -70,6 +70,16 @@ func (t *TSNE) execute() *[][]float64 {
 	return t.Data
 }
 
+// euclideanDistance will calculate the Euclidean distance between two points.
+func (t *TSNE) euclideanDistance(x, y []float64) float64 {
+	// Calculate the Euclidean distance
+	sum := 0.0
+	for idx, i := range x {
+		sum += math.Pow(i-y[idx], 2)
+	}
+	return math.Sqrt(sum)
+}
+
 // kullbackLeiblerDivergence calculates the Kullback-Leibler divergence between two probability distributions.
 func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 	if len(P) != len(Q) {
