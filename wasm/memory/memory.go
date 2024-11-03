@@ -130,3 +130,8 @@ func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 	// Return the KL divergence
 	return &klDiv, nil
 }
+
+// calculateSimilarity calculates the similarity between two points.
+func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *[][]float64 {
+
+}
