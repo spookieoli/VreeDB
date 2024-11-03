@@ -36,7 +36,7 @@ func NewTSNE(perplexity float64, theta float64, maxIter int, maxIterWithoutProgr
 	tsne.MaxIterWithoutProgress = maxIterWithoutProgress
 	tsne.Verbose = verbose
 	tsne.learningRate = learningRate
-	tsne.targetDim = targetDim
+	tsne.targetDim = targetDim // TargetDim is normally 2D for VreeDB
 	tsne.Data = data
 	return tsne, err
 }
@@ -70,6 +70,22 @@ func (t *TSNE) execute() *[][]float64 {
 	return t.Data
 }
 
+// pairwiseDistances calculates the pairwise distances between the data points.
+func (t *TSNE) pairwiseDistances(data *[][]float64) (matrix *[][]float64) {
+	n := len(*data)
+	matrix = &[][]float64{} // initialize the matrix
+
+	// Calculate the pairwise distances
+	for i := 0; i < n; i++ {
+		row := make([]float64, n)
+		for j := range row {
+			row[j] = t.euclideanDistance((*data)[i], (*data)[j])
+		}
+		*matrix = append(*matrix, row)
+	}
+	return
+}
+
 // euclideanDistance will calculate the Euclidean distance between two points.
 func (t *TSNE) euclideanDistance(x, y []float64) float64 {
 	// Calculate the Euclidean distance
@@ -89,6 +105,7 @@ func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 	// Calculate the Kullback-Leibler divergence
 	klDiv := 0.0
 	for i := range P {
+		// Some checks
 		if P[i] == 0 {
 			continue // We will ignore the 0 values
 		}
@@ -104,5 +121,6 @@ func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 		klDiv = 0
 	}
 
+	// Return the KL divergence
 	return &klDiv, nil
 }
