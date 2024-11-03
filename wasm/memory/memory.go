@@ -73,7 +73,7 @@ func (t *TSNE) execute() *[][]float64 {
 // pairwiseDistances calculates the pairwise distances between the data points.
 func (t *TSNE) pairwiseDistances(data *[][]float64) (matrix *[][]float64) {
 	n := len(*data)
-	matrix = &[][]float64{} // initialize the matrix
+	matrix = &[][]float64{} // initialize the matrix - matrix is a pointer and should not be nil
 
 	// Calculate the pairwise distances
 	for i := 0; i < n; i++ {
@@ -94,6 +94,12 @@ func (t *TSNE) euclideanDistance(x, y []float64) float64 {
 		sum += math.Pow(i-y[idx], 2)
 	}
 	return math.Sqrt(sum)
+}
+
+// gaussianKernel calculates the Gaussian kernel for the t-SNE algorithm.
+func (t *TSNE) gaussKernel(dist, sigma *float64) *float64 {
+	r := math.Exp(-*dist * *dist / (2 * *sigma * *sigma))
+	return &r
 }
 
 // kullbackLeiblerDivergence calculates the Kullback-Leibler divergence between two probability distributions.
