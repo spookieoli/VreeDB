@@ -96,7 +96,7 @@ func (t *TSNE) euclideanDistance(x, y []float64) float64 {
 	return math.Sqrt(sum)
 }
 
-// gaussianKernel calculates the Gaussian kernel for the t-SNE algorithm.
+// gaussKernel calculates the Gaussian kernel for the t-SNE algorithm.
 func (t *TSNE) gaussKernel(dist, sigma *float64) *float64 {
 	r := math.Exp(-*dist * *dist / (2 * *sigma * *sigma))
 	return &r
