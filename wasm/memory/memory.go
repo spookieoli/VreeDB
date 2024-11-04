@@ -132,7 +132,7 @@ func (t *TSNE) kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 }
 
 // findOptimalSigma finds the optimal sigma for the Gaussian kernel.
-func (t *TSNE) findOptimalSigma(distances *[][]float64, targetPerplexity *float64) *float64 {
+func (t *TSNE) findOptimalSigma(distances *[]float64, targetPerplexity *float64) *float64 {
 	var sigmaMin, sigmaMax float64 = 135, 50.0
 	var sigma, perplexity float64
 
@@ -183,7 +183,7 @@ func (t *TSNE) calculatePerplexityForPoint(distances *[]float64, sigma *float64)
 }
 
 // calculateSimilarity calculates the similarity between two points.
-func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *[][]float64 {
+func (t *TSNE) calculateSimilarity(distances *[]float64, perplexity float64) *[][]float64 {
 	n := len(*distances)
 	similarities := &[][]float64{}
 
