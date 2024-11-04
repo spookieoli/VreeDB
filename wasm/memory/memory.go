@@ -183,14 +183,14 @@ func (t *TSNE) calculatePerplexityForPoint(distances *[]float64, sigma *float64)
 }
 
 // calculateSimilarity calculates the similarity between two points.
-func (t *TSNE) calculateSimilarity(distances *[]float64, perplexity float64) *[][]float64 {
+func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *[][]float64 {
 	n := len(*distances)
 	similarities := &[][]float64{}
 
 	// Find optimal sigma for every point
 	sigmas := make([]float64, n)
 	for i := 0; i < n; i++ {
-		sigmas[i] = *t.findOptimalSigma(distances, &perplexity)
+		sigmas[i] = *t.findOptimalSigma(&(*distances)[i], &perplexity)
 	}
 
 	for idx, _ := range *similarities {
