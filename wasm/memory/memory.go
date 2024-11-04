@@ -103,7 +103,7 @@ func (t *TSNE) gaussKernel(dist, sigma *float64) *float64 {
 }
 
 // kullbackLeiblerDivergence calculates the Kullback-Leibler divergence between two probability distributions.
-func kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
+func (t *TSNE) kullbackLeiblerDivergence(P, Q []float64) (*float64, error) {
 	if len(P) != len(Q) {
 		return nil, fmt.Errorf("length of P and Q should be equal")
 	}
@@ -172,13 +172,28 @@ func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *
 		sigmas[i] = *t.findOptimalSigma(distances, &perplexity)
 	}
 
-	// Calculate the similarities
-	for i := 0; i < n; i++ {
-		row := make([]float64, n)
-		for j := range row {
-			row[j] = *t.gaussKernel(&(*distances)[i][j], &sigmas[i])
+	for idx, _ := range *similarities {
+		(*similarities)[idx] = make([]float64, n)
+		var sum float64
+
+		for j := range (*similarities)[idx] {
+			if idx != j {
+				p := t.gaussKernel(&(*distances)[idx][j], &sigmas[idx])
+				q := 1.0 / (1.0 + (*distances)[idx][j])
+
+				res, err := t.kullbackLeiblerDivergence([]float64{*p}, []float64{q})
+				if err != nil {
+					return nil
+				}
+				(*similarities)[idx][j] = *res
+				sum += *res
+			}
 		}
-		*similarities = append(*similarities, row)
+
+		// Normalize the similarities
+		for j := range (*similarities)[idx] {
+			(*similarities)[idx][j] /= sum
+		}
 	}
 	return similarities
 }
