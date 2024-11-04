@@ -171,4 +171,14 @@ func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *
 	for i := 0; i < n; i++ {
 		sigmas[i] = *t.findOptimalSigma(distances, &perplexity)
 	}
+
+	// Calculate the similarities
+	for i := 0; i < n; i++ {
+		row := make([]float64, n)
+		for j := range row {
+			row[j] = *t.gaussKernel(&(*distances)[i][j], &sigmas[i])
+		}
+		*similarities = append(*similarities, row)
+	}
+	return similarities
 }
