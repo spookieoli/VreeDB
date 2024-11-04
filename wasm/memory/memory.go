@@ -157,8 +157,29 @@ func (t *TSNE) findOptimalSigma(distances *[][]float64, targetPerplexity *float6
 }
 
 // calculatePerplexity calculates the perplexity for the t-SNE algorithm.
-func (t *TSNE) calculatePerplexityForPoint(distances *[][]float64, sigma *float64) *float64 {
-	return nil
+func (t *TSNE) calculatePerplexityForPoint(distances *[]float64, sigma *float64) *float64 {
+	var sumExp float64
+	probs := make([]float64, len(*distances))
+
+	for j, dist := range *distances {
+		if dist > 0 {
+			probs[j] = math.Exp(-dist * dist / (2.0 * *sigma * *sigma))
+			sumExp += probs[j]
+		} else {
+			probs[j] = 0
+		}
+	}
+
+	var h float64
+	for _, prob := range probs {
+		if prob > 0 {
+			p := prob / sumExp
+			h -= p * math.Log(p)
+		}
+	}
+
+	r := math.Exp2(h)
+	return &r
 }
 
 // calculateSimilarity calculates the similarity between two points.
