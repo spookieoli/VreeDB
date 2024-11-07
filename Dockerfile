@@ -28,8 +28,8 @@ RUN go telemetry off
 # change dir to /wasm
 WORKDIR /wasm
 
-# First build the wasm file
-RUN go build -ldflags="-s -w" -o ../static/tsne.wasm .
+# First build the wasm file - compile to wasm
+RUN GOOS=js GOARCH=wasm go build -o main.wasm ../wasm/main.go
 
 # change dir back to /
 WORKDIR /
