@@ -228,8 +228,8 @@ func (t *TSNE) initializeEmbeddings(n int) *[][]float64 {
 	return embeddings
 }
 
-// tsne will execute the t-SNE algorithm.
-func (t *TSNE) tsne(data [][]float64) [][]float64 {
+// executeTSNE will execute the t-SNE algorithm.
+func (t *TSNE) executeTSNE(data [][]float64) [][]float64 {
 	// Perform the t-SNE algorithm
 	embeddings := t.initializeEmbeddings(len(data))
 	return *embeddings
