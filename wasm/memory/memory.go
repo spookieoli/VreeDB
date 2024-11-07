@@ -218,3 +218,12 @@ func (t *TSNE) calculateSimilarity(distances *[][]float64, perplexity float64) *
 	}
 	return similarities
 }
+
+// initializeEmbeddings initializes the embeddings for the t-SNE algorithm.
+func (t *TSNE) initializeEmbeddings(n int) *[][]float64 {
+	embeddings := &[][]float64{}
+	for i := 0; i < n; i++ {
+		*embeddings = append(*embeddings, make([]float64, t.targetDim))
+	}
+	return embeddings
+}
