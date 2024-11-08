@@ -8,7 +8,6 @@ import (
 	"VreeDB/NN"
 	"VreeDB/Node"
 	"VreeDB/Svm"
-	"VreeDB/Tsne"
 	"VreeDB/Utils"
 	"VreeDB/Vector"
 	"encoding/gob"
@@ -38,8 +37,6 @@ type Collection struct {
 	ClassifierReady    bool
 	Indexes            map[string]*Index
 	ClassifierTraining map[string]Classifier
-	TSNE_Dimensions    []*Vector.Vector
-	TSNE_Train         bool
 }
 
 // Interface for the Classifier
@@ -574,58 +571,6 @@ func (c *Collection) GetClassifierTrainingPhase(name string) (*NN.TrainProgress,
 	default:
 		return nil, fmt.Errorf("Classifier with name %s has no progress yet", name) // TODO: add for SVM
 	}
-}
-
-// CreateTSNE creates a t-SNE object and performs t-SNE dimensionality reduction
-// on the vectors in the collection's space. It takes the dimensions of the output
-// space, the number of iterations, and the learning rate as input parameters.
-// It returns an error if there was an issue performing the t-SNE dimensionality reduction.
-func (c *Collection) CreateTSNE(dimensions, iterations int, learningrate float64) error {
-	// Lock for reading
-	c.Mut.RLock()
-
-	// If TSNE_Train is true return
-	if c.TSNE_Train {
-		c.Mut.RUnlock()
-		return fmt.Errorf("training already in progress")
-	}
-
-	if c.TSNE_Dimensions != nil {
-		fmt.Errorf("TSNE already created")
-	}
-
-	// Set Train to true
-	c.TSNE_Train = true
-
-	// Create tsne object
-	tsne := Tsne.NewTSNE(learningrate, iterations, dimensions, c.Name)
-	// Get all the vectors in c.Space as slice
-	data := make([]*Vector.Vector, 0, len(*c.Space))
-
-	// Create slice from Map
-	for _, v := range *c.Space {
-		data = append(data, v)
-	}
-
-	// perform the training
-	dim, err := tsne.PerformTSNE(data)
-	if err != nil {
-		return fmt.Errorf("Error creating TSNE: %v", err)
-	}
-	c.Mut.RUnlock()
-
-	// Lock fpr writing
-	c.Mut.Lock()
-	c.TSNE_Dimensions = dim
-	c.TSNE_Train = false
-	c.Mut.Unlock()
-
-	return nil
-}
-
-// GetTSNEDimensions returns the TSNE_Dimensions slice of Vector pointers from the collection.
-func (c *Collection) GetTSNEDimensions() []*Vector.Vector {
-	return c.TSNE_Dimensions
 }
 
 // SerialDelete deletes vectors from the collection based on the provided filter.
