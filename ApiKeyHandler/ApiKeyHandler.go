@@ -23,7 +23,7 @@ type Params struct {
 }
 
 type ApiKey struct {
-	salt []byte
+	Salt []byte
 }
 
 // ApiKeyHandler struct
@@ -143,7 +143,7 @@ func (ap *ApiKeyHandler) CreateApiKey() (string, error) {
 
 	// hash the ApiKey
 	k := ap.generateFromPassword(id, salt)
-	ap.ApiKeyHashes[k] = ApiKey{salt: salt}
+	ap.ApiKeyHashes[k] = ApiKey{Salt: salt}
 
 	// Write the changes to the file using gob
 	file, err := os.OpenFile("collections/__apikeys", os.O_APPEND|os.O_WRONLY, 0644)
@@ -183,9 +183,9 @@ func (ap *ApiKeyHandler) DeleteApiKey(apiKey string) error {
 	delete(ap.ApiKeyHashes, k)
 
 	// Write the changes to the file using gob
-	file, err := os.OpenFile("collections/__apikeys", os.O_TRUNC|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(*ArgsParser.Ap.FileStore+"/__apikeys", os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		Logger.Log.Log("Error opening file collections/__apikeys", "ERROR")
+		Logger.Log.Log("Error opening file "+(*ArgsParser.Ap.FileStore)+"/__apikeys", "ERROR")
 		return err
 	}
 	defer file.Close()
@@ -240,7 +240,7 @@ func (ap *ApiKeyHandler) CheckApiKey(apiKey string) bool {
 
 	// ok wie got some ApiKeys - lets check
 	for k := range ap.ApiKeyHashes {
-		h := ap.generateFromPassword(apiKey, ap.ApiKeyHashes[k].salt)
+		h := ap.generateFromPassword(apiKey, ap.ApiKeyHashes[k].Salt)
 		if _, ok := ap.ApiKeyHashes[h]; ok {
 			return true
 		}
