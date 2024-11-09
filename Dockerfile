@@ -26,7 +26,6 @@ RUN lrzip -d -o static/world.geojson static/world.geojson.lrz
 RUN go telemetry off
 
 # tidy the go.mod file and install all dependencies
-RUN go mod tidy
 RUN go mod download
 
 # change dir to /wasm
