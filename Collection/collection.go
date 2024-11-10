@@ -37,6 +37,7 @@ type Collection struct {
 	ClassifierReady    bool
 	Indexes            map[string]*Index
 	ClassifierTraining map[string]Classifier
+	ACES               *Ac
 }
 
 // Interface for the Classifier

@@ -1,6 +1,7 @@
 package Collection
 
 import (
+	"VreeDB/ArgsParser"
 	"VreeDB/Node"
 	"sync"
 )
@@ -12,4 +13,10 @@ type Ac struct {
 	Collection   *Collection
 	Count        int64
 	Distribution float64
+}
+
+// NewAc returns a new Ac
+func NewAc(collection *Collection) *Ac {
+	// Create a new Ac
+	return &Ac{Nodes: nil, Mut: &sync.RWMutex{}, Collection: collection, Count: 0, Distribution: *ArgsParser.Ap.ACDistribution}
 }
