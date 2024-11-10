@@ -51,7 +51,7 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 				continue
 			}
 			// Enter the collection into the map
-			collections[strings.Split(entry.Name(), ".")[0]] = Collection.NewCollection(c.Name, c.VectorDimension, c.DistanceFuncName)
+			collections[strings.Split(entry.Name(), ".")[0]] = Collection.NewCollection(c.Name, c.VectorDimension, c.DistanceFuncName, c.Aces)
 
 			// Set the DiagonalLength
 			collections[c.Name].DiagonalLength = c.DiagonalLength
@@ -88,6 +88,11 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			// Close the file
 			file.Close()
 			Logger.Log.Log("Collection "+c.Name+" restored", "INFO")
+
+			// Recreate the Aces
+			if c.Aces {
+				collections[c.Name].Ac = Collection.NewAc(collections[c.Name])
+			}
 		}
 	}
 	// Log that we are done

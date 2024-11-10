@@ -9,7 +9,7 @@ import (
 
 func TestNewCollection(t *testing.T) {
 	// Creating a new collection
-	collection := Collection.NewCollection("test_collection", 3, "euclid")
+	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Check if the collection was created successfully
 	if collection.Name != "test_collection" {
@@ -28,7 +28,7 @@ func TestNewCollection(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	// Creating a new collection
-	collection := Collection.NewCollection("test_collection", 3, "euclid")
+	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector to insert
 	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}
@@ -47,7 +47,7 @@ func TestInsert(t *testing.T) {
 
 func TestInsertDifferentDimension(t *testing.T) {
 	// Creating a new collection
-	collection := Collection.NewCollection("test_collection", 3, "euclid")
+	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector with a different dimension
 	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2}, Length: 2}
@@ -61,7 +61,7 @@ func TestInsertDifferentDimension(t *testing.T) {
 
 func TestDeleteVectorByID(t *testing.T) {
 	// Creating a new collection
-	collection := Collection.NewCollection("test_collection", 3, "euclid")
+	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector to insert
 	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}

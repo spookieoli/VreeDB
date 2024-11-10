@@ -37,7 +37,8 @@ type Collection struct {
 	ClassifierReady    bool
 	Indexes            map[string]*Index
 	ClassifierTraining map[string]Classifier
-	ACES               *Ac
+	ACES               bool
+	Ac                 *Ac
 }
 
 // Interface for the Classifier
@@ -46,7 +47,7 @@ type Classifier interface {
 }
 
 // NewCollection returns a new Collection
-func NewCollection(name string, vectorDimension int, distanceFuncName string) *Collection {
+func NewCollection(name string, vectorDimension int, distanceFuncName string, ace bool) *Collection {
 	// Vars
 	var distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)
 
@@ -74,6 +75,11 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
 		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index),
 		DeletedVectors: &map[string]*Vector.Vector{}, Mut: sync.RWMutex{}}
+
+	// Create the ACES
+	if *ArgsParser.Ap.ACES && ace {
+		col.Ac = NewAc(col)
+	}
 
 	// Start the DeleteWatcher - it will watch in the background for deleted vectors
 	go col.DeleteWatcher()
@@ -222,6 +228,7 @@ func (c *Collection) WriteConfig() error {
 		VectorDimension:  c.VectorDimension,
 		DistanceFuncName: c.DistanceFuncName,
 		DiagonalLength:   c.DiagonalLength,
+		Aces:             c.ACES,
 	})
 	if err != nil {
 		return err

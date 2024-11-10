@@ -266,6 +266,7 @@ type CollectionConfig struct {
 	VectorDimension  int
 	DistanceFuncName string
 	DiagonalLength   float64
+	Aces             bool
 }
 
 // ResultSet is the result of a search
