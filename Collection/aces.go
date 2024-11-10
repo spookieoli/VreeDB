@@ -20,3 +20,5 @@ func NewAc(collection *Collection) *Ac {
 	// Create a new Ac
 	return &Ac{Nodes: nil, Mut: &sync.RWMutex{}, Collection: collection, Count: 0, Distribution: *ArgsParser.Ap.ACDistribution}
 }
+
+// TODO: Implement Add, Remove, Renew functions
