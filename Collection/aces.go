@@ -21,4 +21,10 @@ func NewAc(collection *Collection) *Ac {
 	return &Ac{Nodes: &Node.Node{Depth: 0}, Mut: &sync.RWMutex{}, Collection: collection, Count: 0, Distribution: *ArgsParser.Ap.ACDistribution}
 }
 
-// TODO: Implement Add, Remove, Renew functions
+// Insert inserts a Node into the Ac
+func (a *Ac) Insert(node *Node.Node) {
+	a.Mut.Lock()
+	defer a.Mut.Unlock()
+	a.Nodes.ACESInsert(node)
+	a.Count++
+}
