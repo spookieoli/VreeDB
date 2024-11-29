@@ -18,7 +18,7 @@ type Ac struct {
 // NewAc returns a new Ac
 func NewAc(collection *Collection) *Ac {
 	// Create a new Ac
-	return &Ac{Nodes: nil, Mut: &sync.RWMutex{}, Collection: collection, Count: 0, Distribution: *ArgsParser.Ap.ACDistribution}
+	return &Ac{Nodes: &Node.Node{Depth: 0}, Mut: &sync.RWMutex{}, Collection: collection, Count: 0, Distribution: *ArgsParser.Ap.ACDistribution}
 }
 
 // TODO: Implement Add, Remove, Renew functions
