@@ -21,7 +21,9 @@ type ArgsParser struct {
 	AVX           *bool
 	AVX256        *bool
 	//AVX512        *bool
-	Neon *bool
+	Neon           *bool
+	ACES           *bool
+	ACDistribution *float64
 }
 
 // Ap is a global ArgsParser
@@ -46,6 +48,8 @@ func init() {
 	Ap.AVX256 = flag.Bool("avx256", false, "Use AVX256")
 	// Ap.AVX512 = flag.Bool("avx512", false, "Use AVX512")
 	Ap.Neon = flag.Bool("neon", false, "Use Neon (ARM only)")
+	Ap.ACES = flag.Bool("aces", false, "Use ACES")
+	Ap.ACDistribution = flag.Float64("acdistribution", 0.001, "The distribution of the AC")
 
 	// Parse
 	flag.Parse()

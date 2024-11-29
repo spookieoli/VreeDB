@@ -13,6 +13,34 @@ type Node struct {
 	Depth    int
 	LastUsed time.Time
 	Used     int
+	self     *Node
+}
+
+// ACESInsert is the same like insert but takes a node as parameter
+func (n *Node) ACESInsert(node *Node) {
+	if n.Vector == nil {
+		n.Vector = node.Vector
+		n.self = node
+		return
+	}
+
+	// Get the current axis
+	axis := n.Depth % n.Vector.Length
+
+	// Compare the new vector to the current vector
+	if node.Vector.Data[axis] < n.Vector.Data[axis] {
+		if n.Left == nil {
+			n.Left = &Node{Depth: axis + 1}
+		}
+		n.Left.ACESInsert(node)
+		return
+	} else {
+		if n.Right == nil {
+			n.Right = &Node{Depth: axis + 1}
+		}
+		n.Right.ACESInsert(node)
+		return
+	}
 }
 
 // Insert inserts a Node into the tree // TBD: Will be in the Collection package

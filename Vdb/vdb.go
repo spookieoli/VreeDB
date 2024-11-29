@@ -38,12 +38,12 @@ func (v *Vdb) InitFileMapper() {
 }
 
 // AddCollection creates a new Collection
-func (v *Vdb) AddCollection(name string, vectorDimension int, distanceFunc string) error {
+func (v *Vdb) AddCollection(name string, vectorDimension int, distanceFunc string, aces bool) error {
 	// Check if collection allready exists
 	if _, ok := v.Collections[name]; ok {
 		return fmt.Errorf("Collection with name %s allready exists", name)
 	}
-	v.Collections[name] = Collection.NewCollection(name, vectorDimension, distanceFunc)
+	v.Collections[name] = Collection.NewCollection(name, vectorDimension, distanceFunc, aces)
 	// Add the collection to the FileMapper
 	v.Mapper.AddCollection(name)
 	// Write the Collection to the FS

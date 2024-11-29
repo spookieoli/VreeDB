@@ -18,6 +18,7 @@ type CollectionCreator struct {
 	DistanceFunction string `json:"distance_function"`
 	Dimensions       int    `json:"dimensions"`
 	Wait             bool   `json:"wait"`
+	Aces             bool   `json:"aces"`
 }
 
 // Used to delete a Collection, when send by REST
