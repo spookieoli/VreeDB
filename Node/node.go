@@ -43,7 +43,7 @@ func (n *Node) ACESInsert(node *Node) {
 	}
 }
 
-// Insert inserts a Node into the tree // TBD: Will be in the Collection package
+// Insert inserts a Node into the tree
 func (n *Node) Insert(newVector *Vector.Vector) {
 	if n.Vector == nil {
 		n.Vector = newVector

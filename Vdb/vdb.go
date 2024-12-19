@@ -60,7 +60,15 @@ func (v *Vdb) DeleteCollection(name string) error {
 	if _, ok := v.Collections[name]; !ok {
 		return fmt.Errorf("Collection with name %s does not exist", name)
 	}
+
+	// Cancel the ACES GoRoutine
+	if v.Collections[name].ACES {
+		v.Collections[name].ACESCancel()
+	}
+
+	// Delet the Collection from the FS
 	delete(v.Collections, name)
+
 	// Delete the Collection from the FileMapper
 	v.Mapper.DelCollection(name)
 	Logger.Log.Log("Collection "+name+" deleted", "INFO")
