@@ -89,10 +89,6 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 			file.Close()
 			Logger.Log.Log("Collection "+c.Name+" restored", "INFO")
 
-			// Recreate the Aces
-			if c.Aces {
-				collections[c.Name].Ac = Collection.NewAc(collections[c.Name])
-			}
 		}
 	}
 	// Log that we are done
