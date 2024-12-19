@@ -25,6 +25,7 @@ func NewAc(collection *Collection) *Ac {
 func (a *Ac) Insert(node *Node.Node) {
 	a.Mut.Lock()
 	defer a.Mut.Unlock()
+	// TBD: Implement the AC Insertlogic
 	a.Nodes.ACESInsert(node)
 	a.Count++
 }
