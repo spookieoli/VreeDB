@@ -259,7 +259,7 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 				if strings.ToLower(cc.DistanceFunction) != "euclid" {
 					cc.DistanceFunction = "cosine"
 				}
-				err = r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
+				err = r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction, cc.Aces)
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(err.Error()))
@@ -271,7 +271,7 @@ func (r *Routes) CreateCollection(w http.ResponseWriter, req *http.Request) {
 				return
 			} else {
 				// Create the Collection
-				go r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction)
+				go r.DB.AddCollection(cc.Name, cc.Dimensions, cc.DistanceFunction, cc.Aces)
 				// Send the success or error message to the client
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("Collection created"))

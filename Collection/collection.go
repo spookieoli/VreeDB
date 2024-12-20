@@ -10,6 +10,7 @@ import (
 	"VreeDB/Svm"
 	"VreeDB/Utils"
 	"VreeDB/Vector"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -37,6 +38,11 @@ type Collection struct {
 	ClassifierReady    bool
 	Indexes            map[string]*Index
 	ClassifierTraining map[string]Classifier
+	ACES               bool
+	Ac                 *Ac
+	ACESChannel        chan *Node.Node
+	ACESCtx            context.Context
+	ACESCancel         context.CancelFunc
 }
 
 // Interface for the Classifier
@@ -45,7 +51,7 @@ type Classifier interface {
 }
 
 // NewCollection returns a new Collection
-func NewCollection(name string, vectorDimension int, distanceFuncName string) *Collection {
+func NewCollection(name string, vectorDimension int, distanceFuncName string, ace bool) *Collection {
 	// Vars
 	var distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)
 
@@ -74,10 +80,39 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string) *C
 		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index),
 		DeletedVectors: &map[string]*Vector.Vector{}, Mut: sync.RWMutex{}}
 
+	// Create the ACES
+	if *ArgsParser.Ap.ACES && ace {
+		col.Ac = NewAc(col)
+	}
+
 	// Start the DeleteWatcher - it will watch in the background for deleted vectors
 	go col.DeleteWatcher()
 
+	// Start the ACESWatcher - it will watch in the background for ACES Nodes
+	if col.ACES {
+		col.ACESCtx, col.ACESCancel = context.WithCancel(context.Background())
+		col.ACESChannel = make(chan *Node.Node, 100)
+		go col.ACESWatcher()
+		Logger.Log.Log("Started ACESWatcher for Collection "+name, "INFO")
+	}
 	return col
+}
+
+// ACESWatcher is a goroutine listening to the ACESChannel
+func (c *Collection) ACESWatcher() {
+	for {
+		select {
+		case node := <-c.ACESChannel:
+			c.Ac.Insert(node)
+		case <-c.ACESCtx.Done():
+			return
+		}
+	}
+}
+
+// ACESInsert will insert a Node into the ACES
+func (c *Collection) ACESInsert(node *Node.Node) {
+	c.ACESChannel <- node
 }
 
 // Insert inserts a vector into the collection
@@ -215,12 +250,14 @@ func (c *Collection) WriteConfig() error {
 	if err != nil {
 		return err
 	}
+
 	// Save the struct to it
 	err = json.NewEncoder(file).Encode(Utils.CollectionConfig{
 		Name:             c.Name,
 		VectorDimension:  c.VectorDimension,
 		DistanceFuncName: c.DistanceFuncName,
 		DiagonalLength:   c.DiagonalLength,
+		Aces:             c.ACES,
 	})
 	if err != nil {
 		return err

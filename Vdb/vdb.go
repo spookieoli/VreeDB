@@ -38,12 +38,12 @@ func (v *Vdb) InitFileMapper() {
 }
 
 // AddCollection creates a new Collection
-func (v *Vdb) AddCollection(name string, vectorDimension int, distanceFunc string) error {
+func (v *Vdb) AddCollection(name string, vectorDimension int, distanceFunc string, aces bool) error {
 	// Check if collection allready exists
 	if _, ok := v.Collections[name]; ok {
 		return fmt.Errorf("Collection with name %s allready exists", name)
 	}
-	v.Collections[name] = Collection.NewCollection(name, vectorDimension, distanceFunc)
+	v.Collections[name] = Collection.NewCollection(name, vectorDimension, distanceFunc, aces)
 	// Add the collection to the FileMapper
 	v.Mapper.AddCollection(name)
 	// Write the Collection to the FS
@@ -60,7 +60,15 @@ func (v *Vdb) DeleteCollection(name string) error {
 	if _, ok := v.Collections[name]; !ok {
 		return fmt.Errorf("Collection with name %s does not exist", name)
 	}
+
+	// Cancel the ACES GoRoutine
+	if v.Collections[name].ACES {
+		v.Collections[name].ACESCancel()
+	}
+
+	// Delet the Collection from the FS
 	delete(v.Collections, name)
+
 	// Delete the Collection from the FileMapper
 	v.Mapper.DelCollection(name)
 	Logger.Log.Log("Collection "+name+" deleted", "INFO")
