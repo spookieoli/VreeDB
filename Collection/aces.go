@@ -25,7 +25,10 @@ func NewAc(collection *Collection) *Ac {
 func (a *Ac) Insert(node *Node.Node) {
 	a.Mut.Lock()
 	defer a.Mut.Unlock()
-	// TBD: Implement the AC Insertlogic
+	// check if we have already enough ACES points
+	if a.Count >= int64(float64(a.Collection.GetNodeCount())**ArgsParser.Ap.ACDistribution) {
+		return
+	}
 	a.Nodes.ACESInsert(node)
 	a.Count++
 }

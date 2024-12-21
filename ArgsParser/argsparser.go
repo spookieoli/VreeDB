@@ -24,6 +24,7 @@ type ArgsParser struct {
 	Neon           *bool
 	ACES           *bool
 	ACDistribution *float64
+	ACESMindDist   *float64
 }
 
 // Ap is a global ArgsParser
@@ -49,7 +50,8 @@ func init() {
 	// Ap.AVX512 = flag.Bool("avx512", false, "Use AVX512")
 	Ap.Neon = flag.Bool("neon", false, "Use Neon (ARM only)")
 	Ap.ACES = flag.Bool("aces", false, "Use ACES")
-	Ap.ACDistribution = flag.Float64("acdistribution", 0.001, "The distribution of the AC")
+	Ap.ACDistribution = flag.Float64("acdistribution", 0.01, "The distribution of the AC")
+	Ap.ACESMindDist = flag.Float64("acesminddist", 0.001, "The minimum distance of the AC")
 
 	// Parse
 	flag.Parse()
