@@ -97,6 +97,13 @@ func (s *Server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Shutdown all the goroutines in the DB's collections
+	for _, col := range s.DB.Collections {
+		if col.ACES {
+			col.ACESCancel()
+		}
+	}
+
 	// Shutdown the server
 	err := s.Server.Shutdown(ctx)
 	if err != nil {
