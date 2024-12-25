@@ -3,6 +3,7 @@ package Collection
 import (
 	"VreeDB/ArgsParser"
 	"VreeDB/Node"
+	"VreeDB/Vector"
 	"sync"
 )
 
@@ -31,4 +32,11 @@ func (a *Ac) Insert(node *Node.Node) {
 	}
 	a.Nodes.ACESInsert(node)
 	a.Count++
+}
+
+// chkDistances checks the distances of the nodes in the Ac
+func (a *Ac) chkDistances(v *Vector.Vector) bool {
+	a.Mut.RLock()
+	defer a.Mut.RUnlock()
+	return false
 }
