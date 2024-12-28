@@ -47,6 +47,7 @@ func (n *Node) ACESInsert(node *Node) {
 func (n *Node) Insert(newVector *Vector.Vector) {
 	if n.Vector == nil {
 		n.Vector = newVector
+		n.Vector.Node = n
 		return
 	}
 

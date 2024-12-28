@@ -20,7 +20,9 @@ type Vector struct {
 	Indexed            bool
 	SaveVectorPosition int64
 	deleted            bool
-	mut                *sync.RWMutex
+	// I know - this ugly but we need to store the position of the vector in the KD Tree - so we can update it later :)
+	Node any
+	mut  *sync.RWMutex
 }
 
 // NewVector returns a new Vector

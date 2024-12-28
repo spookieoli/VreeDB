@@ -81,7 +81,7 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string, ac
 		DeletedVectors: &map[string]*Vector.Vector{}, Mut: sync.RWMutex{}}
 
 	// Create the ACES
-	if *ArgsParser.Ap.ACES && ace {
+	if *ArgsParser.Ap.ACES && ace && col.DistanceFuncName == "euclid" {
 		col.Ac = NewAc(col)
 	}
 
@@ -150,6 +150,12 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 	// Check if there is an Index with a key from the Payload - if so add the vector to the Index
 	go c.CheckIndex(vector)
+
+	// Check if we have ACES - if so insert the node
+	if c.ACES {
+		c.ACESInsert(vector.Node.(*Node.Node))
+	}
+
 	return nil
 }
 
