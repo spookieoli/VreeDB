@@ -153,7 +153,7 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 	// Check if we have ACES - if so insert the node
 	if c.ACES {
-		c.ACESInsert(vector.Node.(*Node.Node))
+		c.ACESInsert(vector.Node.(*Node.Node)) // we know that the Node is a *Node.Node
 	}
 
 	return nil
