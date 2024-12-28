@@ -1,13 +1,12 @@
 package Node
 
 import (
-	"VreeDB/Vector"
 	"time"
 )
 
 // Node is a struct that holds a Vector and two pointers to other Nodes
 type Node struct {
-	Vector   *Vector.Vector
+	Vector   *Vector
 	Left     *Node
 	Right    *Node
 	Depth    int
@@ -44,7 +43,7 @@ func (n *Node) ACESInsert(node *Node) {
 }
 
 // Insert inserts a Node into the tree
-func (n *Node) Insert(newVector *Vector.Vector) {
+func (n *Node) Insert(newVector *Vector) {
 	if n.Vector == nil {
 		n.Vector = newVector
 		n.Vector.Node = n

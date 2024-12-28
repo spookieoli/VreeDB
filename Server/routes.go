@@ -3,9 +3,9 @@ package Server
 import (
 	"VreeDB/ApiKeyHandler"
 	"VreeDB/Logger"
+	"VreeDB/Node"
 	"VreeDB/Utils"
 	"VreeDB/Vdb"
-	"VreeDB/Vector"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -364,7 +364,7 @@ func (r *Routes) AddPoint(w http.ResponseWriter, req *http.Request) {
 			}
 
 			// Add the point to the Collection
-			v := Vector.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName)
+			v := Node.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName)
 			err = r.DB.Collections[p.CollectionName].Insert(v)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -432,7 +432,7 @@ func (r *Routes) AddPointBatch(w http.ResponseWriter, req *http.Request) {
 			go func() {
 				for _, p := range pb.Points {
 					d := p.Payload // This is no longer necessary from GO >= 1.22
-					v := Vector.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
+					v := Node.NewVector(p.Id, p.Vector, &d, pb.CollectionName)
 					err = r.DB.Collections[pb.CollectionName].Insert(v)
 					if err != nil {
 						Logger.Log.Log("Error in BulkAdd: "+err.Error(), "ERROR")
@@ -709,10 +709,10 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			// Check if Index is set
 			switch p.Index {
 			case nil:
-				results = r.DB.Search(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
+				results = r.DB.Search(p.CollectionName, Node.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
 					p.MaxDistancePercent, p.Filter, &p.GetVectors, &p.GetId)
 			default:
-				results = r.DB.IndexSearch(p.CollectionName, Vector.NewVector(p.Id, p.Vector, &p.Payload, ""),
+				results = r.DB.IndexSearch(p.CollectionName, Node.NewVector(p.Id, p.Vector, &p.Payload, ""),
 					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue, &p.GetVectors, &p.GetId)
 			}
 

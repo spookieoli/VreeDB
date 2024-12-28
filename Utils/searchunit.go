@@ -3,7 +3,6 @@ package Utils
 import (
 	"VreeDB/Filter"
 	"VreeDB/Node"
-	"VreeDB/Vector"
 	"math"
 	"sync"
 )
@@ -18,10 +17,10 @@ type SearchUnit struct {
 
 type SearchData struct {
 	Node          *Node.Node
-	Target        *Vector.Vector
+	Target        *Node.Vector
 	Queue         *HeapControl
-	DistanceFunc  func(*Vector.Vector, *Vector.Vector) (float64, error)
-	DimensionDiff *Vector.Vector
+	DistanceFunc  func(*Node.Vector, *Node.Vector) (float64, error)
+	DimensionDiff *Node.Vector
 	SU            *SearchUnit
 }
 
@@ -31,8 +30,8 @@ type SearchData struct {
 // by invoking the `In` channel of `queue`. It also decides whether to search the left or
 // right child node based on the target vector values. Finally, it recursively calls
 // `NearestNeighbors` on the primary and secondary child nodes.
-func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Vector.Vector, queue *HeapControl,
-	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
+func (s *SearchUnit) NearestNeighbors(node *Node.Node, target *Node.Vector, queue *HeapControl,
+	distanceFunc func(*Node.Vector, *Node.Vector) (float64, error), dimensionDiff *Node.Vector) {
 	if node == nil || node.Vector == nil {
 		return
 	}
@@ -84,8 +83,8 @@ func (s *SearchUnit) releaseWaitGroup() {
 }
 
 // Search starts the search
-func (s *SearchUnit) Search(node *Node.Node, target *Vector.Vector, queue *HeapControl,
-	distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error), dimensionDiff *Vector.Vector) {
+func (s *SearchUnit) Search(node *Node.Node, target *Node.Vector, queue *HeapControl,
+	distanceFunc func(*Node.Vector, *Node.Vector) (float64, error), dimensionDiff *Node.Vector) {
 	s.AddToWaitGroup()
 	s.Chan <- &SearchData{Node: node, Target: target, Queue: queue, DistanceFunc: distanceFunc, DimensionDiff: dimensionDiff, SU: s}
 	s.wg.Wait()

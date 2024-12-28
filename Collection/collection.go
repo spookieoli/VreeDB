@@ -9,7 +9,6 @@ import (
 	"VreeDB/Node"
 	"VreeDB/Svm"
 	"VreeDB/Utils"
-	"VreeDB/Vector"
 	"context"
 	"encoding/gob"
 	"encoding/json"
@@ -25,13 +24,13 @@ type Collection struct {
 	Name               string
 	Nodes              *Node.Node
 	VectorDimension    int
-	DistanceFunc       func(*Vector.Vector, *Vector.Vector) (float64, error)
+	DistanceFunc       func(*Node.Vector, *Node.Vector) (float64, error)
 	Mut                sync.RWMutex
-	Space              *map[string]*Vector.Vector
-	DeletedVectors     *map[string]*Vector.Vector
-	MaxVector          *Vector.Vector
-	MinVector          *Vector.Vector
-	DimensionDiff      *Vector.Vector
+	Space              *map[string]*Node.Vector
+	DeletedVectors     *map[string]*Node.Vector
+	MaxVector          *Node.Vector
+	MinVector          *Node.Vector
+	DimensionDiff      *Node.Vector
 	DiagonalLength     float64
 	DistanceFuncName   string
 	Classifiers        map[string]Classifier
@@ -53,12 +52,12 @@ type Classifier interface {
 // NewCollection returns a new Collection
 func NewCollection(name string, vectorDimension int, distanceFuncName string, ace bool) *Collection {
 	// Vars
-	var distanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)
+	var distanceFunc func(*Node.Vector, *Node.Vector) (float64, error)
 
 	// Create the max,min and diff vectors
-	ma := &Vector.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
-	mi := &Vector.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
-	dd := &Vector.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
+	ma := &Node.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
+	mi := &Node.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
+	dd := &Node.Vector{Data: make([]float64, vectorDimension), Length: vectorDimension}
 
 	if strings.ToLower(distanceFuncName) == "euclid" {
 		if *ArgsParser.Ap.AVX256 {
@@ -75,10 +74,10 @@ func NewCollection(name string, vectorDimension int, distanceFuncName string, ac
 	}
 
 	// create the collection
-	col := &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Vector.Vector{},
+	col := &Collection{Name: name, VectorDimension: vectorDimension, Nodes: &Node.Node{Depth: 0}, DistanceFunc: distanceFunc, Space: &map[string]*Node.Vector{},
 		MaxVector: ma, MinVector: mi, DimensionDiff: dd, DistanceFuncName: distanceFuncName, Classifiers: make(map[string]Classifier),
 		ClassifierReady: false, ClassifierTraining: make(map[string]Classifier), Indexes: make(map[string]*Index),
-		DeletedVectors: &map[string]*Vector.Vector{}, Mut: sync.RWMutex{}}
+		DeletedVectors: &map[string]*Node.Vector{}, Mut: sync.RWMutex{}}
 
 	// Create the ACES
 	if *ArgsParser.Ap.ACES && ace && col.DistanceFuncName == "euclid" {
@@ -116,7 +115,7 @@ func (c *Collection) ACESInsert(node *Node.Node) {
 }
 
 // Insert inserts a vector into the collection
-func (c *Collection) Insert(vector *Vector.Vector) error {
+func (c *Collection) Insert(vector *Node.Vector) error {
 	c.Mut.Lock()
 	defer c.Mut.Unlock()
 	if vector.Length != c.VectorDimension {
@@ -153,7 +152,7 @@ func (c *Collection) Insert(vector *Vector.Vector) error {
 
 	// Check if we have ACES - if so insert the node
 	if c.ACES {
-		c.ACESInsert(vector.Node.(*Node.Node)) // we know that the Node is a *Node.Node
+		c.ACESInsert(vector.Node) // we know that the Node is a *Node.Node
 	}
 
 	return nil
@@ -205,12 +204,12 @@ func (c *Collection) DeleteMarkedVectors() {
 		}
 	}
 	// Delete the deleted vectors from the deleted vectors
-	c.DeletedVectors = &map[string]*Vector.Vector{}
+	c.DeletedVectors = &map[string]*Node.Vector{}
 	c.Mut.RUnlock()
 }
 
 // SetDiaSpace will set the diagonal space of the Collection
-func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
+func (c *Collection) SetDiaSpace(vector *Node.Vector) {
 	// Update the max and min vectors
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -226,7 +225,7 @@ func (c *Collection) SetDiaSpace(vector *Vector.Vector) {
 }
 
 // SetLocalDiaSpace sets the diagonal space of the Collection in local variables
-func (c *Collection) SetLocalDiaSpace(diff, minn, maxx, vector *Vector.Vector, length *float64, dim *int) {
+func (c *Collection) SetLocalDiaSpace(diff, minn, maxx, vector *Node.Vector, length *float64, dim *int) {
 	// Update the max and min vectors
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -287,9 +286,9 @@ func (c *Collection) Recreate() {
 
 // Rebuild will create a new KD-Tree from the SpaceMap
 func (c *Collection) Rebuild() {
-	minn := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
-	maxx := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
-	diff := &Vector.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	minn := &Node.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	maxx := &Node.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
+	diff := &Node.Vector{Data: make([]float64, c.VectorDimension), Length: c.VectorDimension}
 	nodes := &Node.Node{Depth: 0}
 	length := float64(0)
 	c.Mut.RLock()
@@ -374,7 +373,7 @@ func (c *Collection) TrainClassifier(name string, degree int, lr float64, epochs
 	}
 
 	// Create a slice with all vectors in the collection
-	var data []*Vector.Vector
+	var data []*Node.Vector
 	for _, v := range *c.Space {
 		data = append(data, v)
 	}
@@ -488,7 +487,7 @@ func (c *Collection) CreateIndex(name, key string) error {
 }
 
 // CheckIndex Check if a specific Index exists
-func (c *Collection) CheckIndex(vector *Vector.Vector) error {
+func (c *Collection) CheckIndex(vector *Node.Vector) error {
 	// First check if there is an Index
 	if len(c.Indexes) == 0 {
 		return nil
@@ -580,7 +579,7 @@ func (c *Collection) RebuildIndex() error {
 }
 
 // addVectorToIndexes to Add a vector to the Index(es)
-func (c *Collection) addVectorToIndexes(keys []string, vector *Vector.Vector) error {
+func (c *Collection) addVectorToIndexes(keys []string, vector *Node.Vector) error {
 	c.Mut.RLock()
 	defer c.Mut.RUnlock()
 

@@ -2,8 +2,8 @@ package Tsne
 
 import (
 	"VreeDB/Logger"
+	"VreeDB/Node"
 	"VreeDB/Utils"
-	"VreeDB/Vector"
 	"math"
 	"math/rand"
 	"runtime"
@@ -24,7 +24,7 @@ type TSNE struct {
 	learningRate  float64
 	dimensions    int // represent the number of dimensions in the output space
 	maxIterations int
-	embeddings    []*Vector.Vector
+	embeddings    []*Node.Vector
 	Collection    string
 	Chan          chan ThreadpoolData
 }
@@ -37,7 +37,7 @@ type ThreadpoolData interface {
 
 // ThreadpoolDataSum will calculate gradients sum
 type ThreadpoolDataSum struct {
-	embedding1, embedding2 *Vector.Vector
+	embedding1, embedding2 *Node.Vector
 	dist, sum              *float64
 	wg                     *sync.WaitGroup
 }
@@ -62,11 +62,11 @@ func NewTSNE(learninrate float64, maxiterations, dimensions int, collection stri
 // It updates the state of the TSNE struct based on the input data.
 // It returns a Vector that represents the dimensionality-reduced data.
 // The returned Vector contains the data points in the output space.
-func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
+func (t *TSNE) PerformTSNE(data []*Node.Vector) ([]*Node.Vector, error) {
 	// Create random embeddings
-	embeddings := make([]*Vector.Vector, len(data))
+	embeddings := make([]*Node.Vector, len(data))
 	for i := range embeddings {
-		embeddings[i] = &Vector.Vector{}
+		embeddings[i] = &Node.Vector{}
 		embeddings[i].Data = make([]float64, t.dimensions)
 		for k := 0; k < t.dimensions; k++ {
 			embeddings[i].Data[k] = rand.Float64()
@@ -103,7 +103,7 @@ func (t *TSNE) PerformTSNE(data []*Vector.Vector) ([]*Vector.Vector, error) {
 // Returns:
 //   - A 2D slice of float64 representing the gradients.
 //   - An error if there was an error in the calculation.
-func (t *TSNE) computeGradients(data []*Vector.Vector) ([][]float64, error) {
+func (t *TSNE) computeGradients(data []*Node.Vector) ([][]float64, error) {
 	n := len(data)
 
 	// Create the dist and gradients
@@ -220,7 +220,7 @@ func (t *ThreadpoolDataSum) Done() {
 //   - gradients: A 2D slice of float64 representing the gradients.
 //
 // Returns: None. The embeddings slice is modified in-place.
-func (t *TSNE) updateEmbeddings(embeddings []*Vector.Vector, gradients [][]float64) {
+func (t *TSNE) updateEmbeddings(embeddings []*Node.Vector, gradients [][]float64) {
 	for i := range embeddings {
 		// optimize Memory access by first get data to scope
 		embedding := embeddings[i].Data

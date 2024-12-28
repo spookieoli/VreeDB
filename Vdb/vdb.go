@@ -5,8 +5,8 @@ import (
 	"VreeDB/FileMapper"
 	"VreeDB/Filter"
 	"VreeDB/Logger"
+	"VreeDB/Node"
 	"VreeDB/Utils"
-	"VreeDB/Vector"
 	"fmt"
 	"sort"
 	"time"
@@ -89,7 +89,7 @@ func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 	// serach the point in the collection
 	novector := false
 	getid := true
-	result := v.Search(collectionName, &Vector.Vector{Data: vector}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
+	result := v.Search(collectionName, &Node.Vector{Data: vector}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
 	if len(result) == 0 {
 		return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
 	}
@@ -107,7 +107,7 @@ func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 }
 
 // Search searches for the nearest neighbours of the given target vector
-func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
+func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
 	filter *[]Filter.Filter, getvector, getid *bool) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()
@@ -195,7 +195,7 @@ func (v *Vdb) Search(collectionName string, target *Vector.Vector, queue *Utils.
 	return results
 }
 
-func (v *Vdb) IndexSearch(collectionName string, target *Vector.Vector, queue *Utils.HeapControl, maxDistancePercent float64, filter *[]Filter.Filter,
+func (v *Vdb) IndexSearch(collectionName string, target *Node.Vector, queue *Utils.HeapControl, maxDistancePercent float64, filter *[]Filter.Filter,
 	indexName string, indexValue any, getvector, getid *bool) []*Utils.ResultSet {
 	v.Collections[collectionName].Mut.RLock()
 	defer v.Collections[collectionName].Mut.RUnlock()

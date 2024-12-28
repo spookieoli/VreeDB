@@ -3,7 +3,7 @@ package NN
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
-	"VreeDB/Vector"
+	"VreeDB/Node"
 	"fmt"
 	"math"
 	"math/rand"
@@ -202,7 +202,7 @@ func (n *Network) Train(trainingData [][]float64, targets [][]float64, epochs in
 }
 
 // CreateTrainData creates the training data for the training
-func (n *Network) CreateTrainData(vectors []*Vector.Vector) ([][]float64, [][]float64, error) {
+func (n *Network) CreateTrainData(vectors []*Node.Vector) ([][]float64, [][]float64, error) {
 	// Create Vars
 	var x [][]float64
 	var y [][]float64

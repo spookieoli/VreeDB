@@ -3,7 +3,6 @@ package Collection
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Node"
-	"VreeDB/Vector"
 	"fmt"
 	"sync"
 )
@@ -18,7 +17,7 @@ type Index struct {
 }
 
 // NewIndex returns a new Index
-func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection string) (*Index, error) {
+func NewIndex(payloadkey string, space *map[string]*Node.Vector, collection string) (*Index, error) {
 	// Create the Indexstruct
 	index := &Index{Entries: make(map[any]*Node.Node), CollectionName: collection, Key: payloadkey, mut: &sync.RWMutex{}}
 
@@ -57,9 +56,9 @@ func NewIndex(payloadkey string, space *map[string]*Vector.Vector, collection st
 }
 
 // getVectorFromPayloadIndex returns a map for a specific payload
-func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*Vector.Vector) (*map[any][]*Vector.Vector, error) {
+func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*Node.Vector) (*map[any][]*Node.Vector, error) {
 	// Create the map
-	vectorMap := make(map[any][]*Vector.Vector)
+	vectorMap := make(map[any][]*Node.Vector)
 
 	// Loop over all the entries
 	for _, vector := range *space {
@@ -76,7 +75,7 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 			switch v := (*payload)[payloadkey].(type) {
 			case int, float64, string:
 				if _, ok := vectorMap[v]; !ok {
-					vectorMap[v] = []*Vector.Vector{}
+					vectorMap[v] = []*Node.Vector{}
 				}
 				// Add to the vectorMap
 				vectorMap[v] = append(vectorMap[v], vector)
@@ -91,7 +90,7 @@ func (i *Index) getVectorFromPayloadIndex(payloadkey string, space *map[string]*
 }
 
 // AddToIndex adds a vector to the Index
-func (i *Index) AddToIndex(vector *Vector.Vector) error {
+func (i *Index) AddToIndex(vector *Node.Vector) error {
 
 	// Get the Payload from the hdd
 	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, i.CollectionName)

@@ -4,8 +4,8 @@ import (
 	"VreeDB/Collection"
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
+	"VreeDB/Node"
 	"VreeDB/Utils"
-	"VreeDB/Vector"
 	"encoding/json"
 	"os"
 	"strings"
@@ -104,8 +104,8 @@ func (b *BootUp) RestoreCollections() map[string]*Collection.Collection {
 // The restored vectors are also unindexed and their properties,
 // such as Collection, DataStart, PayloadStart, Length, and SaveVectorPosition,
 // are set based on the read data.
-func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*Vector.Vector, error) {
-	vectors := make(map[string]*Vector.Vector)
+func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*Node.Vector, error) {
+	vectors := make(map[string]*Node.Vector)
 	m, err := FileMapper.Mapper.SaveVectorRead(collection)
 	if err != nil {
 		Logger.Log.Log("Error reading SaveVector: "+err.Error(), "ERROR")
@@ -117,7 +117,7 @@ func (b *BootUp) RestoreVectors(collection string, dimension int) (*map[string]*
 		if v.DataStart < 0 {
 			continue
 		}
-		vectors[v.VectorID] = Vector.NewVector(v.VectorID, nil, nil, "")
+		vectors[v.VectorID] = Node.NewVector(v.VectorID, nil, nil, "")
 		vectors[v.VectorID].Collection = collection
 		vectors[v.VectorID].DataStart = v.DataStart
 		vectors[v.VectorID].PayloadStart = v.PayloadStart

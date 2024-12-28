@@ -3,7 +3,7 @@ package Filter
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
-	"VreeDB/Vector"
+	"VreeDB/Node"
 	"fmt"
 	"unsafe"
 )
@@ -53,7 +53,7 @@ func (o Operator) IsValid() error {
 // - Compares the field value with the filter value using the operator
 // - Returns true if the filter condition is met, otherwise returns false
 // - Returns an error if an error occurs during file reading or type comparison, otherwise returns nil
-func (f *Filter) ValidateFilter(vector *Vector.Vector) (bool, error) {
+func (f *Filter) ValidateFilter(vector *Node.Vector) (bool, error) {
 	// Load the Payload from the hdd
 	payload, err := FileMapper.Mapper.ReadPayload(vector.PayloadStart, vector.Collection)
 	if err != nil {

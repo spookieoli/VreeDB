@@ -3,7 +3,7 @@ package Collection
 
 import (
 	"VreeDB/Collection"
-	"VreeDB/Vector"
+	"VreeDB/Node"
 	"testing"
 )
 
@@ -31,7 +31,7 @@ func TestInsert(t *testing.T) {
 	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector to insert
-	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}
+	vector := &Node.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}
 
 	// Inserting the vector
 	err := collection.Insert(vector)
@@ -50,7 +50,7 @@ func TestInsertDifferentDimension(t *testing.T) {
 	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector with a different dimension
-	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2}, Length: 2}
+	vector := &Node.Vector{Id: "v1", Data: []float64{1, 2}, Length: 2}
 
 	// Inserting the vector
 	err := collection.Insert(vector)
@@ -64,7 +64,7 @@ func TestDeleteVectorByID(t *testing.T) {
 	collection := Collection.NewCollection("test_collection", 3, "euclid", false)
 
 	// Creating a vector to insert
-	vector := &Vector.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}
+	vector := &Node.Vector{Id: "v1", Data: []float64{1, 2, 3}, Length: 3}
 
 	// Inserting the vector
 	err := collection.Insert(vector)

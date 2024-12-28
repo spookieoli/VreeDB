@@ -4,9 +4,9 @@ import (
 	"VreeDB/ApiKeyHandler"
 	"VreeDB/Filter"
 	"VreeDB/NN"
+	"VreeDB/Node"
 	"VreeDB/Utils"
 	"VreeDB/Vdb"
-	"VreeDB/Vector"
 	"html/template"
 	"time"
 )
@@ -69,8 +69,8 @@ type PointBatch struct {
 
 // Result is a struct that contains the result of a search
 type Result struct {
-	Vector   *Vector.Vector `json:"vector"`
-	Distance float64        `json:"distance"`
+	Vector   *Node.Vector `json:"vector"`
+	Distance float64      `json:"distance"`
 }
 
 // SearchResult is the struct that contains the result of a search

@@ -3,7 +3,7 @@ package Svm
 import (
 	"VreeDB/FileMapper"
 	"VreeDB/Logger"
-	"VreeDB/Vector"
+	"VreeDB/Node"
 	"context"
 	"fmt"
 	"math"
@@ -18,7 +18,7 @@ const epsilon float64 = 0.00000001
 type SVM struct {
 	Alpha   []float64
 	Bias    float64
-	Data    []*Vector.Vector
+	Data    []*Node.Vector
 	Kernel  func([]float64, []float64) float64
 	Degree  int
 	idxChan chan IdxChan
@@ -40,7 +40,7 @@ type IdxChan struct {
 	IdxCol int
 	Sum    *float64
 	Wg     *sync.WaitGroup
-	data   *Vector.Vector
+	data   *Node.Vector
 	Mut    *sync.Mutex
 }
 
@@ -54,7 +54,7 @@ func polynomialKernel(x, y []float64, degree int) float64 {
 }
 
 // Train is a function that trains the SVM
-func (svm *SVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) {
+func (svm *SVM) Train(data []*Node.Vector, epochs int, C float64, degree int) {
 	svm.Data = data
 	svm.Degree = degree
 	n := len(data)
@@ -117,7 +117,7 @@ func (svm *SVM) decisionFunction(x []float64, collection string) float64 {
 }
 
 // Train is a function that trains the MultiClassSVM
-func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, degree int) {
+func (mcs *MultiClassSVM) Train(data []*Node.Vector, epochs int, C float64, degree int) {
 	mcs.Classifiers = make(map[int]*SVM)
 	classes := make(map[int]bool)
 	for _, point := range data {
@@ -139,12 +139,12 @@ func (mcs *MultiClassSVM) Train(data []*Vector.Vector, epochs int, C float64, de
 		svm.StartThreads() // Will start the go routines
 
 		// Create a new slice with the modified data
-		modifiedData := make([]*Vector.Vector, len(data))
+		modifiedData := make([]*Node.Vector, len(data))
 		for i, point := range data {
 			if int((*point.Payload)["Label"].(float64)) == class {
-				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": 1}, PayloadStart: point.PayloadStart}
+				modifiedData[i] = &Node.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": 1}, PayloadStart: point.PayloadStart}
 			} else {
-				modifiedData[i] = &Vector.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}, PayloadStart: point.PayloadStart}
+				modifiedData[i] = &Node.Vector{Data: point.Data, Payload: &map[string]interface{}{"Label": -1}, PayloadStart: point.PayloadStart}
 			}
 		}
 		Logger.Log.Log("Training SVM for class "+fmt.Sprint(class), "INFO")

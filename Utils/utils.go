@@ -247,7 +247,7 @@ double cosine_distance_neon(double *array1, double *array2, int len) {
 import "C"
 
 import (
-	"VreeDB/Vector"
+	"VreeDB/Node"
 	"crypto/rand"
 	"fmt"
 	"math"
@@ -289,7 +289,7 @@ func init() {
 }
 
 // EuclideanDistance function calculates the Euclidean distance between two vectors
-func (u *Util) EuclideanDistance(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) EuclideanDistance(vector1, vector2 *Node.Vector) (float64, error) {
 	var sum float64
 	for i := 0; i < vector1.Length; i++ {
 		diff := vector1.Data[i] - vector2.Data[i]
@@ -299,17 +299,17 @@ func (u *Util) EuclideanDistance(vector1, vector2 *Vector.Vector) (float64, erro
 }
 
 // EuclideanDistanceAVX256 calculates the Euclidean distance between two vectors using AVX256
-func (u *Util) EuclideanDistanceAVX256(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) EuclideanDistanceAVX256(vector1, vector2 *Node.Vector) (float64, error) {
 	return float64(C.euclidean_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
 // EuclideanDistanceNEON calculates the Euclidean distance between two vectors using ARM/NEON
-func (u *Util) EuclideanDistanceNEON(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) EuclideanDistanceNEON(vector1, vector2 *Node.Vector) (float64, error) {
 	return float64(C.euclidean_distance_neon((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
 // CosineDistance function calculates the Cosine distance between two vectors
-func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) CosineDistance(vector1, vector2 *Node.Vector) (float64, error) {
 	var sum, sum1, sum2 float64
 
 	for _, value := range vector1.Data {
@@ -328,12 +328,12 @@ func (u *Util) CosineDistance(vector1, vector2 *Vector.Vector) (float64, error) 
 }
 
 // CosineDistanceAVX256 calculates the Cosine distance between two vectors using AVX256.
-func (u *Util) CosineDistanceAVX256(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) CosineDistanceAVX256(vector1, vector2 *Node.Vector) (float64, error) {
 	return float64(C.cosine_distance_avx((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
 // CosineDistanceNEON calculates the cosine distance between two vectors using ARM/NEON.
-func (u *Util) CosineDistanceNEON(vector1, vector2 *Vector.Vector) (float64, error) {
+func (u *Util) CosineDistanceNEON(vector1, vector2 *Node.Vector) (float64, error) {
 	return float64(C.cosine_distance_neon((*C.double)(unsafe.Pointer(&vector1.Data[0])), (*C.double)(unsafe.Pointer(&vector2.Data[0])), C.int(vector1.Length))), nil
 }
 
@@ -346,7 +346,7 @@ func (u *Util) FastSqrt(x float64) float64 {
 }
 
 // GetMaxDimension returns the maximum value of two vectors
-func (u *Util) GetMaxDimension(vector1, vector2 *Vector.Vector, wg *sync.WaitGroup) {
+func (u *Util) GetMaxDimension(vector1, vector2 *Node.Vector, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for idx := range vector1.Data {
 		if vector2.Data[idx] > vector1.Data[idx] {
@@ -356,7 +356,7 @@ func (u *Util) GetMaxDimension(vector1, vector2 *Vector.Vector, wg *sync.WaitGro
 }
 
 // GetMinDimension returns the minimum value of two vectors
-func (u *Util) GetMinDimension(vector1, vector2 *Vector.Vector, wg *sync.WaitGroup) {
+func (u *Util) GetMinDimension(vector1, vector2 *Node.Vector, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for idx := range vector1.Data {
 		if vector2.Data[idx] < vector1.Data[idx] {
@@ -366,14 +366,14 @@ func (u *Util) GetMinDimension(vector1, vector2 *Vector.Vector, wg *sync.WaitGro
 }
 
 // CalculateDimensionDiff will calculate the difference between the max and min vectors
-func (u *Util) CalculateDimensionDiff(dimension int, dimensionDiff, maxVector, minVector *Vector.Vector) {
+func (u *Util) CalculateDimensionDiff(dimension int, dimensionDiff, maxVector, minVector *Node.Vector) {
 	for i := 0; i < dimension; i++ {
 		(*dimensionDiff).Data[i] = (*maxVector).Data[i] - (*minVector).Data[i]
 	}
 }
 
 // Calculate the DiogonalLength of the Collection
-func (u *Util) CalculateDiogonalLength(diagonalLength *float64, dimension int, dimensionDiff *Vector.Vector) {
+func (u *Util) CalculateDiogonalLength(diagonalLength *float64, dimension int, dimensionDiff *Node.Vector) {
 	*diagonalLength = 0
 	for i := 0; i < dimension; i++ {
 		*diagonalLength += (*dimensionDiff).Data[i] * (*dimensionDiff).Data[i]

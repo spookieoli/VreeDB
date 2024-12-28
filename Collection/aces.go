@@ -4,7 +4,6 @@ import (
 	"VreeDB/ArgsParser"
 	"VreeDB/Node"
 	"VreeDB/Utils"
-	"VreeDB/Vector"
 	"sync"
 )
 
@@ -16,7 +15,7 @@ type Ac struct {
 	Collection   *Collection
 	Count        int64
 	Distribution float64
-	DistanceFunc func(*Vector.Vector, *Vector.Vector) (float64, error)
+	DistanceFunc func(*Node.Vector, *Node.Vector) (float64, error)
 }
 
 // NewAc returns a new Ac
@@ -55,7 +54,7 @@ func (a *Ac) Insert(node *Node.Node) {
 }
 
 // chkDistances checks the distances of the nodes in the Ac
-func (a *Ac) chkDistances(v *Vector.Vector) bool {
+func (a *Ac) chkDistances(v *Node.Vector) bool {
 	a.Mut.RLock()
 	defer a.Mut.RUnlock()
 	// Get the Diagonal Length of the Collection
