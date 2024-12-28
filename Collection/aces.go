@@ -69,9 +69,9 @@ func (a *Ac) chkDistances(v *Vector.Vector) bool {
 			return false
 		}
 
-		// If the distance is greater or equal than the minimum distance, return continue
-		if dist >= dl {
-			continue
+		// if dist is smaller than dl, return false
+		if dist < dl {
+			return false
 		}
 	}
 	return true
