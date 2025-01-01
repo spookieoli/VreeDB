@@ -9,7 +9,6 @@ import (
 	"VreeDB/Utils"
 	"fmt"
 	"sort"
-	"time"
 )
 
 // Vdb is the main struct of the VectorDatabase
@@ -123,8 +122,6 @@ func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.He
 	// Add 1 to the queue waitgroup
 	queue.AddToWaitGroup()
 
-	// Get the starting time
-	t := time.Now()
 	su := Utils.NewSearchUnit(filter, 0.1)
 
 	// search
@@ -144,9 +141,6 @@ func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.He
 
 	// Wait for the Queue to finish
 	queue.Wg.Wait()
-
-	// Print the time it took
-	Logger.Log.Log("Search took: "+time.Since(t).String(), "INFO")
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
@@ -211,8 +205,6 @@ func (v *Vdb) IndexSearch(collectionName string, target *Node.Vector, queue *Uti
 	// Add 1 to the queue waitgroup
 	queue.AddToWaitGroup()
 
-	// Get the starting time
-	t := time.Now()
 	su := Utils.NewSearchUnit(filter, 0.1)
 
 	// search
@@ -232,9 +224,6 @@ func (v *Vdb) IndexSearch(collectionName string, target *Node.Vector, queue *Uti
 
 	// Wait for the Queue to finish
 	queue.Wg.Wait()
-
-	// Print the time it took
-	Logger.Log.Log("Search took: "+time.Since(t).String(), "INFO")
 
 	// Get the nodes from the queue
 	data := queue.GetNodes()
