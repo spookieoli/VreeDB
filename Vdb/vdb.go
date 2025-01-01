@@ -88,10 +88,23 @@ func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 	// serach the point in the collection
 	novector := false
 	getid := true
-	result := v.Search(collectionName, &Node.Vector{Data: vector}, Utils.NewHeapControl(1), 0, nil, &novector, &getid)
+
+	// Create the SearchParams
+	sp := &Utils.SearchParams{
+		CollectionName: collectionName,
+		Target:         &Node.Vector{Data: vector},
+		Queue:          Utils.NewHeapControl(1),
+		Filter:         nil,
+		Getvector:      &novector,
+		Getid:          &getid,
+	}
+
+	// Search for the point
+	result := v.Search(sp)
 	if len(result) == 0 {
 		return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
 	}
+
 	// Delete the Point when the distance is 0
 	if result[0].Distance == 0 {
 		// Delete the node
@@ -102,55 +115,55 @@ func (v *Vdb) DeletePoint(collectionName string, vector []float64) error {
 		Logger.Log.Log("Point deleted from collection ", "INFO")
 		return nil
 	}
+
 	return fmt.Errorf("Point with point %v not found in collection %s", vector, collectionName)
 }
 
 // Search searches for the nearest neighbours of the given target vector
-func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.HeapControl, maxDistancePercent float64,
-	filter *[]Filter.Filter, getvector, getid *bool) []*Utils.ResultSet {
-	v.Collections[collectionName].Mut.RLock()
-	defer v.Collections[collectionName].Mut.RUnlock()
+func (v *Vdb) Search(sp *Utils.SearchParams) []*Utils.ResultSet {
+	v.Collections[sp.CollectionName].Mut.RLock()
+	defer v.Collections[sp.CollectionName].Mut.RUnlock()
 
 	// if the collection is empty we return an empty slice
-	if v.Collections[collectionName].DiagonalLength == 0 {
+	if v.Collections[sp.CollectionName].DiagonalLength == 0 {
 		return []*Utils.ResultSet{}
 	}
 
 	// Start the Queue Thread
-	queue.StartThreads()
+	sp.Queue.StartThreads()
 
 	// Add 1 to the queue waitgroup
-	queue.AddToWaitGroup()
+	sp.Queue.AddToWaitGroup()
 
-	su := Utils.NewSearchUnit(filter, 0.1)
+	su := Utils.NewSearchUnit(sp.Filter, 0.1)
 
 	// search
-	su.Search(v.Collections[collectionName].Nodes, target, queue, v.Collections[collectionName].DistanceFunc, v.Collections[collectionName].DimensionDiff)
+	su.Search(v.Collections[sp.CollectionName].Nodes, sp.Target, sp.Queue, v.Collections[sp.CollectionName].DistanceFunc, v.Collections[sp.CollectionName].DimensionDiff)
 
 	// Close the channel and wait for the Queue to finish
-	queue.CloseChannel()
+	sp.Queue.CloseChannel()
 
 	// Here we have some time to do some other stuff
 	filterRes := false
-	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+	if v.Collections[sp.CollectionName].DistanceFuncName == "euclid" && sp.MaxDistancePercent > 0 {
 		filterRes = true
 	}
 
 	// Create the ResultSet
-	results := make([]*Utils.ResultSet, queue.MaxResults)
+	results := make([]*Utils.ResultSet, sp.Queue.MaxResults)
 
 	// Wait for the Queue to finish
-	queue.Wg.Wait()
+	sp.Queue.Wg.Wait()
 
 	// Get the nodes from the queue
-	data := queue.GetNodes()
+	data := sp.Queue.GetNodes()
 	dataLen := len(data)
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if filterRes {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
 		for i := 0; i < dataLen; i++ {
-			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+			if data[i].Distance > sp.MaxDistancePercent*v.Collections[sp.CollectionName].DiagonalLength {
 				data = append(data[:i], data[i+1:]...)
 				i--
 			}
@@ -158,25 +171,25 @@ func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.He
 	}
 
 	// only create a new slice if the dataLen is smaller than the MaxResults
-	if dataLen < queue.MaxResults {
+	if dataLen < sp.Queue.MaxResults {
 		results = make([]*Utils.ResultSet, dataLen)
 	}
 
 	// Get the Payloads back from the Memory Map
 	for i := 0; i < dataLen; i++ {
-		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
+		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, sp.CollectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
 			continue
 		}
 		// if getvector is true we also return the vector
 		var vd *[]float64
-		if *getvector {
+		if *sp.Getvector {
 			vd = &data[i].Node.Vector.Data
 		}
 		// if getid is true we also return the id
 		var id string
-		if *getid {
+		if *sp.Getid {
 			id = data[i].Node.Vector.Id
 		}
 		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}
@@ -189,51 +202,50 @@ func (v *Vdb) Search(collectionName string, target *Node.Vector, queue *Utils.He
 	return results
 }
 
-func (v *Vdb) IndexSearch(collectionName string, target *Node.Vector, queue *Utils.HeapControl, maxDistancePercent float64, filter *[]Filter.Filter,
-	indexName string, indexValue any, getvector, getid *bool) []*Utils.ResultSet {
-	v.Collections[collectionName].Mut.RLock()
-	defer v.Collections[collectionName].Mut.RUnlock()
+func (v *Vdb) IndexSearch(sp *Utils.SearchParams) []*Utils.ResultSet {
+	v.Collections[sp.CollectionName].Mut.RLock()
+	defer v.Collections[sp.CollectionName].Mut.RUnlock()
 
 	// if the collection is empty we return an empty slice
-	if v.Collections[collectionName].DiagonalLength == 0 {
+	if v.Collections[sp.CollectionName].DiagonalLength == 0 {
 		return []*Utils.ResultSet{}
 	}
 
 	// Start the Queue Thread
-	queue.StartThreads()
+	sp.Queue.StartThreads()
 
 	// Add 1 to the queue waitgroup
-	queue.AddToWaitGroup()
+	sp.Queue.AddToWaitGroup()
 
-	su := Utils.NewSearchUnit(filter, 0.1)
+	su := Utils.NewSearchUnit(sp.Filter, 0.1)
 
 	// search
-	su.Search(v.Collections[collectionName].Indexes[indexName].Entries[indexValue], target, queue, v.Collections[collectionName].DistanceFunc, v.Collections[collectionName].DimensionDiff)
+	su.Search(v.Collections[sp.CollectionName].Indexes[sp.IndexName].Entries[sp.IndexValue], sp.Target, sp.Queue, v.Collections[sp.CollectionName].DistanceFunc, v.Collections[sp.CollectionName].DimensionDiff)
 
 	// Close the channel and wait for the Queue to finish
-	queue.CloseChannel()
+	sp.Queue.CloseChannel()
 
 	// Here we have some time to do some other stuff
 	filterRes := false
-	if v.Collections[collectionName].DistanceFuncName == "euclid" && maxDistancePercent > 0 {
+	if v.Collections[sp.CollectionName].DistanceFuncName == "euclid" && sp.MaxDistancePercent > 0 {
 		filterRes = true
 	}
 
 	// Create the ResultSet
-	results := make([]*Utils.ResultSet, queue.MaxResults)
+	results := make([]*Utils.ResultSet, sp.Queue.MaxResults)
 
 	// Wait for the Queue to finish
-	queue.Wg.Wait()
+	sp.Queue.Wg.Wait()
 
 	// Get the nodes from the queue
-	data := queue.GetNodes()
+	data := sp.Queue.GetNodes()
 	dataLen := len(data)
 
 	// If this collection uses euclid and we have a maxDistancePercent > 0 we need to filter the results
 	if filterRes {
 		// If a result is greater than maxDistancePercent * DiagonalLength we remove it
 		for i := 0; i < dataLen; i++ {
-			if data[i].Distance > maxDistancePercent*v.Collections[collectionName].DiagonalLength {
+			if data[i].Distance > sp.MaxDistancePercent*v.Collections[sp.CollectionName].DiagonalLength {
 				data = append(data[:i], data[i+1:]...)
 				i--
 			}
@@ -241,25 +253,25 @@ func (v *Vdb) IndexSearch(collectionName string, target *Node.Vector, queue *Uti
 	}
 
 	// only create a new slice if the dataLen is smaller than the MaxResults
-	if dataLen < queue.MaxResults {
+	if dataLen < sp.Queue.MaxResults {
 		results = make([]*Utils.ResultSet, dataLen)
 	}
 
 	// Get the Payloads back from the Memory Map
 	for i := 0; i < dataLen; i++ {
-		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, collectionName)
+		m, err := FileMapper.Mapper.ReadPayload(data[i].Node.Vector.PayloadStart, sp.CollectionName)
 		if err != nil {
 			Logger.Log.Log("Error reading payload: "+err.Error(), "ERROR")
 			continue
 		}
 		// if getvector is true we also return the vector
 		var vd *[]float64
-		if *getvector {
+		if *sp.Getvector {
 			vd = &data[i].Node.Vector.Data
 		}
 		// if getid is true we also return the id
 		var id string
-		if *getid {
+		if *sp.Getid {
 			id = data[i].Node.Vector.Id
 		}
 		results[i] = &Utils.ResultSet{Payload: m, Distance: data[i].Distance, Vector: vd, Id: id}

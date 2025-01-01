@@ -247,6 +247,7 @@ double cosine_distance_neon(double *array1, double *array2, int len) {
 import "C"
 
 import (
+	"VreeDB/Filter"
 	"VreeDB/Node"
 	"crypto/rand"
 	"fmt"
@@ -258,6 +259,19 @@ import (
 
 type Util struct {
 	earthRadius, eccentricityfactor float64
+}
+
+// SearchParams is the struct that will be used to search for the nearest neighbours of a vector, when send by REST
+type SearchParams struct {
+	CollectionName     string
+	Target             *Node.Vector
+	Queue              *HeapControl
+	MaxDistancePercent float64
+	Filter             *[]Filter.Filter
+	IndexName          string
+	IndexValue         any
+	Getvector          *bool
+	Getid              *bool
 }
 
 // CollectionConfig is a struct to hold the configuration of a Collection
