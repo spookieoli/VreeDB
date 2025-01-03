@@ -706,14 +706,23 @@ func (r *Routes) Search(w http.ResponseWriter, req *http.Request) {
 			// Set the resultset
 			var results []*Utils.ResultSet
 
+			// Create the SearchParams
+			sp := &Utils.SearchParams{
+				CollectionName:     p.CollectionName,
+				Target:             Node.NewVector(p.Id, p.Vector, &p.Payload, p.CollectionName),
+				Queue:              queue,
+				Filter:             p.Filter,
+				MaxDistancePercent: p.MaxDistancePercent,
+				Getvector:          &p.GetVectors,
+				Getid:              &p.GetId,
+			}
+
 			// Check if Index is set
 			switch p.Index {
 			case nil:
-				results = r.DB.Search(p.CollectionName, Node.NewVector(p.Id, p.Vector, &p.Payload, ""), queue,
-					p.MaxDistancePercent, p.Filter, &p.GetVectors, &p.GetId)
+				results = r.DB.Search(sp)
 			default:
-				results = r.DB.IndexSearch(p.CollectionName, Node.NewVector(p.Id, p.Vector, &p.Payload, ""),
-					queue, p.MaxDistancePercent, p.Filter, p.Index.IndexName, p.Index.IndexValue, &p.GetVectors, &p.GetId)
+				results = r.DB.IndexSearch(sp)
 			}
 
 			// Send the results to the client
