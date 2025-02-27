@@ -282,6 +282,7 @@ func (f *FileMapper) MapFile(collection string) {
 			// We panic here because we can't continue without the mapped data
 			panic(err)
 		}
+
 		f.MappedData[collection] = mappedData
 		f.Mapped[collection] = true
 	} else {

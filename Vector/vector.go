@@ -5,13 +5,14 @@ import (
 	"crypto/rand"
 	"fmt"
 	"sync"
+	"weak"
 )
 
 // Vector is a struct that holds a slice of float64
 type Vector struct {
 	Id                 string
 	Collection         string
-	Data               []float64
+	Data               weak.Pointer[[]float64]
 	Length             int
 	CLength            int
 	Payload            *map[string]interface{}
@@ -48,9 +49,9 @@ func NewVector(id string, data []float64, payload *map[string]interface{}, colle
 			// if we cannot write to the file we panic
 			panic(err)
 		}
-		return &Vector{Id: id, Data: data, Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps, CLength: clen, SaveVectorPosition: -1}
+		return &Vector{Id: id, Data: weak.Make[[]float64](&data), Length: len(data), DataStart: ds, Indexed: true, mut: &sync.RWMutex{}, Collection: collection, PayloadStart: ps, CLength: clen, SaveVectorPosition: -1}
 	} else {
-		return &Vector{Id: id, Data: data, Length: len(data), Payload: payload, Indexed: false, mut: &sync.RWMutex{}, Collection: collection, SaveVectorPosition: -1}
+		return &Vector{Id: id, Data: weak.Make[[]float64](&data), Length: len(data), Payload: payload, Indexed: false, mut: &sync.RWMutex{}, Collection: collection, SaveVectorPosition: -1}
 	}
 }
 
@@ -63,7 +64,7 @@ func (v *Vector) Unindex() {
 	if v.DataStart < 0 {
 		return
 	}
-	v.Data = *FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection)
+	v.Data = weak.Make[[]float64](FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection))
 	v.Indexed = false
 }
 
@@ -75,7 +76,7 @@ func (v *Vector) GetData() *[]float64 {
 	if v.Indexed {
 		return FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection)
 	}
-	return &v.Data
+	return v.Data.Value()
 }
 
 // RecreateMut will recreate the mut
