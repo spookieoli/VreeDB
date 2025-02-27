@@ -74,6 +74,7 @@ func (v *Vector) GetData() *[]float64 {
 	v.mut.RLock()
 	defer v.mut.RUnlock()
 	if v.Data.Value() == nil {
+		// read the data from the file
 		v.Data = weak.Make[[]float64](FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection))
 	}
 	return v.Data.Value()
