@@ -73,8 +73,8 @@ func (v *Vector) GetData() *[]float64 {
 	// Protect the data from being written to while we read it
 	v.mut.RLock()
 	defer v.mut.RUnlock()
-	if v.Indexed {
-		return FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection)
+	if v.Data.Value() == nil {
+		v.Data = weak.Make[[]float64](FileMapper.Mapper.ReadVector(v.DataStart, v.Length, v.Collection))
 	}
 	return v.Data.Value()
 }
