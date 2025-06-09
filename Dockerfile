@@ -28,6 +28,15 @@ RUN go telemetry off
 # tidy the go.mod file and install all dependencies
 RUN go mod download
 
+# change dir to /wasm
+WORKDIR /wasm
+
+# First build the wasm file - compile to wasm
+RUN GOOS=js GOARCH=wasm go build -o main.wasm ../wasm/main.go
+
+# change dir back to /
+WORKDIR /
+
 # Build the Go app
 RUN go build -o VreeDB .
 
