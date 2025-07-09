@@ -1,3 +1,9 @@
+# PLEASE NOTE: VreeDB now is archived and will not be maintained anymore! Feel free to Fork and watch out for our next Project!
+
+
+
+
+
 # VreeDB ((V)ector-T(ree) Database)
 A simple, fast, no dependency, Go powered Vector Database
 
